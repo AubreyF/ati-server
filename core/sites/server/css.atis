@@ -1,0 +1,29 @@
+<?
+
+setPageHeader('content-type','text/css');
+setPageHeader('cache-control','public, max-age=43200');
+if($_SERVER['server'] != 'testing') setPageCache(180);
+
+if(strpos($_REQUEST['default'],',')) $temp = explode(',',$_REQUEST['default']);
+else $temp[] = $_REQUEST['default'];
+
+foreach($temp as $key=>$file) {
+	
+	//Handle URL Aliases
+	if(substr($file,0,1) == '_') {
+		$temp = strpos($file,'_',1);
+		$file = $GLOBALS['prefs']['alias']['/'.substr($file,0,$temp)].str_replace(array('_','+'),array('/','.'),substr($file,$temp));
+	}
+	else $file = '/serv/sites/'.$_SERVER['site'].'/'.str_replace(array('_','+'),array('/','.'),$file);
+	
+	$dat .= chr(10).file_get_contents(_root.$file.'.css');
+}
+
+if($dat && !$_REQUEST['source'])
+	$dat = '/* Add "-source-true" to URL */ '.preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', str_replace(array("\r\n", "\r", "\n", "\t", '  ', '    ', '    '), '', $dat));
+else if(!$dat)
+	$css = 'ATIERROR::CSSNF: '.$file;
+
+setPage($dat);
+
+?>

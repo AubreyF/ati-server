@@ -1,0 +1,12 @@
+.adDiv { display:block; height:75px; border-bottom:1px solid #999999; clear:both; text-decoration:none; }
+.adDiv:hover { text-decoration:none; }
+.adDiv > div { margin-left:10px; margin-right:10px; }
+.adDiv .thumb { float:left; height: 75px; width: 100px; }
+.adDiv .title { display:block; height:22px; line-height:18px; margin-top:5px; font-weight:bold; text-align:center; text-decoration:none; overflow:hidden; font-size:0.9em; }
+.adDiv:hover .title { text-decoration:none; color: #477B9E; }
+.adDiv .specs { height:28px; margin-bottom:3px; overflow:hidden; font-size:0.9em; line-height:13px; text-align:center; color:#555555; }
+.adDiv .specs .spec { color:#999999; }
+.adDiv .price { float:left; font-weight:bold; margin-left:10px; }
+.adDiv .date { position:relative; height:20px; margin-bottom:-20px; text-align:center; font-size:0.9em; margin-right:130px; }
+.adDiv .location { float:right; font-size:0.9em; max-width:250px; text-align:right; line-height:9px; }
+.adDiv .tools, .adDiv .provider { float:right; margin:0; margin-top:7px; }

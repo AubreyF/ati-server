@@ -1,0 +1,130 @@
+<?
+
+function loadSite($str) { //Handle Aliases and Redirects
+	if(file_exists(_root.'/serv/redirects/'.$str)) 		sendPage('Domain Redirect',array('status'=>'HTTP/1.1 301 Moved Permanently', 'location' => 'http://'.file_get_contents('../../serv/redirects/'.$str)));
+	if(file_exists(_root.'/serv/aliases/'.$str)) 			$str = file_get_contents('../../serv/aliases/'.$str);
+	if(!file_exists(_root.'/serv/sites/'.$str.'/'))		return false;	//Check for Site
+															return $str;	//Success!
+}
+
+function generatePage() {
+	//******************** Set Server Specific Preferences *********************
+	
+	$_SERVER = array_merge_recursive($_SERVER,$GLOBALS['prefs']['servers'][(strpos($_SERVER['HTTP_HOST'],$GLOBALS['prefs']['servers']['testing']['superDomain']) ? 'testing' : 'production')]);
+	
+	//********************* Determine "Site" and "Network" *********************
+	
+	$_SERVER['FAKE_HOST'] = $_SERVER['HTTP_HOST'];
+	$_SERVER['HTTP_HOST'] = preg_replace($GLOBALS['prefs']['cloak']['str'], $GLOBALS['prefs']['cloak']['rep'], (($temp = strpos($_SERVER['HTTP_HOST'],':')) ? substr($_SERVER['HTTP_HOST'],0,$temp) : $_SERVER['HTTP_HOST']));
+	
+	if($_SERVER['site'] = loadSite(($temp = strpos($_SERVER['HTTP_HOST'],':') ? (substr($_SERVER['HTTP_HOST'],0,$temp)) : $_SERVER['HTTP_HOST'])));		//Full Host (trim port if necessary)
+	else if($_SERVER['site'] = loadSite(substr($_SERVER['HTTP_HOST'],strpos($_SERVER['HTTP_HOST'],'.')+1))) $_SERVER['ATI_CODE'] = '';		//Trim Subdomain
+	else $_SERVER['ATI_CODE'] = 'nodom';	//Invalid Domain
+	
+	//************************* HTTP Header presets ****************************
+	
+	$_SERVER['headers'] = $GLOBALS['prefs']['defHeaders'];
+	$_SERVER['headers']['host'] = $_SERVER['HTTP_HOST'];
+	
+	//*********************** Set Required Variables ***************************
+	
+	$_SERVER['FAKE_URI'] = 'http://'.$_SERVER['FAKE_HOST'].$_SERVER['REQUEST_URI'];
+	
+	if(substr_count($_SERVER['HTTP_HOST'],'.') > 1) {
+		$temp = strpos($_SERVER['HTTP_HOST'],'.');
+		$_SERVER['HTTP_HOST_TOP'] = substr($_SERVER['HTTP_HOST'],$temp + 1);
+		$_SERVER['HTTP_HOST_SUB'] = substr($_SERVER['HTTP_HOST'],0,$temp);
+		$temp = strpos($_SERVER['FAKE_HOST'],'.');
+		$_SERVER['FAKE_HOST_TOP'] = substr($_SERVER['FAKE_HOST'],$temp + 1);
+		$_SERVER['FAKE_HOST_SUB'] = substr($_SERVER['FAKE_HOST'],0,$temp);
+	}
+	else {
+		$_SERVER['FAKE_HOST_TOP'] = $_SERVER['FAKE_HOST'];
+		$_SERVER['HTTP_HOST_TOP'] = $_SERVER['HTTP_HOST'];
+	}
+	
+	//**************************** Handle Redirects! ***************************
+	
+	$temp = preg_replace($GLOBALS['prefs']['redirect']['str'], $GLOBALS['prefs']['redirect']['rep'], $_SERVER['FAKE_URI']);
+	if ($temp != $_SERVER['FAKE_URI']) sendPage('',array('status'=>'HTTP/1.1 301 Moved Permanently', 'location'=>$temp));
+	
+	//*************************** Handle Banned Users! *************************
+	
+	if(array_key_exists($_SERVER['REMOTE_ADDR'], $GLOBALS['prefs']['banned'])) sendPage('',array('status'=>'HTTP/1.1 301 Moved Permanently', 'location'=>'http://www.youtube.com/watch?v=oHg5SJYRHA0'));
+	
+	//******************* Determine File and Type being served *****************
+	
+	//Get path and extension while stripping arguments and anchors	
+	$file = array();
+	if(!strpos($_SERVER['REQUEST_URI'], '.', max(0, strlen($_SERVER['REQUEST_URI']) - 10)) && !strpos($_SERVER['REQUEST_URI'], '.atis') && !strpos($_SERVER['REQUEST_URI'], '.htm')) preg_match('/^([^-|\?|\#]*)([^\?|\-]*)([^\#]*)/',$_SERVER['REQUEST_URI'], $file); //This url DOES NOT have dot, which means that the first dash we see will be a parameter separator
+	else preg_match('/^([^\	?]*)(\.[^\?|\-]*)([^\#]*)/',$_SERVER['REQUEST_URI'], $file); //This url HAS a dot, which means that we wait till AFTER the LAST dot to start looking for parameters
+	//$file[2] = '.'.$file[2];
+	$_SERVER['REQUEST_FILE'] = $file[1].$file[2]; //REQUEST_FILE doesn't want a file extension if the url didnt have one.
+	if(!$file[2]) {
+		foreach($GLOBALS['prefs']['extmask'] as $key=>$val) if(strpos($file[1],$key) !== false) {
+			$file[2] = $val;
+			break;
+		}
+		if(!$file[2] && substr($_SERVER['REQUEST_URI'],-1) != '/') $file[2] = $GLOBALS['prefs']['extmask']['default'];
+	}
+	else if($file[2] == 'hidden') sendPage('The file you attempted to view was invalid');
+	$_SERVER['REQUEST_URI'] = $file[1].$file[2];
+	$_SERVER['REQUEST_PARAMS'] = substr($file[3],1);
+	if($file[2]) $_SERVER['REQUEST_TYPE'] = $GLOBALS['prefs']['extensions'][$file[2]];
+	if (!$_SERVER['REQUEST_TYPE']) $_SERVER['REQUEST_TYPE'] = $GLOBALS['prefs']['extensions']['other'];
+	if($_SERVER['REQUEST_TYPE']['simple']) $GLOBALS['prefs']['simple'] = true;
+	
+	//******************** Determine Browser Pecularities **********************
+	
+	if(strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== false && $_SERVER['REQUEST_TYPE']['gZip'] == true) $GLOBALS['prefs']['gzipPage'] = true;
+	
+	//*************************** Garbage Collection ***************************
+	
+	unset($GLOBALS['prefs']['extensions'], $GLOBALS['prefs']['servers']);
+	
+	//************************ Handle Session Cookie Loader ********************
+	
+	if($_SERVER['REQUEST_URI'] == '/loadcookie.ati') require 'cookieloader.atii';
+	
+	//****************** Dynamically defined LINK Rewriting ********************
+	
+	$GLOBALS['prefs']['alias']['/_n'] = '/serv/networks/'.$_SERVER['network'];
+	
+	//**************************** Handle Aliases ******************************
+	
+	if($_SERVER['site']) {
+		foreach ($GLOBALS['prefs']['alias'] as $str=>$rep) {
+			$pos = strpos($_SERVER['REQUEST_URI'],$str);
+			if($pos !== false) {
+				$_SERVER['REQUEST_URI'] = $rep.substr($_SERVER['REQUEST_URI'],$pos+strlen($str));
+				$alreadyReplaced = true;
+				break;
+			}
+		}
+		if(!$alreadyReplaced) $_SERVER['REQUEST_URI'] = '/serv/sites/'.$_SERVER['site'].$_SERVER['REQUEST_URI'];
+	}
+	else $_SERVER['REQUEST_URI'] = '/core/sites/server'.$_SERVER['REQUEST_URI'];
+	
+	//*************************** Handle Index Files ***************************
+	
+	if(substr($_SERVER['REQUEST_URI'],-1) == '/') {
+		foreach ($GLOBALS['prefs']['indexes'] as $str=>$rep) if(file_exists(_root.$_SERVER['REQUEST_URI'].$str)) sendPage('',array('status'=>'HTTP/1.1 301 Moved Permanently', 'location'=>$_SERVER['FAKE_URI'].$rep));
+		$_SERVER['REQUEST_URI'] .= 'index';
+		$_SERVER['REQUEST_TYPE'] = 'dynamic';
+		//sendPage('',array('status'=>'HTTP/1.1 301 Moved Permanently', 'location'=>$_SERVER['FAKE_URI'].$rep)); //None of the files existed
+	}
+	
+	//**************************** Handle Static Files *************************
+	
+	if($_SERVER['REQUEST_TYPE']['dynamic'] != true) require_once 'static.atii';
+	
+	//***************************** Handle .php Files **************************
+	
+	else if($_SERVER['REQUEST_TYPE']['name'] == '.php') require_once 'php.atii';
+	
+	//********************** Handle ATISERVER Files! **************************
+	
+	else require_once 'dynamic.atii';
+}
+
+?>

@@ -1,0 +1,18 @@
+<?
+
+setPageHeader('cache-control','public, max-age=86400');
+setPageHeader('Content-Type','application/json');
+
+function getSubCats($id=0) {
+	$rs = $_SERVER['db']->execute("SELECT id, title FROM classifieds_categories WHERE parent = '{$id}'");	
+	if($rs) while ($row = $rs->fetchRow()) $str .= ($str ? ',' : '').'{"property": {"name": "'.$row['title'].'","id": "'.$row['id'].'"}'.getSubCats($row['id']).'}';
+	return ($str ? ',"children": ['.$str.']' : '');
+}
+
+setPage('[{
+	"property": {
+		"name": "Categories"
+	}'.getSubCats().'
+}]');
+
+?>

@@ -1,0 +1,12 @@
+<?
+//ID, Location, Date, Type, Price, PriceType, Title, Thumbnail
+
+setPagePref('deadEndPage',true);
+setPagePref('template','none');
+setPageHeader('cache-control','public, max-age=3600'); //cache page for an hour!
+
+$rs = $_SERVER['db']->execute($adBox['sql']);
+if ($rs) while ($ad = $rs->FetchRow()) $pageContent .= "\r\n".$ad['id'].';'.$ad['town'].', '.$ad['country'].';'.doDate($ad['date'],'short').';'.$ad['type'].';'.$ad['price'].';'.$ad['priceType'].';'.$ad['title'].';'.$ad['thumb0'];
+
+$pageContent = substr($pageContent,4);
+?>

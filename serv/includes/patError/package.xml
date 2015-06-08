@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
+<package version="1.0" packagerversion="1.4.0a4">
+ <name>patError</name>
+ <summary>Simple and powerful error management package.</summary>
+ <description>patError - simple and powerful error managemet system. Inspired by error handling of PEAR.
+ </description>
+ <maintainers>
+  <maintainer>
+   <user>schst</user>
+   <name>Stephan Schmidt</name>
+   <email>schst@php-tools.net</email>
+   <role>lead</role>
+  </maintainer>
+  <maintainer>
+   <user>gerd</user>
+   <name>Gerd Schaufelberger</name>
+   <email>gerd@php-tools.net</email>
+   <role>lead</role>
+  </maintainer>
+  <maintainer>
+   <user>argh</user>
+   <name>Sebastian Mordziol</name>
+   <email>argh@php-tools.net</email>
+   <role>developer</role>
+  </maintainer>
+  </maintainers>
+ <release>
+  <version>1.1.0</version>
+  <date>2005-03-06</date>
+  <license>LGPL</license>
+  <state>stable</state>
+  <notes>Changes since 1.0.2:
+- allow strings in error codes (gERD)
+- fixed pushExpect() and popExpect() (schst)
+- fix PHP5 compatibility (argh)
+- added new handler to throw exceptions (schst)
+  </notes>
+  <deps>
+   <dep type="php" rel="ge" version="4.3.0" optional="no"/>
+  </deps>
+  <filelist>
+   <dir name="/" baseinstalldir="pat">
+    <dir name="docs">
+     <file role="doc" name="errorcodes.txt"/>
+     <file role="doc" name="install.txt"/>
+     <file role="doc" name="readme.txt"/>
+    </dir> <!-- /docs -->
+    <dir name="examples">
+     <file role="doc" name="example_cli_error.php"/>
+     <file role="doc" name="example_error.php"/>
+     <file role="doc" name="example_errormanager.php"/>
+     <file role="doc" name="example_errormanager_customlevel.php"/>
+     <file role="doc" name="example_exception.php"/>
+     <file role="doc" name="example_expect.php"/>
+     <file role="doc" name="example_ignore.php"/>
+     <file role="doc" name="patErrorHandlerDebug.php"/>
+    </dir> <!-- /examples -->
+    <file role="php" name="patError.php"/>
+    <file role="php" name="patErrorManager.php"/>
+   </dir> <!-- / -->
+  </filelist>
+ </release>
+ <changelog>
+   <release>
+    <version>1.0</version>
+    <date>2004-02-10</date>
+    <license>PHP License</license>
+    <state>beta</state>
+    <notes>first public release
+    </notes>
+   </release>
+   <release>
+    <version>1.0.1</version>
+    <date>2004-03-31</date>
+    <license>PHP License</license>
+    <state>beta</state>
+    <notes>added cli-compatible error-handling
+    </notes>
+   </release>
+   <release>
+    <version>1.0.2</version>
+    <date>2004-05-04</date>
+    <license>PHP License</license>
+    <state>beta</state>
+    <notes>new features for ignoring errors
+    </notes>
+   </release>
+   <release>
+    <version>1.1.0</version>
+    <date>2005-03-06</date>
+    <license>LGPL</license>
+    <state>stable</state>
+    <notes>Changes since 1.0.2:
+- allow strings in error codes (gERD)
+- fixed pushExpect() and popExpect() (schst)
+- fix PHP5 compatibility (argh)
+- added new handler to throw exceptions (schst)
+    </notes>
+   </release>
+ </changelog>
+</package>

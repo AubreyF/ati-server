@@ -1,0 +1,31 @@
+<?
+setPage('<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.google.com/schemas/sitemap/0.84">
+	<url>
+		<loc>http://safarri.com/index</loc>
+		<changefreq>hourly</changefreq>
+		<priority>1.0</priority>
+	</url>
+	<url>
+		<loc>http://safarri.com/browse</loc>
+		<changefreq>hourly</changefreq>
+		<priority>0.8</priority>
+	</url>
+	<url>
+		<loc>http://forum.safarri.com/index</loc>
+		<changefreq>hourly</changefreq>
+		<priority>0.5</priority>
+	</url>
+	<url>
+		<loc>http://safarri.com/earth</loc>
+		<changefreq>weekly</changefreq>
+		<priority>0.3</priority>
+	</url>
+	<url>
+		<loc>http://safarri.com/submit</loc>
+		<changefreq>weekly</changefreq>
+		<priority>0.3</priority>
+	</url>
+</urlset>
+');
+?>

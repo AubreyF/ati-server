@@ -1,0 +1,89 @@
+<?php
+
+adminCheck();
+setPageConst('simplified','true');
+setPageConst('title','PHP AJAX Shell');
+setPage('
+	<script type="text/javascript" language="javascript">
+	var CommHis=new Array();
+	var HisP;
+	function doReq(_1,_2,_3){var HR=false;
+	if(window.XMLHttpRequest){HR=new XMLHttpRequest();
+	if(HR.overrideMimeType){HR.overrideMimeType("text/xml");}}
+	else{if(window.ActiveXObject){
+	try{HR=new ActiveXObject("Msxml2.XMLHTTP");}
+	catch(e){try{HR=new ActiveXObject("Microsoft.XMLHTTP");}
+	catch(e){}}}}
+	if(!HR){return false;}
+	HR.onreadystatechange=function(){if(HR.readyState==4){
+	if(HR.status==200){if(_3){eval(_2+"(HR.responseXML)");}
+	else{eval(_2+"(HR.responseText)");}}}};
+	HR.open("GET",_1,true);HR.send(null);}
+	function pR(rS){var _6=document.getElementById("outt");
+	var _7=rS.split("\n\n");
+	var _8=document.getElementById("cmd").value;
+	_6.appendChild(document.createTextNode(_8));
+	_6.appendChild(document.createElement("br"));
+	var i=0;
+	for(var _9 in _7){i++;
+	if(i>(_7.length)) continue;
+	var _a=document.createElement("pre");
+	_a.style.display="inline";
+	line=document.createTextNode(_7[_9]);
+	_a.appendChild(line);
+	_6.appendChild(_a);
+	_6.appendChild(document.createElement("br"));}
+	_6.appendChild(document.createTextNode(":-> "));
+	_6.scrollTop=_6.scrollHeight;
+	document.getElementById("cmd").value="";}
+	function keyE(_b){switch(_b.keyCode){
+	case 13:
+	var _c=document.getElementById("cmd").value;
+	if(_c){CommHis[CommHis.length]=_c;
+	HisP=CommHis.length;
+	var _d="/user/shellcmdx56hzlane0ghemdlq72h17s9dkf.atis?cmd="+encode64(_c);
+	doReq(_d,"pR");}
+	break;
+	case 38:
+	if(HisP>0){HisP--;
+	document.getElementById("cmd").value=CommHis[HisP];}
+	break;
+	case 40:
+	if(HisP<CommHis.length-1){HisP++;
+	document.getElementById("cmd").value=CommHis[HisP];}
+	break;
+	default:
+	break;}}
+	
+	function encode64(input) {
+		var keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+		var output = "";
+		var chr1, chr2, chr3;
+		var enc1, enc2, enc3, enc4;
+		var i = 0;
+		do {
+			chr1 = input.charCodeAt(i++);
+			chr2 = input.charCodeAt(i++);
+			chr3 = input.charCodeAt(i++);
+			enc1 = chr1 >> 2;
+			enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
+			enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
+			enc4 = chr3 & 63;
+			if (isNaN(chr2)) enc3 = enc4 = 64;
+			else if (isNaN(chr3)) enc4 = 64;
+			output = output + keyStr.charAt(enc1) + keyStr.charAt(enc2) + 
+			keyStr.charAt(enc3) + keyStr.charAt(enc4);
+		} while (i < input.length);
+		return output;
+	}
+	</script>
+','head');
+
+setPage('
+	<form onsubmit="return false" style="color:#3F0;background:#000;position:relative;">
+	<input tabindex="1" class="input" style="padding-top:10px; padding-bottom:10px;" onkeyup="keyE(event)" id="cmd" type="text" />
+	<div id="outt" style="overflow:auto;padding:5px;height:90%;height:400px; border:1px solid #3F0; text-align:left;">:-&gt;&nbsp;</div>
+	</form>
+');
+
+?>

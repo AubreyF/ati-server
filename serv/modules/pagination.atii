@@ -1,0 +1,62 @@
+<?
+
+//The onClick stuff is for my "super advanced" JS form submit to keep urls simple...
+function pagination($numHits, $limit, $pageName = 'page', $onClick='',$maxItems='') {
+	
+	if($maxItems) {
+		$actualHits = $numHits;
+		$numHits = min($numHits,$maxItems);
+	}
+	
+	if(!$numHits) return array('string'=>'No Items','offset'=>0,'limit'=>0);
+	if(!$limit) $numPages = 1;
+	else $numPages = ceil($numHits / $limit);
+	if(!$_REQUEST[$pageName]/* || $_REQUEST[$pageName] * ($limit - 1) > $numHits*/) $pageNum = 1;
+	else $pageNum = $_REQUEST[$pageName];
+	if($onClick) {
+		$onClicks = ' onClick="return '.$onClick.'';
+		$onClicke = ');"';
+	}
+	if($numPages > 1) {
+		$url = generate_url($pageName,'');
+		if($pageNum > 1) $string .= ' <a rel="nofollow" href="'.$url.'-'.$pageName.'-'.($pageNum - 1).'"'.(($onClick) ? $onClicks.($pageNum - 1).$onClicke:'').'>« Previous Page</a> ';
+		if($pageNum > 5) $string .= '<a rel="nofollow" href="'.$url.'"'.(($onClick) ? $onClicks.'1'.$onClicke:'').'>1</a>...';
+		for ($i=max($pageNum-4,1); $i <= $numPages && $i < (max($pageNum-5,1) + 10); $i++) { 
+			if($i == $pageNum) $string .=  '<b>'.$i.'</b> '; 
+			else if($i == 1) $string .= '<a href="'.$url.'"'.(($onClick) ? $onClicks.'1'.$onClicke:'').'>1</a>';
+			else $string .= '<a rel="nofollow" href="'.$url.'-'.$pageName.'-'.$i.'"'.(($onClick) ? $onClicks.$i.$onClicke:'').'>'.$i.'</a>';
+		}
+		if($pageNum < $numPages) $string .= ' <a rel="nofollow" href="'.$url.'-'.$pageName.'-'.($pageNum + 1).'"'.(($onClick) ? $onClicks.($pageNum + 1).$onClicke:'').'>Next Page »</a>';
+	}
+	
+	$pages = number_format($numPages);
+	$page['offset']  = ($pageNum - 1) * $limit; 
+	//$page['limit'] = min($limit + $page['offset'],$numHits); // Make sure limit is within hits
+	$page['limit'] = $limit;
+	$page['sql'] = ' LIMIT '.$page['offset'].', '.$page['limit'];
+	$page['number'] = $pageNum;
+	$page['pages'] = $numPages;
+	$page['items'] = $numHits;
+	$page['prevpage'] = max(1,$pageNum - 1);
+	$page['nextpage'] = min($pages,$pageNum + 1);
+	
+	if($numHits) {	
+		//$page['string'] = 'Viewing <b>'.($page['offset'] + 1).'</b> to <b>'.$page['limit'].'</b> of <b>'.number_format($numHits).'</b>';
+		$page['text'] = 'Page <b>'.$pageNum.'</b> of <b>'.number_format($pages).'</b>';
+		$page['string'] = ($maxItems && $numHits >= $maxItems ? '<b>Lots</b> of' : '<b>'.number_format($numHits).'</b>').' items'.($string ? ' - '.$string : '');
+		$page['links'] = $string;
+	}
+	
+	return $page; 
+}
+
+function paginationSimple($limit, $pageName = 'page') {
+	if (!$limit) $numPages = 1;
+	if(!$_REQUEST[$pageName]) $pageNum = 1;
+	else $pageNum = $_REQUEST[$pageName];
+	$page['offset']  = ($pageNum - 1) * $limit;
+	$page['limit']  = $limit + $page['offset'];
+	return $page;
+}
+
+?>

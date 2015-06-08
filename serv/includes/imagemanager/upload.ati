@@ -1,0 +1,49 @@
+<?
+setPagePref('template','none');
+setPage('
+<style type="text/css">
+	body {
+		font-size:11px;
+	}
+</style>
+');
+
+
+if(!isLoggedIn()) {
+	setPage('
+	<h4>You must be registered to upload images!</h4>
+	<h4>Registration is fast, easy, and free.</h4>
+	'.$message);
+	
+	buildPage();
+}
+
+if($_REQUEST['uploadVerified'] == true) {
+	$image = func(_mod.'imageuploader','imageUploader','imageLocation','full');
+	
+	if ($image == 1) $message = '<span class="smallText" id="message">You forgot to select an image!</span>';
+	else if ($image == 2) $message = '<span class="smallText" id="message">The file you selected was not an image!</span>';
+	else if ($image == 3) $message = '<span class="smallText" id="message">Errors were experienced while processing your image!</span>';
+	else  $message = '
+	<span class="smallText">Your image was successfully uploaded!</span>
+	<script type="text/javascript">
+	<!--
+	parent.document.getElementById(\'src\').value = \''.$image.'\';
+	parent.ImageDialog.showPreviewImage(\''.$image.'\');
+	//-->
+	</script>
+	';
+}
+
+if(!$message) $message = '<span class="smallText" id="message">Press "Browse" and select an image to upload...</span>';
+
+setPage('<link rel="stylesheet" type="text/css" media="all" href="/_n/tpl/view/style.css" />','head');
+setPage('
+<form enctype="multipart/form-data" method="post">
+	<input name="imageLocation" id="imageLocation" type="file" value="" onClick="document.getElementById(\'message\').innerHTML = \'Press Upload! to upload your image.\';" />
+	<input type="submit" id="upload" name="upload" value="Upload!"  onClick="document.getElementById(\'message\').innerHTML = \'Please Wait - Your image is uploading...\';" />
+	<input name="uploadVerified" type="hidden" id="uploadVerified" value="true" />
+</form>
+'.$message);
+
+?>

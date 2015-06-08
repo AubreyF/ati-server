@@ -1,0 +1,1 @@
+<?setPageHeader('cache-control','public, max-age='.(60 * 60 * 24)); //cache page client side for a day!setPagePref('template','html');setPage('	<iframe src="'.base64_decode($_REQUEST['id']).'" height="100%" width="100%" frameborder="0" scrolling="auto" marginwidth="0" marginheight="0"></iframe>');?>

@@ -1,0 +1,45 @@
+<?
+setPageHeader('cache-control','public, max-age=8600');
+setPageHeader('Content-Type','text/xml');
+
+if($adBox['ads']) foreach($adBox['ads'] as $key=>$ad) {
+	if(!$ad) continue; //This item has been cleared by the pagination system
+
+	if($ad['lat'] == 0.000000) {
+		$ad['lat'] = '';
+		$ad['lon'] = '';
+	}
+	if($ad['catTrail'] == 'Other') $ad['catTrail'] = 'Sale';
+	
+	$adBox['content'] .= '
+	<listing>
+	  <id>'.$ad['id'].'</id>
+	  <create_time>'.$ad['dateSeconds'].'</create_time>
+	  <url>'.$ad['url'].'</url>
+	  <category>'.$ad['catTrail'].'</category>
+	  <price>'.$ad['price'].'</price>
+	  <title><![CDATA['.$ad['type'].': '.$ad['title'].']]></title>
+	  <description><![CDATA['.br2nill($ad['description']).']]></description>
+	  <location>
+		<country_code>US</country_code>
+		<latitude>'.$ad['lat'].'</latitude>
+		<longitude>'.$ad['lon'].'</longitude>
+		<state>'.$ad['country'].'</state>
+		<city>'.$ad['town'].'</city>
+	  </location>
+	  '.($ad['hasThumb'] ? '<image_url>'.$ad['thumb'].'</image_url>' : '').'
+	  '.($ad['expires'] ? '<expire_time>'.$ad['expires'].'</expire_time>' : '').'
+	</listing>
+	';
+}
+
+$content = '<?xml version="1.0" encoding="iso-8859-1"?>
+<listing_feed>
+  <feed_generated_time>'.time().'</feed_generated_time>
+  <listings>
+  '.$adBox['content'].'
+  </listings>
+</listing_feed>
+';
+
+?>

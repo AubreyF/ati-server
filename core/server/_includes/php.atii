@@ -1,0 +1,24 @@
+<?
+
+//************************* Deciper Urls *************************
+
+if($_SERVER['REQUEST_PARAMS']) { //Url has embedded get data
+	$_SERVER['REQUEST_PARAMS'] = str_replace(array('?','&','='),'&',(($temp = strpos($_SERVER['REQUEST_PARAMS'],'=')) ? substr($_SERVER['REQUEST_PARAMS'],0,$temp).str_replace('-','%2d',substr($_SERVER['REQUEST_PARAMS'],$temp)) : $_SERVER['REQUEST_PARAMS'])); //Super advanced filtering :-)
+	$matches = explode('&',$_SERVER['REQUEST_PARAMS']); //Handle "?foo=bar", "-foo-bar", and "-foo-bar?bar=foo" mode
+	if(count($matches) % 2) { //Number of params is odd - first param is assigned to "default"
+		$matches[0] = urldecode($matches[0]);
+		$_GET['default'] = $matches[0];
+		$_REQUEST['default'] = $matches[0];
+		array_shift($matches); //Remove "default" param from array
+	}
+	for($x = 0; $x < count($matches); $x += 2) {
+		$matches[$x+1] = urldecode($matches[$x+1]);
+		$_GET[$matches[$x]] = $matches[($x+1)];
+		$_REQUEST[$matches[$x]] = $matches[($x+1)];
+	}
+}
+
+if(file_exists(_root.$_SERVER['REQUEST_URI'])) include _root.$_SERVER['REQUEST_URI'];
+else sendPage('<h4>The PHP script you requested ('.$_SERVER['FAKE_URI'].') could not be found!</h4>',array('status'=>'HTTP/1.1 404 Not Found'));
+
+?>

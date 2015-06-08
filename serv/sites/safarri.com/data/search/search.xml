@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+	
+	<ShortName>Safarri</ShortName>
+	<LongName>Safarri.com - Syndicated Classifieds</LongName>
+	<Description>Search thousands of classifieds sites at once to find exactly what you are looking for!</Description>
+	<Tags>commerce classifieds buying selling</Tags>
+	
+	<Developer>Aubrey Falconer</Developer>
+	<Contact>admin@theati.net</Contact>
+	<Attribution>Safarri.com and supported aggregators - including Oodle.com and Base.Google.com</Attribution>
+	<InputEncoding>UTF-8</InputEncoding>
+	
+	<Image width="16" height="16" type="image/png">http://safarri.com/images/logos/small.png</Image>
+	<Image width="16" height="16" type="image/vnd.microsoft.icon">http://safarri.com/favicon.ico</Image>	
+	
+	<Url type="text/html" method="post" template="http://safarri.com/browse"><Param name="q" value="{searchTerms}"/></Url>
+	<Url type="application/rss+xml" template="http://safarri.com/export.atis-tpl-rss-q-{searchTerms}-page-{startPage?}"/>
+	
+	<Query role="example" searchTerms="test" />
+	
+	<SyndicationRight>open</SyndicationRight>
+	<AdultContent>false</AdultContent>
+	<Language>en-us</Language>
+	<OutputEncoding>UTF-8</OutputEncoding>
+	<InputEncoding>UTF-8</InputEncoding>
+</OpenSearchDescription>

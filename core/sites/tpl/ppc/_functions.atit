@@ -1,0 +1,92 @@
+<?
+if (!$tplDefs['block']) $tplDefs['block'] = 'content';
+if (!$tplDefs['blockMessage']) $tplDefs['blockMessage'] = 'content';
+
+if(!function_exists('block')) {
+function block($title,$content) {
+	return '
+	<table width="100%"  border="0" cellspacing="0" cellpadding="0">
+	  <tr>
+		<td width="0"><img src="/*st/images/boxTopLeft.png" width="14" height="25" border="0" /></td>
+		<td class="boxTop" width="100%">'.$title.'</td>
+	  </tr>
+	  <tr align="center">
+		<td colspan="2" class="boxContent">'.$content.'</td>
+	  </tr>
+	</table>
+	';
+}
+}
+
+if(!function_exists('blockMessage')) {
+function blockMessage($message) {
+	return '
+	<table width="100%" border="0" cellspacing="0" cellpadding="0">
+	  <tr>
+		<td><img src="/*st/images/messageLeft.png" alt="" /></td>
+		<td width="100%" style="background-image:url(\'/*st/images/messageCenter.png\'); font-size:1.2em; text-align:center; vertical-align:top;"><div style="margin-top:16px; text-align:left; font-weight:bold; font-size:12px; padding-bottom:0.5em;">Safarri Message Viewer:</div>'.$message.'</td>
+		<td><a href="'.$_SERVER['FAKE_URI'].'" title="Close Message"><img src="/*st/images/messageRight.png" border="0" /></a></td>
+	  </tr>
+	</table>
+	';
+}
+}
+
+if(!function_exists('linkBar')) {
+function linkBar($funcs) {
+	$sep = '';
+	
+	foreach ($funcs as $key=>$val) {
+		if(!$val) $return .= $sep.'<span class="highlighted">'.$key.'</span>';
+		else $return .= $sep.'<a href="'.$val.'">'.$key.'</a>';
+		$sep = ' - ';
+	}
+	return '<div class="lbar">'.$return.'</div>';
+}
+}
+
+if(!function_exists('navLinks')) {
+function navLinks($mode='list',$arr,$opts='') {
+	if(!$opts['level']) $opts['level'] = 'top';
+	if(!$opts['down']) $opts['down'] = 'current';
+	
+	static $links;
+	foreach($arr as $key=>$val) {
+		$links[$opts['level'].'Count']++;
+		if(is_array($val)) {
+			$links[$opts['level']] .= '<a href="'.$val['link'].'" class="link sub'.(($GLOBALS['preferences']['navLinksSelected'][$opts['level']] == $val['link']) || (strpos($_SERVER['FAKE_URI'],$val['link']) !== false) ? ' current' : '').'">'.$key.'</a>';
+			navLinks($mode,$val['children'],'sub');
+		}
+		else $links[$opts['level']] .= '<a href="'.$val.'" class="link'.(($GLOBALS['preferences']['navLinksSelected'][$opts['level']] == $val) || (strpos($_SERVER['FAKE_URI'],$val) !== false) ? ' '.$opts['down'] : '').'" id="link'.strtolower($key).'"><span class="text">'.$key.'</span></a>';
+	}
+	return $links;
+}
+}
+
+
+if(!function_exists('blockNav')) {
+function blockNav($text,$lnks) {
+	foreach($lnks as $name=>$loc) $links .= '<a href="'.$loc.'">>> '.$name.'</a>';
+	return '
+	<div class="llst">
+		'.$text.'
+		'.$links.'
+	</div>
+	<br clear="all" />
+	';
+}
+}
+
+function columns() {
+	$funcs = func_get_args();
+	$xtra = array_shift($funcs);
+	if(!$xtra) $xtra = 'width="100%" border="0"';
+	
+	foreach ($funcs as $val) {
+		if($val) $return .= '<td>'.$val.'</td>';
+	}
+	
+	return '<table '.$xtra.'>'.$return.'</table>';
+}
+
+?>

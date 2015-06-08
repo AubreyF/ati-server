@@ -1,0 +1,20 @@
+<?
+
+$skins = array(
+	2 => array(
+		'logo' => array('type' => 'img', 'width' => 200, 'height' => 70),
+		'contentWidth' => 'adaptable',
+	),
+	
+	3 => array(
+		'logo' => array('type' => 'img', 'width' => 700, 'height' => 100),
+		'contentWidth' => '680',
+	),
+	
+	5 => array(
+		'logo' => array('type' => 'img', 'width' => 900, 'height' => 100),
+		'contentWidth' => '660',
+	),
+)
+
+?>

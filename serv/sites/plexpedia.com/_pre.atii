@@ -1,0 +1,179 @@
+<?
+
+$_SERVER['plexDataTypes'] = array(
+	'doc' => array('n'=>'Document','d'=>'Articles, News, and More','p'=>'Documents',),
+	'dis' => array('n'=>'Discussion','d'=>'Ask questions, Get Answers','p'=>'Discussions',),
+	'pic' => array('n'=>'Picture','d'=>'Share your Images','p'=>'Pictures',),
+	'lnk' => array('n'=>'Link','d'=>'Connect the Web','p'=>'Links',),
+	'aud' => array('n'=>'Audio','d'=>'MP3 Sound Files','p'=>'Audio',),
+	'med' => array('n'=>'Media','d'=>'Custom Embedded Multimedia','p'=>'Media',),
+	//'mtx' => array('n'=>'Matrix','d'=>'Compare Anything','p'=>'',),
+	'fea' => array('n'=>'Feature Request','d'=>'Have an idea?','a'=>'g','p'=>'Feature Requests','a'=>'d',),
+	'bug' => array('n'=>'Bug Report','d'=>'Something not working right?','a'=>'g','p'=>'Bug Reports','a'=>'d',),
+	'pge' => array('n'=>'Page','d'=>'Pages are listed in this group\'s nav bar','a'=>'m',),
+);
+
+//******************************** Group Manager *******************************
+
+if($_SERVER['FAKE_HOST_TOP'] != PLEXPEDIA) $siteDomain = $_SERVER['HTTP_HOST']; //Custom Domain
+else if($_SERVER['HTTP_HOST_SUB']) $siteDomain = $_SERVER['HTTP_HOST_SUB']; //Plexpedia Subdomain
+if($siteDomain) { //Were on a group
+	$_SESSION['plexpediaGroup'] = $_SERVER['db']->getRow("SELECT * FROM `groups` WHERE `link` = '{$siteDomain}'");
+	if($_SESSION['plexpediaGroup']) {
+		
+		if($_SESSION['plexpediaGroup']['customURLs']) {
+			$_SESSION['plexpediaGroup']['customURLs'] = unserialize($_SESSION['plexpediaGroup']['customURLs']);
+			if($_SESSION['plexpediaGroup']['customURLs'][$_SERVER['REQUEST_FILE']]) redirect($_SESSION['plexpediaGroup']['customURLs'][$_SERVER['REQUEST_FILE']]);
+		}
+		
+		$_SESSION['plexpediaGroup']['groupSql'] = " AND (`groupid` = '{$_SESSION['plexpediaGroup']['id']}'";
+		if($_SESSION['plexpediaGroup']['catgroups']) {
+			if(strpos($_SESSION['plexpediaGroup']['catgroups'],',')) {
+				$_SESSION['plexpediaGroup']['catgroups'] = explode($_SESSION['plexpediaGroup']['catgroups'],',');
+				foreach($_SESSION['plexpediaGroup']['catgroups'] as $key=>$val) $_SESSION['plexpediaGroup']['groupSql'] .= ' OR groupid = \'-'.$val.'\'';
+			}
+			else $_SESSION['plexpediaGroup']['groupSql'] .= ' OR groupid = \'-'.$_SESSION['plexpediaGroup']['catgroups'].'\'';
+		}
+		$_SESSION['plexpediaGroup']['groupSql'] .= ')';
+		if($_SESSION['plexpediaGroup']['type'] == 'usr') {
+			$_SESSION['plexpediaGroup']['sql'] = ' AND userId = \''.$_SESSION['plexpediaGroup']['usId'].'\' AND access = 1';
+		}
+		else {
+			$_SESSION['plexpediaGroup']['sql'] = $_SESSION['plexpediaGroup']['groupSql'];
+		}
+		
+		$_SESSION['plexpediaGroup']['userName'] = $_SERVER['serverdb']->getOne('SELECT `userName` FROM `members` WHERE `userId` = \''.$_SESSION['plexpediaGroup']['usId'].'\'');
+		$_SESSION['groupName'] = $_SESSION['plexpediaGroup']['name'];
+		if($_SESSION['plexpediaGroup']['skin']) setPagePref('skin',$_SESSION['plexpediaGroup']['skin']);
+		$temp = unserialize($_SESSION['plexpediaGroup']['text']);
+		if(!is_array($temp)) {
+			$_SESSION['plexpediaGroup']['text'] = array('h' => $_SESSION['plexpediaGroup']['text']);
+		}
+		else $_SESSION['plexpediaGroup']['text'] = $temp;
+		
+		if($_SESSION['plexpediaGroup']['theme']) {
+			$theme = $_SERVER['serverdb']->getRow('SELECT * FROM themes WHERE id = '.$_SESSION['plexpediaGroup']['theme']);
+			setPage('<style type="text/css">'.$theme['css'].'</style>','head');
+			setPage($theme['footer'],'footer');
+		}
+		
+		if($_SESSION['plexpediaGroup']['level'] > 0) SetPageConst('showAds',false,'skin');
+		define('catTable', 'group_categories');
+	}
+	else setPage('<!--atiserver::notice::domopen-->','head','server');		//This subdomain is open
+	
+	/*
+	if($_SESSION['plexpediaGroup']['access'] == '2' || $_SESSION['plexpediaGroup']['access'] == '3') {
+		if(!isLoggedIn() && !strpos($_SERVER['FAKE_URI'],'/user/login')) redirect('/user/login','Membership is required to view this group');
+	}
+	else if($_SESSION['plexpediaGroup']['access'] == '4') {
+		if(!isLoggedIn()) {
+			if(!strpos($_SERVER['FAKE_URI'],'/user/login')) redirect('/user/login','This is an "Invite Only" group. If you have an invitation, please login!');
+		} else if($_SESSION['plexpediaGroup']['usId'] != $_SESSION['userId'] && !isAdmin() && !$_SERVER['db']->getOne('SELECT groupId FROM group_members WHERE userId = "'.$_SESSION['userId'].'" AND groupId = "'.$_SESSION['plexpediaGroup']['id'].'"')) {
+			if(!strpos($_SERVER['FAKE_URI'],'/user/logout') && !strpos($_SERVER['FAKE_URI'],'/nopermission')) redirect('/nopermission');
+		}
+	}
+	*/
+	
+	if($_SESSION['plexpediaGroup']['access'] == '3') {
+		if(!isLoggedIn()) {
+			if(!strpos($_SERVER['FAKE_URI'],'/user/login') && !strpos($_SERVER['FAKE_URI'],'/user/register') && !strpos($_SERVER['FAKE_URI'],'/user/passwordreset') && !strpos($_SERVER['FAKE_URI'],'/user/logout')) redirect('/user/login','Welcome! Please authenticate to access this site.','end',true);
+			else $_SESSION['hideRegistration'] = true;
+			//if(!strpos($_SERVER['FAKE_URI'],'/user/register') {
+			//	include 
+			//	$_SESSION['hideRegistration'] = true;
+			setPageConst('navLinks','hide');
+		} else if($_SESSION['plexpediaGroup']['usId'] != $_SESSION['userId'] && !isAdmin() && !$_SERVER['db']->getOne('SELECT groupId FROM group_members WHERE userId = "'.$_SESSION['userId'].'" AND groupId = "'.$_SESSION['plexpediaGroup']['id'].'"')) {
+			if(!strpos($_SERVER['FAKE_URI'],'/user/logout') && !strpos($_SERVER['FAKE_URI'],'/nopermission')) redirect('/nopermission');
+			setPageConst('navLinks','hide');
+		}
+		$_SESSION['plexpediaGroup']['userCanSubmit'] = true;
+		$_SESSION['plexpediaGroup']['userCanComment'] = true;
+	}
+	else if($_SESSION['plexpediaGroup']['access'] == '2') {
+		if(isLoggedIn() && ($_SESSION['plexpediaGroup']['usId'] == $_SESSION['userId'] || $_SERVER['db']->getOne('SELECT groupId FROM group_members WHERE userId = "'.$_SESSION['userId'].'" AND groupId = "'.$_SESSION['plexpediaGroup']['id'].'"'))) {
+			$_SESSION['plexpediaGroup']['userCanSubmit'] = true;
+			$_SESSION['plexpediaGroup']['userCanComment'] = true;
+		}
+		else {
+			$_SESSION['plexpediaGroup']['userCanSubmit'] = false;
+			$_SESSION['plexpediaGroup']['userCanComment'] = false;
+			$_SESSION['plexpediaGroup']['sqlContent'] = ' AND `access` = 1';
+		}
+	}
+	else if($_SESSION['plexpediaGroup']['access'] == '4') {
+		if(isLoggedIn() && ($_SESSION['plexpediaGroup']['usId'] == $_SESSION['userId'] || $_SERVER['db']->getOne('SELECT groupId FROM group_members WHERE userId = "'.$_SESSION['userId'].'" AND groupId = "'.$_SESSION['plexpediaGroup']['id'].'"'))) {
+			$_SESSION['plexpediaGroup']['userCanSubmit'] = true;
+			$_SESSION['plexpediaGroup']['userCanComment'] = true;
+		}
+		else {
+			$_SESSION['plexpediaGroup']['userCanSubmit'] = false;
+			$_SESSION['plexpediaGroup']['userCanComment'] = true;
+			$_SESSION['plexpediaGroup']['sqlContent'] = ' AND `access` = 1';
+		}
+	}
+	else {
+		$_SESSION['plexpediaGroup']['userCanSubmit'] = true;
+		$_SESSION['plexpediaGroup']['userCanComment'] = true;
+	}
+	
+	//if($_SERVER['network'] != 'atinetwork') {
+		setPageConst('networkLinks','
+			<li><a title="...And your site could be too" href="http://plexpedia.com">Powered by PlexPedia</a></li>
+		','network');
+		
+		setPageConst('networkLink','
+			<a id="ATILogo" href="http://'.PLEXPEDIA.'/index" title="PlexPedia"><img src="http://'.ATIHOME.'/_n/atinetwork/pc/img/logoplexpedia.png" alt="PlexPedia - The unified online compendium of knowledge" /></a>
+		','network');
+		
+		if($_SESSION['plexpediaGroup']['level'] == 0) {
+			setPageConst('networkFooter','
+				This website is powered by <a href="http://'.PLEXPEDIA.'/index" class="btxt">Plexpedia</a><br />
+				Usage of this site constitutes agreement to the <a href="http://theati.net/legal">» Legal Stuff</a>
+			','network');
+		}
+		else setPageConst('networkFooter','
+				
+		','network');
+	//}
+	
+	if($_SESSION['plexpediaGroup']['usId'] == $_SESSION['userId']) $_SESSION['plexpediaGroup']['userCanModerate'] = true;
+}
+
+if(!$_SESSION['plexpediaGroup']['id']) {
+	$_SESSION['plexpediaGroup']['userCanSubmit'] = true;
+	$_SESSION['plexpediaGroup']['userCanComment'] = true;
+	$_SESSION['plexpediaGroup']['sql'] = ' AND access = 1';
+}
+
+if(!$_SESSION['plexpediaGroup']['text']['contentName']) $_SESSION['plexpediaGroup']['text']['contentName'] = 'Content';
+
+if(!$_SESSION['groupName']) define('catTable', 'forum_categories');
+
+function isModerator() {
+
+	
+	if($_SESSION['plexpediaGroup']['usId'] == $_SESSION['userId']) return true;
+	
+	$isMod = false;
+	preg_match('/moderator=([^;]*)/',$_SESSION['userAdminPrivleges'], $temp);
+	if($temp[1] == $_SERVER['HTTP_HOST']) {
+		$isMod = true;
+	}
+	else foreach(explode(',',$temp[1]) as $key=>$domain) {
+		if($domain == $_SERVER['HTTP_HOST']) {
+			$isMod = true;
+			break;
+		}
+	}
+	
+/*if($isMod) {
+test("isMOD:");
+test($_SESSION['userAdminPrivleges']);
+test($isMod);
+}*/
+	return $isMod;
+
+}
+
+?>

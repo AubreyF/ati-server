@@ -1,0 +1,52 @@
+body { 
+	margin: 0px;
+	text-align:center;
+	font-family:Verdana, Arial, Helvetica, sans-serif;
+	font-size:12px;
+	background-image:url("/tpl/pc/img/bg.png");
+}
+
+h3 {
+	font-family:"Apple Chancery", "Brush Script MT", "Bodoni SvtyTwo OS ITC TT-BookIt";
+	font-size:18px;
+	font-weight:bold;
+	color:#0033CC;
+}
+a { color:#0033CC; }
+a:hover { 
+	color:#CC0033;
+	text-decoration: none;
+}
+#img {
+	border:0;
+}
+
+#logo {
+	background-image:url("/tpl/pc/img/logobg.png");
+	height:70px;
+	padding:0px;
+	margin:0px;
+}
+
+#links {
+	background-image:url("/tpl/pc/img/bbbg.png");
+	height:50px;
+}
+
+#content {
+	width:640px;
+	background-image:url("/tpl/pc/img/contentbg.png");
+	padding: 0 20px 50px 20px;
+}
+
+#credits {
+	height:45px;
+	background-image:url("/tpl/pc/img/creditsbg.png");
+	text-align:right;
+	font-style:italic;
+}
+#credits a {
+	font-size:9px;
+	font-style:bold;
+	text-decoration:none;
+}

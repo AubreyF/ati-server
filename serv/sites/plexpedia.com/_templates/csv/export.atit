@@ -1,0 +1,29 @@
+<?
+
+setPagePref('template',false);
+setPageHeader('cache-control','public, max-age=86400');
+
+if($items) foreach($items as $key=>$thread) {
+	if($content) $content .= "\n";
+	
+	//ID, Title
+	if(substr($thread['title'],0,1) == '#') {
+		$sepPos = strpos($thread['title'],':');
+		$content .= '"'.substr($thread['title'],1,$sepPos-1).'","'.str_replace('"','""',
+			trim(substr($thread['title'],$sepPos+1))
+			.($thread['description'] ? ' - '.$thread['description'] : '')
+		).'"';
+	}
+	else {
+		$content .= '"'.str_replace('"','""',$thread['title'].($thread['description'] ? ' - '.$thread['description'] : '')).'"';
+	}
+	
+	//Description
+	$content .= ',"'.str_replace('"','""',nl2nill(strip_tags($thread['text'],'<ul><li>'))).'"';
+	
+	//Images
+	preg_match_all("/<img.*?src=\"([^\"]*?)\"[^>]*?/", $thread['text'], $matches, PREG_SET_ORDER);
+	foreach ($matches as $val) $content .=',"'.$val[1].'"';
+}
+
+?>

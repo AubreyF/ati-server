@@ -1,0 +1,2 @@
+'network'=>'atinetwork',
+'redirects'=>array('theati.net/classifieds'=>'safarri.com','theati.net/fun'=>'fun.theati.net','theati.net/forum'=>'plexpedia.com'),

@@ -1,0 +1,53 @@
+/*********************** SAFARRI STYLING SHEET **********************/
+
+#storeFooter {
+	max-width:600px;
+	height:90px;
+	font-weight:bold;
+	padding-left:15%;
+}
+
+.dtree {
+	font-size:11px;
+	color:#666666;
+	white-space:nowrap;
+	width:auto;
+	text-align:left;
+}
+
+.dtree img {
+	border:0;
+	vertical-align:middle;
+}
+
+.dtree .clip {
+	overflow:visible;
+}
+
+.dtree,form .dtree a {
+	color:#000000;
+	text-decoration:none;
+}
+
+.dtree a.node,.dtree a.nodeSel {
+	margin-left:20px;
+}
+
+.dtree input {
+	padding:0;
+	margin:0;
+	position:absolute;
+	margin-top:5px;
+}
+
+.dtree a.node:hover,form .dtree a.nodeSel:hover,form .dtree .node:hover,form .dtree .nodeSel:hover {
+	color:#999999;
+	text-decoration:none;
+}
+
+.dtree a.nodeSel,form .dtree .nodeSel {
+	white-space:nowrap;
+	padding:1px 2px;
+	font-weight:bold;
+	background-color:#EBEBEB;
+}

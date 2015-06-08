@@ -1,0 +1,17 @@
+<search
+	version="1.0"
+	name="Safarri"
+	description="Syndicated Classifieds"
+	action="http://safarri.com/browse"
+	searchForm="http://safarri.com/browse"
+	method="POST"
+>
+	<input name="q" user>
+	<input name="src" value="moz">
+</search>
+
+<browser
+	update="http://safarri.com/data/search/search.src"
+	updateIcon="http://safarri.com/images/logos/small.png"
+	updateCheckDays="30"
+>

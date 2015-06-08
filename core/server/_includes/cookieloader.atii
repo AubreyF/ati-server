@@ -1,0 +1,29 @@
+<?
+
+$_REQUEST['loadcookie'] = $_SERVER['REQUEST_PARAMS'];
+
+$content = '
+<html><head><script type="text/javascript"><!--
+	cookie = "'.$_REQUEST['loadcookie'].'";
+	if(cookie.length > 30)	window.onLoad = setInterval("ati_doCookie()",2000);
+	function ati_doCookie() {
+		var now = new Date();
+		now.setTime(now.getTime() + 3000);
+		document.cookie = "atid='.$_REQUEST['loadcookie'].'; expires=" + now + "; path=/; domain=.'.$_SERVER['HTTP_HOST_TOP'].'";
+	}
+--></script></head><body>ATIServer Session loaded</body></html>
+';
+
+$_SERVER['headers']['status'] = "HTTP/1.1 200 OK"; //we're okay...
+$_SERVER['headers']['cache-control'] = 'no-store, no-cache, must-revalidate'; //DO NOT CACHE THIS PAGE OR THE NEXT USER WILL BE ABLE TO "STEAL" YOUR SESSION FROM THE CACHE
+$_SERVER['headers']['content-type'] = "text/html";
+if(strlen($_REQUEST['loadcookie']) > 30)	$_SERVER['headers']['set-cookie'] = "atid={$_REQUEST['loadcookie']}; path=/; domain=.{$_SERVER['FAKE_HOST_TOP']}"; //session management
+else 										$_SERVER['headers']['set-cookie'] = "atid={$_REQUEST['loadcookie']}; path=/; domain=.{$_SERVER['FAKE_HOST_TOP']}; expires={$_SERVER['sessionExpiryDate']}"; //session management
+if($GLOBALS['prefs']['gzipPage'] == true) {
+	$content = gzencode($content, 6);
+	$_SERVER['headers']['content-encoding'] = "gzip";
+}
+
+sendPage($content,array('content-length'=>strlen($content)));
+
+?>

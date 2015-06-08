@@ -1,0 +1,93 @@
+<?
+if($_SESSION['plexpediaGroup']['id']) {
+	echo $_SESSION['plexpediaGroup']['text']['h'];
+	if ($_SESSION['plexpediaGroup']['usId'] == $_SESSION['userId'] || isAdmin()) echo '<br /><div class="lbar"><a href="/control/group">>> Edit '.$_SESSION['groupName'].' Group Settings</a></div><br />';
+}
+else {
+?>
+	<!--<img src="img/index/homepagelogo1.png" class="logoImage"><img src="img/index/homepagelogo2.png" class="logoImage"><img src="img/index/homepagelogo3.png" class="logoImage"><img src="img/index/homepagelogo4.png" class="logoImage"><img src="img/index/homepagelogo5.png" class="logoImage"><img src="img/index/homepagelogo6.png" class="logoImage"><img src="img/index/homepagelogo7.png" class="logoImage"><img src="img/index/homepagelogo8.png" class="logoImage"><img src="img/index/homepagelogo9.png" class="logoImage"><img src="img/index/homepagelogo10.png" class="logoImage">-->
+	
+	<!--
+	<div style="width:500px; margin-left:80px;">
+	<br /><br />
+	<div class="htxt">Welcome to PlexPedia.</div>
+	<div style="font-size:1.1em; margin-left:50px; margin-top:20px; line-height:25px;">
+	<div>&nbsp;</div>
+	<div>PlexPedia delivers access to any knowledge in the universe.</div>
+	<div class="btxt">&nbsp;</div>
+	<div>PlexPedia is simple and powerful.</div>
+	<div class="btxt">&nbsp;</div>
+	<div class="btxt"><span style="font-weight: normal;">Host your own website,&nbsp;personal blog, or feature rich online group.</span></div>
+	<div>&nbsp;</div>
+	</div>
+	</div>
+	-->
+	
+	<div id="ptitle">Welcome to PlexPedia.</div>
+	<div id="pdescs">
+		<div><b>PlexPedia</b> is an organized database for all the knowledge in the universe.</div>
+		<br />
+		<div><b>PlexPedia</b> is the simple, powerful, free solution for hosting your personal blog, feature rich online group, or great looking web site.</div>
+	</div>
+	
+	<div class="llst slender bold" style="padding-top:40px; padding-bottom:60px; line-height:30px;">
+		<a href="http://dev.plexpedia.com/view-1577">&raquo; PlexPedia's Vision</a>
+		<a href="http://plexpedia.com/control/group">&raquo; Start Your Own Group</a>
+		<a href="http://dev.plexpedia.com/index">&raquo; PlexPedia Development Group</a>
+	</div>
+<? } ?>
+
+<?
+
+if($itemList && $_SESSION['plexpediaGroup']['text']['homeStyle'] != 't') {
+	
+	if($_SESSION['plexpediaGroup']['text']['homeStyle'] == 'c') {
+?>
+
+<div style="margin-top:30px;">
+<div style="height:40px; line-height:40px;" class="desc"><a href="/browse" class="lbtn rflt" style="margin-top:10px;">View All Content</a>Latest Content:</div>
+<div style="max-height:270px; overflow:hidden;" id="contlist">
+	<?=$itemList?>
+</div>
+
+
+<script type="text/javascript">
+	window.addEvent('domready', function() {
+		var contlist = new Scroller($('contlist'), {area: 70, velocity: 0.3});
+		$('contlist').addEvent('mouseenter', contlist.start.bind(contlist));
+		$('contlist').addEvent('mouseleave', contlist.stop.bind(contlist));
+		$('contlist').setStyle('overflow','hidden');
+	});
+</script>
+
+<? } else { ?>
+
+<div style="margin-top:30px;">
+<div style="width:48%;" class="lflt">
+	<div style="height:390px; overflow:hidden;" id="contlist">
+		<?=$itemList?>
+	</div>
+</div>
+
+<div style="width:48%; margin-left:52%;">
+	<div style="height:390px; overflow:auto;" class="llst tagCloud" id="taglist">
+		<div style="height:20px;" class="desc">Prevalent Tags:</div>
+		<?=cfunc(600,_fnc.'tags','tagCloud',$_SESSION['plexpediaGroup']['sql']);?>
+	</div>
+</div>
+</div>
+
+<script type="text/javascript">
+	window.addEvent('domready', function() {
+		var contlist = new Scroller($('contlist'), {area: 70, velocity: 0.3});
+		$('contlist').addEvent('mouseenter', contlist.start.bind(contlist));
+		$('contlist').addEvent('mouseleave', contlist.stop.bind(contlist));
+		$('contlist').setStyle('overflow','hidden');
+		var taglst = new Scroller($('taglist'), {area: 70, velocity: 0.3});
+		$('taglist').addEvent('mouseenter', taglst.start.bind(taglst));
+		$('taglist').addEvent('mouseleave', taglst.stop.bind(taglst));
+		$('taglist').setStyle('overflow','hidden');
+	});
+</script>
+
+<? } } ?>

@@ -1,11 +1,17 @@
-# Build and Release Folders
-bin/
-bin-debug/
-bin-release/
+# production server connection passwords
+serv/conf/settings_secret.atii
 
-# Other files and folders
-.settings/
+# experimental / customer / mothballed projects
+serv/site_archives/
 
-# Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
-# should NOT be excluded as they contain compiler settings and other important
-# information for Eclipse / Flash Builder.
+# Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion
+*.iml
+
+## Directory-based project format:
+.idea/
+
+# IntelliJ
+/out/
+
+# mpeltonen/sbt-idea plugin
+.idea_modules/

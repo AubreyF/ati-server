@@ -1,0 +1,34 @@
+<?
+$tplDefs['blockMessage'] = 'content';
+$tplDefs['blockFancy'] = 'content';
+$tplDefs['blockHelp'] = 'sideBar2';
+
+
+function block($title,$content) {
+	return '
+	<table class="centerBlockTop" border="0" cellspacing="0" cellpadding="0">
+      <tr>
+        <td class="centerBlockTopLeft">&nbsp;</td>
+        <td class="centerBlockTopCenter">'.$title.'</td>
+        <td class="centerBlockTopRight">&nbsp;</td>
+      </tr>
+    </table>
+	<div class="centerBlockContent">
+     '.$content.'
+    </div><br />
+	';
+}
+
+function blockMessage($message) {
+	return '
+	<table width="100%" border="0" cellspacing="0" cellpadding="0">
+	  <tr>
+		<td><img src="/tpl/pc/img/messageleft.png" alt="" /></td>
+		<td width="100%" style="background-image:url(\'/tpl/pc/img/messagecenter.png\'); font-size:1.2em; text-align:center; vertical-align:middle;">'.$message.'</td>
+		<td><img src="/tpl/pc/img/messageright.png" alt="" /></td>
+	  </tr>
+	</table>
+	';
+}
+
+?>

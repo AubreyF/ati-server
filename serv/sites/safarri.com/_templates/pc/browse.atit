@@ -1,0 +1,513 @@
+<?
+
+//******************************* Page Details *********************************
+
+$title = $page['title'];
+$bct = $page['bct'];
+$head .= '
+	<meta name="totalResults" content="'.$adBox['pagination']['items'].'" />
+	<meta name="startIndex" content"'.$adBox['pagination']['offset'].'" />
+	<meta name="itemsPerPage" content="'.$_REQUEST['adsppage'].'" />
+	<style type="text/css">
+		.sideForm>div { margin:3px; margin-left:60px; text-align:right; }
+		.sideForm>div>div:first-child { position:absolute; font-style:italic; font-size:10px; margin-left:-57px; padding-top:3px; text-align:left; }
+		.sideForm>.expand:hover { margin-left:0; }
+		.sideForm>.expand:hover>div:first-child { display:none; }
+		.sideForm .hideShow { font-size:9px; }
+		
+		.adFilterBox { padding:1px; font-size:10px; }
+		
+		.adList { width:100%; border-spacing:0px; border-collapse:collapse; }
+		.adList .adDate, .adList .adPrice, .adList .adLocation, .adList .adImageH, .adList .adSpecs { text-align:center; border-bottom:1px solid #999999; padding-top:5px; padding-bottom:5px; }
+		.adList .adTitle { border-bottom:1px solid #DDDDDD; text-align:center; }
+		.adList .adTitle>a { display: block; text-decoration:none; padding:7px; font-weight:bold;  }
+		.adList .adImage { height: 75px; width:100px; display:block; text-align:left; }
+		.adStatus { position:absolute; }
+		.adList .adSpecs { border-bottom:1px solid #DDDDDD; color:#555555; font-size: 11px; padding:4px; }
+		.adList .adSpecs .spec { color:#999999; }
+		.adList .adSpecs .s { max-height: 60px; overflow:auto; }
+		.adList .adPrice { font-weight:bold; white-space:nowrap; }
+		.adList .adDate { width:30%; }
+		.adList .adLocation { font-size: 11px; }
+		.adList .adSeperator, .adSeperator a { color:#0033CC; font-size:9px; line-height:14px; background-color:#F1F1F1; border-top-width:0px; }
+		.adList .adSeperator a { font-style:italic; }
+		.adList .adSeperator a:hover { background:none; }
+		.adList .adGraphic { float:right; padding-top:7px; }
+		
+		.adDiv { display:block; height:70px; text-decoration:none; border-bottom:1px solid #999999; }
+		.adDiv:hover { text-decoration:none; }
+		.adDiv .adImage { height: 70px; padding-right:5px; float:left; }
+		.adDiv .adTitle { height:45px; margin-top:5px; font-size:1.1em; }
+		.adDiv .adGraphic { float:right; }
+		.adDiv .adPrice { font-weight:bold; }
+		
+		.adCats { width:100%; overflow:hidden; text-align:left; padding-left:20px; }
+		.adCat { text-decoration:none; display:block; float:left; width:165px; } .adCat:hover { text-decoration:none; }
+		.adCat span { padding:2px; margin-left:30px; margin-right:5px; margin-top:5px; display:block; width:124px; }
+		.adCat:hover span { padding:1px; background-color:#F1F1F1; border:1px solid #999999; cursor:pointer;}
+		.adCat img { vertical-align:middle; padding-right:7px; float:left; }
+	</style>
+';
+
+//******************************* Workarounds **********************************
+
+//This one makes sure people are not viewing pages that have no ads on them. If they are, it redirects them...
+if($_REQUEST['adpage'] > 1 && $_REQUEST['adpage'] > $adBox['pagination']['pages']) setPage('paramBrowse(\'adpage\','.$adBox['pagination']['pages'].');','onLoad');
+
+//*************************** Generate Sub Cats ********************************
+
+if(!$page['categories']) {
+	$timeStart = microtime_float();
+	if($page['category']) $catBox['content'] .= ' <a href="/browse'.($page['category']['parent'] ? '-cat-'.$page['category']['parent'] : '').'" class="adCat" onClick="return doBrowse(this);"><img src="/images/folders/folderup.png"/><span>Up Category</span></a>';
+	
+	if(!$cats = cfunc(1800,_mod.'dbtree','getChildTreeArray','classifieds_categories',$page['category']['id'],"ORDER BY title"));
+	else {
+		//We are not in a filter or a store - so we show all the cats
+		if (!$page['searchApplied'] && !$_SESSION['safarriStore']['id']) foreach ($cats as $key=>$cat) $catBox['content'] .= ' <a title="'.$cat['title'].' - '.$cat['description'].'" href="/browse-cat-'.$cat['id'].'" class="adCat" onClick="return doBrowse(this);"><img src="/images/folders/folder.png"/><span>'.$cat['title'].'</span></a>';
+		//Apply filter to sub categories
+		else foreach ($cats as $key=>$cat) {
+			//Init
+			$latest = 0;
+			$ads = array();
+			
+			//Do Safarri Item Counts
+			$subCats = func(_mod.'dbtree','getAllChildren','classifieds_categories',$cat['id']);
+			$subCats[] = $cat['id']; //Add parent category :-)
+			foreach($subCats as $key=>$id) {
+				$rs = $_SERVER['db']->execute("SELECT id FROM classifieds_ads a WHERE cid = {$id}{$_SESSION['safarriStore']['sql']} {$adBox['safarri']['filters']} ORDER BY date DESC");
+				if($rs) $ads['safarri'] = $rs->RecordCount();
+				$ads['total'] += $ads['safarri'];
+			}
+			
+			$GLOBALS['adBox']['details']['catsListed']++;
+			
+			//Do Remote Item Counts
+			if(!$_SESSION['safarriStore']['id']) {
+				$cat = $_SERVER['db']->getRow("SELECT id, baseStr, baseStrCat, title, oodleCat FROM classifieds_categories WHERE id = '{$cat['id']}'");	
+				
+				//Do Base Item counts
+				if($adBox['base']['totalAds']) {
+					$timeStart2 = microtime_float();
+					$GLOBALS['adBox']['details']['catsListedRemote']++;
+					if($cat['baseStr']) $catStr = rawurlencode($cat['baseStr']);
+					else if($cat['baseStrCat']) $catStr = rawurlencode($cat['baseStrCat']);
+					else if($row['title'] != 'Other') $catStr = rawurlencode($cat['title']);
+					$ch = curl_init();
+					curl_setopt($ch, CURLOPT_URL,  'http://www.google.com/base/feeds/snippets/?bq='.$catStr.$adBox['base']['params'].'&alt=rss&content=none');
+					curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+					curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+					$ads['base'] = (int) preg_match("|<openSearch:totalResults>(.*)<\/openSearch:totalResults>|U", curl_exec($ch), $match) ? $match[1] : 0;
+					$ads['total'] += $ads['base'];
+					curl_close($ch);
+					$temp = (microtime_float() - $timeStart2);
+					$GLOBALS['adBox']['details']['catListTimeBase'] = $GLOBALS['adBox']['details']['catListTimeBase'] + $temp;
+					if($temp > $GLOBALS['adBox']['details']['catListTimeBaseTop']) $GLOBALS['adBox']['details']['catListTimeBaseTop'] = $temp;
+				}
+				
+				//Do Oodle Item counts
+				if($adBox['oodle']['totalAds'] && $cat['oodleCat']) {
+					$timeStart2 = microtime_float();
+					$GLOBALS['adBox']['details']['catsListedRemote']++;
+					$temp = $adBox['oodle']['params'];
+					$temp['category'] = $cat['oodleCat'];
+					$temp['from'] = 0;
+					$temp['to'] = 1;
+					if($adBox['oodle']['client']->query('get',$temp)) {
+						$str = $adBox['oodle']['client']->getResponse();
+						$ads['oodle'] = $str['total'];
+						$ads['total'] += $ads['oodle'];
+					}
+					$temp = (microtime_float() - $timeStart2);
+					$GLOBALS['adBox']['details']['catListTimeOodle'] = $GLOBALS['adBox']['details']['catListTimeOodle'] + $temp;
+					if($temp > $GLOBALS['adBox']['details']['catListTimeOodleTop']) $GLOBALS['adBox']['details']['catListTimeOodleTop'] = $temp;
+				}
+			}
+			
+		if(!$_SESSION['safarriStore']['id'] || $ads['total']) $catBox['content'] .= ' <a title="'.$cat['title'].' - '.$cat['description'].'" href="/browse-cat-'.$cat['id'].'" class="adCat" onClick="return doBrowse(this);"><img src="/images/folders/folder.png"/><span>'.$cat['title'].(($ads['total'] && !$adBox['showcased']) ? (($ads['total'] < 10000) ? (' ('. number_format($ads['total']).')') : (' (!)')) : '').'</span></a>';
+		}
+	}
+	if($catBox['content']) $content .= pFunc('block',$catBox['title'],'<div class="adCats">'.$catBox['content'].'</div>');
+	$GLOBALS['adBox']['details']['catListTime'] = round(microtime_float() - $timeStart,4);
+}
+
+//*************************** Render Ads **********************************
+
+if($adBox['ads']) foreach($adBox['ads'] as $key=>$ad) {
+	if(!$ad) continue; //This item has been cleared by the pagination system
+	
+	(($counter++ % 2) == 0) ? $class = 'class="even"' : $class = 'class="odd"';
+	if($_REQUEST['map'] && $ad['location']) $markers .= 'markers["'.$ad['id'].'"] = new markerInit("'.$ad['id'].'","'.(($ad['latitude'] && $ad['longitude']) ? '' : addslashes($ad['location'])).'","'.$ad['latitude'].'","'.$ad['longitude'].'", \'<a href="'.$ad['url'].'" target="'.$ad['target'].'"><img border="0" src="'.$ad['thumb'].'" style="max-width:150px; max-height: 150px;" /><h4>'.addslashes($ad['title']).'</h4>'.$ad['price'].' '.$ad['priceType'].' - '.$ad['date'].'<br />'.addslashes($ad['description']).'</a>\');';
+	
+	$classifieds .= '
+	<tr '.$class.'>
+		<td rowspan="'.( $ad['specifics'] ? '3' : '2' ).'" class="adImageH">
+			<a href="'.$ad['url'].'" target="'.$ad['target'].'" class="adImage">
+				'.($ad['status'] ? '<img alt="" src="/images/icons/icon'.$ad['status'].'.png" class="adStatus" />' : '').'
+				<img alt="" src="'.$ad['thumb'].'" style="max-width:100px; max-height:75px;" />
+			</a>
+		</td>
+		<td colspan="3" class="adTitle">
+			<!--<div class="hoverTainer adGraphic">
+				<div class="trigger"><img src="/images/icons/adtools.png" /></div>
+				<div class="hoverBox llst">
+					<div class="header">Item Tools:</div>
+					'.($ad['location'] ? '
+						'.($_REQUEST['map'] ? '<a href="#map" onClick="markerOpen(\''.$ad['id'].'\');"><img src="/images/map/link.png" /> View on Map</a>' : '').'
+						<a href="/ad-'.encrypt($ad['id'],'url').'-tpl-earth'.($ad['aggregator'] != 'safarri' ? '-source-'.$ad['aggregator'] : '').'"><img src="/images/formats/earth.png" /> View in Google Earth</a>
+					' : '').'
+				</div>
+			</div>-->
+			<img src="/images/providers/ad'.$ad['aggregator'].'.png" class="adGraphic" />
+			<a class="title" href="'.$ad['url'].'" target="'.$ad['target'].'">'.$ad['title'].'</a>
+		</td>
+	</tr>
+	'.( $ad['specifics'] ? '<tr '.$class.'><td colspan="3" class="adSpecs"><div class="s">'.wordwrap($ad['specifics'], 70, " ", 1).'</div></td></tr>' : '' ).'
+	<tr '.$class.'>
+		<td class="adPrice">'.$ad['price'].' '.$ad['priceType'].'</td>
+		<td class="adDate">'.$ad['date'].'</td>
+		<td class="adLocation">'.$ad['location'].'</td>
+	</tr>';
+}
+
+//***************************** Display Ads ************************************
+
+if($classifieds) {
+	if($adBox['message']) $adBox['content'] = '<div class="ebox">'.$adBox['message'].'</div>';
+	$adBox['content'] .= '
+		<table class="adList">
+			<tr>
+				<th>Picture:</th>
+				<th>Price:</th>
+				<th>Date:</th>
+				<th>Location:</th>
+			</tr>
+			'.$classifieds.'
+		</table>
+	';
+	
+	if($_REQUEST['map']) {
+		if($_SESSION['userLatitude'] != 0.000000) $mapParams = ', new LatLon('.$_SESSION['userLatitude'].', '.$_SESSION['userLongitude'].'),8';
+		if($_SERVER['HTTP_HOST'] == 'safarri.com') $key = 'ABQIAAAAef5FCsGcSNBBQL6yyH6JdhSh3ca_5rXV7lpmnZ5RJuLXYJ2znRTt0fHlpeaYXAG5AXXLqk-DkMMguw';
+		else $key = 'ABQIAAAAef5FCsGcSNBBQL6yyH6JdhQulgWP0YppCiC2zuG-T_hyCOz-XhSW_Kret7hOiLtsf3RIO_twETZTFQ';
+		
+		$head .= '<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key='.$key.'" type="text/javascript"></script>';	
+		$footer .= '<script type="text/javascript">
+			//<![CDATA[
+				var map;
+				var bounds;
+				var geocoder;
+				var markers = new Object();
+				var icon = new GIcon();
+				icon.image = "http://'.SAFARRI.'/images/map/arrow.png";
+				icon.shadow = "http://'.SAFARRI.'/images/map/shadow.png";
+				icon.iconSize = new GSize(12, 20);
+				icon.shadowSize = new GSize(25, 20);
+				icon.iconAnchor = new GPoint(6, 20);
+				icon.infoWindowAnchor = new GPoint(0, 0);
+				
+				function markerInit(id,loc,lat,lon,txt) {
+					this.loc=loc;
+					this.lat=lat;
+					this.lon=lon;
+					this.txt=txt;
+					if(this.loc) geocoder.getLatLng(this.loc, function(point) { if (point) { //geocode addresses
+						var marker = new GMarker(point,icon);
+						map.addOverlay(marker);		//Add marker to map
+						GEvent.addListener(marker, "click", function() { markerOpen(id) }); //Pop up info window on click
+						bounds.extend(point); 		//Used to calculate correct zoom
+						map.setCenter(new GLatLng(((bounds.getNorthEast().lat() + bounds.getSouthWest().lat()) / 2.0),((bounds.getNorthEast().lng() + bounds.getSouthWest().lng()) / 2.0)),map.getBoundsZoomLevel(bounds));
+						markers[id].obj = marker;	//Add marker refrence to array
+					} } );	
+					else {
+						var point = new GLatLng(this.lat, this.lon);
+						var marker = new GMarker(point,icon);
+						map.addOverlay(marker);		//Add marker to map
+						GEvent.addListener(marker, "click", function() { markerOpen(id) }); //Pop up info window on click
+						bounds.extend(point); 		//Used to calculate correct zoom
+						map.setCenter(new GLatLng(((bounds.getNorthEast().lat() + bounds.getSouthWest().lat()) / 2.0),((bounds.getNorthEast().lng() + bounds.getSouthWest().lng()) / 2.0)),map.getBoundsZoomLevel(bounds));
+						this.obj = marker;	//Add marker refrence to array
+					}
+				}
+				
+				function markerOpen(id) {
+					if(markers[id].obj) (markers[id].obj).openInfoWindowHtml(markers[id]["txt"]);
+					else alert("Marker could not be found on map.");
+				}	
+				
+				function GLoad() {
+					if (GBrowserIsCompatible()) {
+						map = new GMap2(document.getElementById("mapBox"));
+						map.addControl(new GLargeMapControl());
+						map.addControl(new GMapTypeControl());
+						map.addControl(new GOverviewMapControl());
+						map.setCenter(new GLatLng(0,0),2); //Yes - I know we set the center again - but it crashes if we add markers without it being set...
+						bounds = new GLatLngBounds();
+						geocoder = new GClientGeocoder();
+						'.$markers.'
+					}
+				}
+			//]]>
+			</script>';
+		$onLoad .= ' GLoad();';
+		$onUnload .= ' GUnload();';
+		$adBox['mapToolbar'] = '<a href="'.do_url('map','').'" onClick="return paramBrowse(\'map\',\'\');"><< Hide Map</a>';
+		
+		$adBox['map'] = '<a name="map"></a><div id="mapBox" style="height:400px;"></div>';
+		$adBox['content'] = '<div id="ads" style="max-height:350px; overflow:auto;">'.$adBox['content'].'</div>';
+	}
+	else $adBox['mapToolbar'] = '<a href="'.do_url('map','true').'" onClick="return paramBrowse(\'map\',true);">>> Show Map</a>';
+	
+	if($adBox['pagination']['pages']) $adBox['toolBarLeft'] .= ' 
+		<a class="jumpLink">>> Jump
+			<div class="content">
+				<form onSubmit="return paramBrowse(\'adpage\',Math.min(this.adpage.value,'.($adBox['pagination']['pages']).'));">
+					Page Number: <input type="text" name="adpage" value="" size="4" /><br />
+					<input type="submit" style="width:10em;" value="Jump to Page!" />
+				</form>
+			</div>
+		</a>
+	';
+	
+	$adBox['linkBar'] = '
+	<div class="lbar">
+		<!--<span style="float:left;">
+			'.$adBox['toolBarLeft'].'
+		</span>
+		<span style="float:right;">
+			'.$adBox['mapToolbar'].'
+		</span>-->
+		'.$adBox['pagination']['string'].'
+	</div>';
+	
+	$temp = '';
+	foreach($adBox['details']['sources'] as $name=>$val) if($adBox[$name]['totalAds']) $temp .= '&nbsp;&nbsp;<a href="http://'.$val['domain'].'" target="_blank"><img src="/images/providers/ad'.$name.'.png" /> '.$val['name'].' <span class="smallText hidden">('.($val['quantizer'] == 'fill' ? '~/~/'.(int)$adBox[$name]['pageAds'].'/'.number_format($adBox[$name]['totalAds']) : (int)$adBox[$name]['suggestedAds'].'/'.(int)$adBox[$name]['loadedAds'].'/'.(int)$adBox[$name]['pageAds'].'/'.number_format($adBox[$name]['totalAds'])).')</span></a>';
+	$adBox['creditBar'] = '<div class="subBox lbar"><span style="float:right;" class="smallText">(Calc/Load/View/Total)</span><span style="float:left;">Ad Sources:</span>'.$temp.'</div>';
+	if($_REQUEST['featured']) $adBox['creditBar'] .= '<div class="footer content llst adFilterBox subBox"><a href="'.do_url('filter','none').'" onClick="return paramBrowse(\'filter\',\'none\');">The results you are viewing have been automatically filtered for maximum interest. Click Here to see All Ads.</a></div>';
+}
+//else $adBox['content'] = '<div class="header">'.$adBox['noAdsError'].'</div><div class="content"><div class="desc">Please Try:</div><div class="llst">'.$adBox['noAdsAction'].'</div></div></div>';
+else $adBox['content'] = '<div class="ebox"><div class="btxt">'.$adBox['noAdsError'].'.</div><br /><br /><div class="stxt">Please Try:</div><ul class="slender">'.$adBox['noAdsAction'].'</ul></div>';
+
+$content .= pFunc('block',$adBox['title'],'
+	'.$adBox['linkBar'].'
+	'.$adBox['content'].'
+	<a name="map"></a>
+	'.$adBox['linkBar'].'
+	'.$adBox['creditBar'].'	
+	'.$adBox['map']
+);
+
+//*************************** Display Side Boxes *******************************
+
+$order[$_REQUEST['order']] = ' selected';
+
+if($rs = $_SERVER['db']->execute("SELECT * FROM classifieds_types")) while ($arr = $rs->FetchRow()) {
+	if ($_POST['type'] == $arr['typeId']) $selected = ' selected';
+	else $selected = '';
+	$typeSelect .= '<option value="'.$arr['typeId'].'"'.$selected.'>'.$arr['type'].'</option>';
+}
+
+if($_SESSION['userZip']) {
+	if($_REQUEST['distance'] == 10) 		$selected10 = ' selected';
+	else if($_REQUEST['distance'] == 25) 	$selected25 = ' selected';
+	else if($_REQUEST['distance'] == 50) 	$selected50 = ' selected';
+	else if($_REQUEST['distance'] == 100) 	$selected100 = ' selected';
+	else if($_REQUEST['distance'] == 250) 	$selected250 = ' selected';
+	else if($_REQUEST['distance'] == 500) 	$selected500 = ' selected';
+}
+
+$adsPPage[$_REQUEST['adsppage']] = ' selected';
+foreach($adBox['details']['sources'] as $name=>$val) {
+	$selected = array();
+	$selected[$_REQUEST[$name.'ads']] = ' selected';
+	$dataSources .= '
+	<div><div>'.ucwords($name).':</div><select name="'.$name.'ads" class="input">
+		<option value="fill"'.$selected['fill'].'>Fill Page</option>
+		<option'.$selected[3].'>3</option>
+		<option'.$selected[2].'>2</option>
+		<option'.$selected[1].'>1</option>
+		<option value="off"'.$selected['off'].'>Off</option>
+	</select></div>';
+}
+
+$temp = '';
+foreach($adBox['details']['pagination'] as $key=>$row) $temp .= ' '.ucwords($key).': '.$row['off'].', '.$row['lim'];
+$adBox['details']['pagination'] = $temp;
+
+$sideBar .= pFunc('blockSide','Filters','
+	<form name="sidebarform" id="sidebarform" action="/browse" method="post" onSubmit="return doFilter();">
+	
+	<input type="hidden" name="adpage" id="adpage" />
+	<input type="hidden" name="map" id="map" value="'.$_REQUEST['map'].'" />
+	<input type="hidden" name="user" id="user" value="'.$_REQUEST['user'].'" />
+	<input type="hidden" name="filter" id="filter" value="'.$_REQUEST['filter'].'" />
+	
+	<script language="javascript" type="text/javascript">
+	<!--
+	function hideShow(id,trigger) {
+		if (trigger==1) {
+			document.getElementById(id+\'Full\').style.display="block";
+			document.getElementById(id+\'Hidden\').style.display="none";
+		}
+		else {
+			document.getElementById(id+\'Full\').style.display="none";
+			document.getElementById(id+\'Hidden\').style.display="block";
+		}
+	}
+	//-->
+	</script>
+	
+	<input type="submit" value="» Search!" />
+	
+	<div class="sideForm">
+		<div class="expand"><div>Keywords:</div><input class="input" type="text" name="q" value="'.htmlentities($_REQUEST['q']).'" /></div>
+		'.$page['locationMessage'].'
+		<div><div>City/Zip:</div><input class="input" type="text" name="location" value="'.$_REQUEST['location'].'" /></div>
+	</div>
+	'.$GLOBALS['adBox']['locationMessage'].'
+	
+	<div class="hideShow">
+		<a id="advancedSearchHidden" class="title closed" href="javascript:hideShow(\'advancedSearch\',1)">» Specialized Criteria</a>
+		<div id="advancedSearchFull">
+			<a class="title" href="javascript:hideShow(\'advancedSearch\',0)">« Specialized Criteria:</a>
+			<div class="sideForm">
+				<div><div>Min Price:</div><input class="input" type="text" name="minprice" value="'.$_REQUEST['minprice'].'" /></div>
+				<div><div>Max Price:</div><input class="input" type="text" name="maxprice" value="'.$_REQUEST['maxprice'].'" /></div>
+				<div><div>Distance:</div><select class="input" name="distance"><option value="">Unlimited</option><option value="10"'.$selected10.'>10 Miles</option><option value="25"'.$selected25.'>25 Miles</option><option value="50"'.$selected50.'>50 Miles</option><option value="100"'.$selected100.'>100 Miles</option><option value="250"'.$selected250.'>250 Miles</option><option value="500"'.$selected500.'>500 Miles</option></select></div>
+				<div><div>Type:</div><select class="input" name="type"><option value="">Safarri Stuff:</option>'.$typeSelect.'</select></div>
+				<div><div>Photo:</div><select class="input" name="picreq"><option value="">Optional</option><option value="true"'.($_REQUEST['picreq'] ? ' selected' : '').'>Required</option></select></div>
+				<div class="expand"><div>Order:</div><select class="input" name="order"><option value="">Automatically</option><!--<option value="distance"'.$order['distance'].'>Distance (Nearest First)</option>--><option value="datenew"'.$order['datenew'].'>Date (Newest First)</option><option value="dateold"'.$order['dateold'].'>Date (Oldest First)</option><option value="pricecheap"'.$order['pricecheap'].'>Price (Cheapest First)</option><option value="pricespendy"'.$order['pricespendy'].'>Price (Spendiest First)</option></select></div>
+			</div>
+		</div>
+	</div>
+	<div class="hideShow">
+		<a id="dataSourcesHidden" class="title closed" href="javascript:hideShow(\'dataSources\',1)">» Ad Quantizer</a>
+		<div id="dataSourcesFull">
+			<a class="title" href="javascript:hideShow(\'dataSources\',0)">« Ad Quantizer:</a>
+			<div class="sideForm">
+				<div><div>Length:</div><select name="adsppage" class="input"><option value="40"'.$adsPPage[40].'>Long Page</option><option value="20"'.$adsPPage[20].'>Standard Page</option></select></div>
+				'.$dataSources.'
+			</div>
+		</div>
+	</div>
+	<div class="hideShow">
+		<a id="searchTipsHidden" class="title closed" href="javascript:hideShow(\'searchTips\',1)">» Search Tips</a>
+		<div id="searchTipsFull">
+			<a class="title" href="javascript:hideShow(\'searchTips\',0)">« Search Tips:</a>
+			<div class="content">
+				<b style="float:left;">Advanced Keywords:</b><br /><br />
+				<b>Operators:</b><br />
+				<b>*</b> Wildcard (at end of word)<br />
+				<b>-</b> Negator (at front of word)<br />
+				<b>""</b> Group several words<br />
+				<b>|</b> OR (inside expression)<br />
+				<br /><b>Example:</b><br />
+				(thi* | that) -"not this"
+				<br /><br /><b style="float:left;">Categories:</b><br /><br />
+				The () next to a category is the number of items that match your search. A (!) means more that 10,000 items!
+				<br /><br /><b style="float:left;">QuickBrowse:</b><br /><br />
+				You can browse multiple categories at once by "checking" them in the QuickBrowse box and then pressing ">> View Checked"!
+				<br /><br /><b style="float:left;">Ad Quantizer:</b><br /><br />
+				Use the quantizer to pick the total ads per page, and the relative weights of ad sources!
+			</div>
+		</div>
+	</div>
+	
+	<style type="text/css">
+	#searchStatsFull .content {
+		height:200px;
+		overflow:auto;
+	}
+	</style>
+	
+	<div class="hideShow">
+		<a id="searchStatsHidden" class="title closed" href="javascript:hideShow(\'searchStats\',1)">» Search Stats</a>
+		<div id="searchStatsFull">
+			<a class="title" href="javascript:hideShow(\'searchStats\',0)">« Search Stats:</a>
+			<div class="content">
+				<b>Time</b> - <b>'.round(($buildTime = microtime_float() - $GLOBALS['constants']['pageBuildStart'])).'</b> seconds:<br />
+				<span class="smallText">
+					<b>'.$GLOBALS['adBox']['details']['loadTime'].'</b> Gathering ads<br />
+					<b>'.$GLOBALS['adBox']['details']['filterTime'].'</b> Filtering ads<br />
+					<b>'.$GLOBALS['adBox']['details']['catListTime'].'</b> Generating Cats (<br />
+					&nbsp;<b>'.$GLOBALS['adBox']['details']['catsListed'].'</b> Cats Listed<br />
+					&nbsp;<b>'.round($GLOBALS['adBox']['details']['catsListedRemote'],3).'</b> network queries (<br />
+					&nbsp;&nbsp;<b>'.round($GLOBALS['adBox']['details']['catListTimeOodle'],3).'</b> for Oodle<br />
+					&nbsp;&nbsp;&nbsp;(<b>'.round($GLOBALS['adBox']['details']['catListTimeOodleTop'],3).'</b> max)<br />
+					&nbsp;&nbsp;<b>'.round($GLOBALS['adBox']['details']['catListTimeBase'],3).'</b> for Base<br />
+					&nbsp;&nbsp;&nbsp;(<b>'.round($GLOBALS['adBox']['details']['catListTimeBaseTop'],3).'</b> max)<br />
+					&nbsp;)<br />
+					)<br /> 
+					<b>'.round($buildTime - ($GLOBALS['adBox']['details']['loadTime'] + $GLOBALS['adBox']['details']['filterTime'] + $GLOBALS['adBox']['details']['catListTime']),3).'</b> generating page
+				</span><br /><br />
+				<b>Pagination:</b>
+				'.$adBox['details']['pagination'].'<br /><br />
+				'.(isAdmin() || $_SESSION['userName'] == 'Falconer' ? '
+				<b>Safarri Filters:</b><br />
+				'.$adBox['safarri']['sql'].'<br /><br />
+				<b>Oodle Filters:</b><br />
+				'.print_r($adBox['oodle']['params'],true).'<br /><br />
+				<b>Base Filters:</b><br />
+				'.urldecode($adBox['base']['params']).'<br /><br />
+				' : '').'
+			</div>
+		</div>
+	</div>
+	
+	<script type="text/javascript"><!--
+	//--></script>	
+	<div style="width:170px;"></div>	
+	<script type="text/javascript"><!--
+		hideShow(\'advancedSearch\','.(($_REQUEST['minprice'] || $_REQUEST['maxprice']) ? '1' : '0').');
+		hideShow(\'dataSources\',0);
+		hideShow(\'searchTips\',0);
+		hideShow(\'searchStats\',0);
+	//--></script>
+	
+	<br />
+	
+	<input type="submit" value="» Search!" />
+	</form>
+');
+
+$url = '/export.atis'.build_url(array('adpage','adsppage'));
+$head .= '<link rel="alternate" type="application/rss+xml" title="RSS Feed of this browse page" href="'.$url.'-tpl-rss" />';
+
+$formats .= '
+	<div class="hoverTainer">
+		<div class="trigger"><a rel="nofollow" href="'.$url.'-tpl-rss" target="_blank" title="Syndicate RSS"><img src="/images/formats/rss.png" /></a></div>
+		<div class="hoverBox">
+			<div class="header">RSS Feed:</div>
+			Monitor these results as an RSS feed!
+		</div>
+	</div>
+	<div class="hoverTainer">
+		<div class="trigger"><img src="/images/formats/txt.png" /></div>
+		<div class="hoverBox llst">
+			<div class="header">View As Text:</div>
+			<a rel="nofollow" href="'.$url.'-tpl-txt" target="_blank">Plain</a>
+			<a rel="nofollow" href="'.$url.'-tpl-txt-style-deco" target="_blank">Decorative</a>
+			<a rel="nofollow" href="'.$url.'-tpl-txt-style-boxes" target="_blank">Boxy</a>
+		</div>
+	</div>
+	<div class="hoverTainer">
+		<div class="trigger"><a rel="nofollow" href="'.$url.'-tpl-xml" target="_blank" title="Export XML"><img src="/images/formats/xml.png" /></a></div>
+		<div class="hoverBox">
+			<div class="header">XML File:</div>
+			Want to syndicate Safarri ads with your own site? Use this XML File!
+		</div>
+	</div>
+	<div class="hoverTainer">
+		<div class="trigger"><a rel="nofollow" href="/export.atis'.build_url(array('adpage','location','distance','adsppage','latitude','longitude')).'-tpl-earth" target="_blank" title="View in Google Earth"><img src="/images/formats/earth.png" /></a></div>
+		<div class="hoverBox">
+			<div class="header">Google Earth:</div>
+			See items with your current filters applied in real time as you fly around the globe!
+			<div class="llst">
+				<a rel="nofollow" href="/earth" title="Save As Text">Learn More</a>
+			</div>
+		</div>
+	</div>
+';
+
+func(_fnc.'quickbrowse','quickBrowse');
+
+?>

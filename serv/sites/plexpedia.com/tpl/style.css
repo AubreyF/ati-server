@@ -1,0 +1,37 @@
+/********************************************************************/
+/****************** GLOBAL STYLING SHEET FOR PLEXPEDIA! *************/
+/********************************************************************/
+
+.artText {
+	padding-left: 50px;
+	padding-right: 50px;
+	max-width:1000px;
+	margin:auto;
+}
+
+.linkImage {
+	text-decoration:none;
+	font-size:1.3em;
+	font-weight:bold;
+}
+.linkImage:hover {
+	text-decoration:none;
+}
+
+.category, .category:hover, .subcategory, .subcategory:hover { padding:1px; text-decoration:none; display:block; text-align:left;  }
+/*.category:hover, .subcategory:hover { padding:0px; background-color:#F1F1F1; border:1px solid #999999; }*/
+.category img, .subcategory img { vertical-align:middle; padding-right:7px; float:left; }
+.category { line-height:25px; }
+.subcategory { margin-left:10px; min-height:15px; }
+.subcategory img { padding-top:1px; }
+
+.browseList { margin-bottom:5px; }
+.browseList a { display:block; height:50px; }
+/*.browseList img { max-height:50px; }*/
+.browseList .title { margin-bottom:1px; margin-top:6px; }
+.browseList .desc { font-size:9px; }
+.browseList .stats { width:150px; }
+.browseList .stats>div { text-align:left; width:140px; font-size:9px; line-height:16px; }
+.browseList .stats>div>div { float:right; display:inline; font-size:11px; }
+
+.tagCloud a { display:inline; vertical-align:middle; white-space:nowrap; text-decoration:none; }

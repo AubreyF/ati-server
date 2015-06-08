@@ -1,0 +1,1 @@
+<?setPageConst('title','Invitation Needed');setPageConst('bct','Welcome to PlexPedia - the powerful, flexible, user powered online database of knowledge.');setPageBlock('block',' Invitation Needed','	<h4>You need an invitation to use this group!</h4>	Please contact the group administrator and ask them to add you to the access list.');?>

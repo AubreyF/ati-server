@@ -1,0 +1,104 @@
+<?
+$tplDefs += array('blockHelp'=>'sideBar2');
+
+function block($title,$content) {
+	return '
+	<div class="bt"><div class="cbc"><div class="left"></div><div class="text">'.$title.'</div><div class="right"></div></div></div>
+	<div class="bc">'.$content.'</div>
+	';
+}
+
+function blockSide($title,$content) {
+	return '
+	<div class="sbt"><div class="cbc"><div class="left"></div><div class="right"></div>'.substr($title,0,23).'</div></div>
+	<div class="sb">'.$content.'</div>
+	';
+}
+
+function blockHelp($title,$content) {
+	setPage('
+	<script type="text/javascript">
+	<!--
+	function setHelp(title,message) {
+		document.getElementById("tipboxtitle").innerHTML = title;
+		document.getElementById("tipboxtext").innerHTML = message;
+	}
+	function clearHelp() {
+		document.getElementById("tipboxtitle").innerHTML = \''.addslashes($title).'\';
+		document.getElementById("tipboxtext").innerHTML = "'.nl2nill(addslashes($content)).'";
+	}
+	//-->
+	</script>
+	','head');
+	
+	return '
+	<div class="tb">
+		<div class="tbt" id="tipboxtitle">'.substr($title,0,23).'</div>
+		<div class="tbc" id="tipboxtext">'.$content.'</div>
+		<div class="tbb"></div>
+	</div>
+	<div class="hbspacer"></div>
+	';
+}
+
+function blockMessage($message) {
+	return '
+	<div id="message">
+		'.$message.'
+	</div>
+	';
+}
+
+function blockFancy($title,$content,$options='') {
+	return '
+	<div class="fbt">'.$title.'</div>
+	<div class="fb">
+		'.$content.'
+	</div>
+	';
+}
+
+function blockContent($title,$content,$options='') {
+	return '
+	<div class="cbt'.($options['fancy'] ? ' fancy' : '').'"><div class="cbc"><div class="left"></div><div class="text">'.$title.'</div><div class="right"></div></div></div>
+	<div class="cb'.($options['fancy'] ? ' fancy' : '').''.($options['nopad'] ? ' noPad' : '').'" style="'.($options['height'] ? 'height:'.$options['height'].'px;' : '').'"'.($options['id'] ? ' id="'.$options['id'].'"' : '').'>
+		'.$content.'
+	</div><br />
+	';
+}
+
+function blockHeaded($title,$desc='',$content='') {
+	return '
+	<div class="hbt">'.$title.'</div>
+	'.($desc ? '<div class="hbd">'.$desc.'</div>' : '').'
+	'.($content ? '<div class="hbc">'.$content.'</div>' : '').'
+	';
+}
+
+/*
+function blockComment($post,$user='') {
+	if(!$user) $user = renderMemberBasic($post['userId']);
+	foreach($post['links'] as $key=>$val) $links .= '<a href="'.$val.'">>> '.$key.'</a>';
+	
+	return '
+	<a name="c'.$post['id'].'" class="anchor"></a>
+	<div class="comment">
+		<div class="title">
+			<div class="right"></div>
+			'.$links.'
+			<div class="left"></div>
+			'.$post['title'].'
+		</div>
+		<div class="side">
+			<div class="user">'.$user['userFullName'].'</div>
+			'.doDate($post['date']).'
+			'.($post['parentLink'] !== false ? ($post['parentLink'] ? '<a href="'.$post['parentLink'].'"><< In Reply to</a>' : '<br />(In Reply to Item)') : '').'
+		</div>
+		<div class="text">
+			'.$post['text'].'
+		</div>
+	</div>
+	';
+}
+*/
+?>

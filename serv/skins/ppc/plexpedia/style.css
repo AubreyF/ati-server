@@ -1,0 +1,10 @@
+@import url(/tpl/view/style.css);
+
+body{
+	background-color: #FFFFFF;
+}
+
+#logo { height:80px; width:250px; }
+#logo img, #view img { padding:0px; border:0px; display:inline; }
+
+td, tr { display:block; }

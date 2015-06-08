@@ -1,0 +1,497 @@
+<?
+
+
+//******************************************************************************
+//************************************ Init *************************************
+//******************************************************************************
+
+//********************************* Timer Init *********************************
+
+$timeStart = microtime_float();
+
+//********************************** Settings **********************************
+
+$GLOBALS['adBox']['details']['sources'] = array(
+	'base'=>array('quantizer'=>'off', 'domain'=>'google.com/base', 'name'=>'Google Base'),
+	'oodle'=>array('quantizer'=>2, 'domain'=>'oodle.com', 'name'=>'Oodle'),
+	'safarri'=>array('quantizer'=>2, 'domain'=>'safarri.com', 'name'=>'Safarri'),
+);
+
+//********************************** Presets ***********************************
+
+if($_SESSION['userLatitude'] != 0.000000 && !$_REQUEST['latitude'])	$_REQUEST['latitude'] = $_SESSION['userLatitude'];
+if($_SESSION['userLongitude'] != 0.000000 && !$_REQUEST['longitude'])	$_REQUEST['longitude'] = $_SESSION['userLongitude'];
+if(!$_REQUEST['adpage']) $_REQUEST['adpage'] = 1;
+
+//**************************** Distance Calculations ***************************
+
+if(!$_REQUEST['distance'] && $_REQUEST['boxeast'] && $_REQUEST['boxwest'] && $_REQUEST['boxeast'] != 0.000000 && $_REQUEST['boxwest'] != 0.000000) {
+	$_REQUEST['distance'] = min(3000,max(1,round((53.0 * abs($_REQUEST['boxeast'] - $_REQUEST['boxwest'])) / 3)));
+}
+else if($_REQUEST['latitude'] == 0.000000) { //Clear distance if no location
+	$_REQUEST['distance'] = 0;
+	$_REQUEST['showdist'] = false;
+}
+/*
+else if($_REQUEST['distance'] == 'unlimited') $_REQUEST['distance'] = 0;
+else if($_REQUEST['latitude'] != 0.000000 && !$_REQUEST['distance']) $_REQUEST['distance'] = 50; //This helps to make sure that all providers show ads within at least 50 miles
+else if($_REQUEST['latitude'] == 0.000000) { //Clear distance if no location
+	$_REQUEST['distance'] = 0;
+	$_REQUEST['showdist'] = false;
+}*/
+
+//******************************* User Filters *********************************
+
+if($_REQUEST['user']) {
+	$_REQUEST['adtypes'] = 'local';
+	$_REQUEST['userid'] = $_SERVER['serverdb']->getOne("SELECT userId FROM members WHERE userName = '{$_REQUEST['user']}'");
+	//test($_REQUEST['userid']);
+}
+
+//******************************************************************************
+//******************************** Pagination ***********************************
+//******************************************************************************
+
+
+
+//Init sources, Divide full page and quantized sources
+if($_REQUEST['adtypes'] != 'local' && !$_SESSION['safarriStore']['id'] && $_REQUEST['adtypes'] != 'sasell') {
+	foreach($GLOBALS['adBox']['details']['sources'] as $name=>$val) {
+		if(!$_REQUEST[$name.'ads']) $_REQUEST[$name.'ads'] = $val['quantizer'];
+		if($_REQUEST[$name.'ads'] == 'off') $GLOBALS['adBox']['sources']['off'][$name] = 'off';
+		else if($_REQUEST[$name.'ads'] == 'fill') $GLOBALS['adBox']['sources']['fill'][$name] = 'fill';
+		else if($_REQUEST[$name.'ads'] = (int)$_REQUEST[$name.'ads']) { //Weighted data source
+			$GLOBALS['adBox']['details']['quantifierTotal'] += $_REQUEST[$name.'ads'];
+			$GLOBALS['adBox']['sources']['quanti'][$name] = $_REQUEST[$name.'ads'];
+		}
+		else if($_REQUEST[$name.'ads'] == 'exclusive') {
+			$GLOBALS['adBox']['sources'] = array('fill'=>array($name=>'fill'));
+			break;
+		}
+	}
+}
+else $GLOBALS['adBox']['sources']['fill']['safarri'] = 'fill';
+//$_REQUEST['safarriads'] = 'fill';
+
+//Reorder sources by weighting
+$GLOBALS['adBox']['details']['quantizer'] = array();
+if($GLOBALS['adBox']['sources']['fill']) $GLOBALS['adBox']['details']['quantizer'] += $GLOBALS['adBox']['sources']['fill'];
+if($GLOBALS['adBox']['sources']['quanti']) {
+	arsort($GLOBALS['adBox']['sources']['quanti']);
+	$GLOBALS['adBox']['details']['quantizer'] += $GLOBALS['adBox']['sources']['quanti'];
+}
+if($GLOBALS['adBox']['sources']['off']) $GLOBALS['adBox']['details']['quantizer'] += $GLOBALS['adBox']['sources']['off'];
+
+//Full Page Providers
+if($GLOBALS['adBox']['sources']['fill']) foreach($GLOBALS['adBox']['sources']['fill'] as $name=>$val) {
+	$GLOBALS['adBox']['details']['pagination'][$name] = array('off'=>max(0,($_REQUEST['adsppage'] * ($_REQUEST['adpage'] - 1))),'lim'=>$_REQUEST['adsppage'] - $GLOBALS['adBox']['details']['loadedAds']);
+	call_user_func('get'.$name.'ads',$GLOBALS['adBox']['details']['pagination'][$name]['off'],$GLOBALS['adBox']['details']['pagination'][$name]['lim']);
+}
+
+//Quantified Providers
+$off = $_REQUEST['adsppage'] * ($_REQUEST['adpage'] - 1);
+$lim = $_REQUEST['adsppage'] - $GLOBALS['adBox']['details']['loadedAds'];
+if($GLOBALS['adBox']['sources']['quanti']) foreach($GLOBALS['adBox']['sources']['quanti'] as $name=>$type) {
+	$GLOBALS['adBox']['details']['pagination'][$name] = array('off'=>$off,'lim'=>round(($_REQUEST[$name.'ads'] * $lim) / $GLOBALS['adBox']['details']['quantifierTotal'] - 0.1));
+	call_user_func('get'.$name.'ads',$GLOBALS['adBox']['details']['pagination'][$name]['off'],$GLOBALS['adBox']['details']['pagination'][$name]['lim']);
+}
+
+
+//******************************************************************************
+//************************* Provider Specific Functions ************************
+//******************************************************************************
+
+
+//******************************** Safarri *************************************
+
+function getSafarriAds($start='',$end='') {
+	$ads = array();
+	
+	//Filters
+	if($_REQUEST['q'])  		$GLOBALS['adBox']['safarri']['params'] .= " AND MATCH(title) AGAINST ('{$_REQUEST['q']}' IN BOOLEAN MODE)";
+	if($_REQUEST['type']) 		$GLOBALS['adBox']['safarri']['params'] .= " AND a.type = '{$_REQUEST['type']}'";
+	if($_REQUEST['userid'])		$GLOBALS['adBox']['safarri']['params'] .= " AND a.usid = '{$_REQUEST['userid']}'";
+	if($_REQUEST['maxprice']) 	$GLOBALS['adBox']['safarri']['params'] .= ' AND a.price < \''.str_replace(array('$',' ',','), '', $_REQUEST['maxprice']).'\'';
+	if($_REQUEST['minprice']) 	$GLOBALS['adBox']['safarri']['params'] .= ' AND a.price > \''.str_replace(array('$',' ',','), '', $_REQUEST['minprice']).'\'';
+	if($_REQUEST['latitude'] != 0.000000 && $_REQUEST['latitude'])		$GLOBALS['adBox']['safarri']['fields'] .= ", SQRT( (69.1 * ('{$_REQUEST['latitude']}' - a.lat)) * (69.1 * ('{$_REQUEST['latitude']}' - a.lat)) + (53.0 *('{$_REQUEST['longitude']}' - a.lon)) * (53.0 *('{$_REQUEST['longitude']}' - a.lon))) as distance";
+	if($_REQUEST['latitude'] != 0.000000 && $_REQUEST['latitude'])		$GLOBALS['adBox']['safarri']['params'] .= ' AND a.lat != 0.000000';
+	//else if($_REQUEST['viewbox'])	$GLOBALS['adBox']['safarri']['params'] .= ' AND a.lat BETWEEN '.$_REQUEST['viewbox']['north'].' AND '.$_REQUEST['viewbox']['south'].' AND a.lon BETWEEN '.$_REQUEST['viewbox']['west'].' AND '.$_REQUEST['viewbox']['east'];
+	$GLOBALS['adBox']['safarri']['filters'] = $GLOBALS['adBox']['safarri']['params']; //Used by category counting code on browse template
+	
+	
+	//Seller Grouping
+	if($_REQUEST['adtypes'] == 'sasell') {
+		$GLOBALS['adBox']['safarri']['fields'] .= ", COUNT(*) AS adcount";
+		$GLOBALS['adBox']['safarri']['order'] = ' GROUP BY a.usid ORDER BY adcount DESC';
+	}
+	
+	//Ordering
+	else if(!$GLOBALS['adBox']['safarri']['order']) { //A custom ordering method has not yet been assigned
+		if($_REQUEST['order'] == 'distance' || (!$_REQUEST['order'] && $_REQUEST['latitude'] != 0.000000)) 	{
+			if($_REQUEST['latitude'] != 0.000000) $GLOBALS['adBox']['safarri']['order'] = ' ORDER BY distance ASC';
+		}
+		else if ($_REQUEST['order'] == 'datenew')		$GLOBALS['adBox']['safarri']['order'] = ' ORDER BY a.submitDate DESC';
+		else if ($_REQUEST['order'] == 'dateold')		$GLOBALS['adBox']['safarri']['order'] = ' ORDER BY a.submitDate ASC';
+		else if ($_REQUEST['order'] == 'pricecheap')	$GLOBALS['adBox']['safarri']['order'] = ' ORDER BY a.price ASC';
+		else if ($_REQUEST['order'] == 'pricespendy')	$GLOBALS['adBox']['safarri']['order'] = ' ORDER BY a.price DESC';
+		else if ($_REQUEST['order'] == 'viewedleast')	$GLOBALS['adBox']['safarri']['order'] = ' ORDER BY a.view ASC';
+		else if ($_REQUEST['order'] == 'viewedmost')	$GLOBALS['adBox']['safarri']['order'] = ' ORDER BY a.view DESC';
+		else if ($_REQUEST['order'] == 'title')		$GLOBALS['adBox']['safarri']['order'] = ' ORDER BY a.title DESC';
+		else if ($_REQUEST['order'] == 'type')			$GLOBALS['adBox']['safarri']['order'] = ' ORDER BY t.type DESC';
+		else $GLOBALS['adBox']['safarri']['order'] = ' ORDER BY a.submitDate DESC';
+	}
+	
+	//Category Mapping
+	if($GLOBALS['page']['categories']) {
+		foreach($GLOBALS['page']['categories'] as $key=>$id) {
+			$where .= " OR a.cid = '{$id}'";
+			$temp = func(_mod.'dbtree','getAllChildren','classifieds_categories',$id);
+			if($temp) foreach($temp as $key=>$id) $where .= " OR a.cid = '{$id}'";
+		}
+		$GLOBALS['adBox']['safarri']['params'] .= " AND (0{$where})";
+	}
+	else if($GLOBALS['page']['category']) {
+		$childCategories = func(_mod.'dbtree','getAllChildren','classifieds_categories',$_REQUEST['cat']);
+		$temp = '';
+		if ($childCategories && !$GLOBALS['adBox']['singleCategory']) foreach($childCategories as $key=>$id) {
+			$temp .= " OR a.cid = '{$id}'";
+			$subCats .= ','.$id;
+		}
+		$GLOBALS['adBox']['safarri']['params'] .= " AND (a.cid = '{$_REQUEST['cat']}'{$temp})";
+		
+	} else if($_REQUEST['featured']) {
+		$GLOBALS['adBox']['title'] 		= 'Showcased Items';
+		$GLOBALS['adBox']['safarri']['params'] 	.= ' AND a.price > 1000';
+		//$GLOBALS['adBox']['safarri']['order'] 	= ' ORDER BY round((a.view / (('.time().' - a.submitDate) / 86400)) / 10) DESC';
+		//$GLOBALS['adBox']['safarri']['params']	.= ' AND a.view > '.$_SERVER['db']->getOne("SELECT avg(view) FROM classifieds_ads") * 1.7.' AND a.thumb0 != \'\'';
+	}
+	if($_REQUEST['picreq'] || $_REQUEST['featured']) $GLOBALS['adBox']['safarri']['params'] 	.= ' AND a.thumb0 != \'\'';
+	
+	//Distance Filter (must be after all other filters, as it is based off of a HAVING clause)
+	if($_REQUEST['distance']) $GLOBALS['adBox']['safarri']['params'] .= " HAVING distance <= '{$_REQUEST['distance']}'";
+	
+	$GLOBALS['adBox']['safarri']['sql'] = "
+	SELECT a.id, a.title, a.price, a.town, a.country, a.submitDate, a.soldDate,  a.status, a.thumb0, a.pic0, a.lat, a.lon, a.cid, t.type, p.priceType{$GLOBALS['adBox']['safarri']['fields']} FROM classifieds_ads a, classifieds_types t, classifieds_prices p{$GLOBALS['adBox']['sqlTables']}
+	WHERE a.type = t.typeId AND a.priceType = p.priceId{$_SESSION['safarriStore']['sql']} {$GLOBALS['adBox']['safarri']['params']}".$GLOBALS['adBox']['safarri']['order'];
+	
+	$rs = $_SERVER['db']->execute($GLOBALS['adBox']['safarri']['sql']);
+	if ($rs) {
+		$GLOBALS['adBox']['safarri']['totalAds'] = $rs->RecordCount();
+		$GLOBALS['adBox']['details']['totalAds'] += $GLOBALS['adBox']['safarri']['totalAds'];
+		
+		if($start || $end) $GLOBALS['adBox']['safarri']['sql'] .= ' LIMIT '.$start.', '.$end;
+		$rs = $_SERVER['db']->execute($GLOBALS['adBox']['safarri']['sql']);
+		$i=0;
+		while ($ad = $rs->FetchRow()) {	
+			$ad['aggregator'] = 'safarri';
+			
+			$ad = filterSafarriAd($ad);
+			
+			$GLOBALS['adBox']['ads'][] = $ad;
+			$GLOBALS['adBox']['safarri']['loadedAds']++;
+		}
+		$GLOBALS['adBox']['details']['loadedAds'] += $GLOBALS['adBox']['safarri']['loadedAds'];
+	}
+}
+
+function filterSafarriAd($ad) {
+	if($ad['town']) {
+		if($_REQUEST['showdist'] === false) $ad['distance'] = '';
+		else {
+			if($ad['distance'] === FALSE) $ad['distance'] = func(_mod.'location','getDistance',$ad['lat'],$ad['lon'],$_REQUEST['latitude'],$_REQUEST['longitude']);
+			$ad['distance'] = ': <b>'.round($ad['distance'],1).'</b> miles';
+		}
+		$ad['location'] = $ad['town'].', '.$ad['country'].' '.$ad['xtraLocation'].$ad['distance'];
+	}
+	else $ad['location'] = $ad['xtraLocation'];
+	$ad['catTrail'] = func(_mod.'dbtree','getPathFromId','classifieds_categories',$ad['cid']);
+	if($ad['cid'] != $_REQUEST['cat']) $ad['specifics'] .=  ' <span class="spec">Category:</span> '.$ad['catTrail'];
+	if($ad['adcount']) $ad['specifics'] .=  ' <span class="spec">Seller Listings:</span> '.$ad['adcount'];
+	if(!$ad['thumb'] = $ad['thumb0']) $ad['thumb'] = '/images/icons/noimage.png';
+	else $ad['hasThumb'] = true;
+	$ad['thumb'] = 'http://'.SAFARRI.$ad['thumb'];
+	$ad['pic'] = 'http://'.SAFARRI.$ad['pic0'];
+	$ad['dateSeconds'] = $ad['submitDate'];
+	$ad['date'] = doDate($ad['submitDate'],'short');
+	$ad['price'] = $ad['price'] != 0.00 ? '$'.number_format($ad['price'],2) : '';
+	if($ad['status'] == 1) $ad['status'] = 'pending';
+	else if($ad['status'] == 2 || ($ad['soldDate'] && $ad['soldDate'] < time())) $ad['status'] = 'sold';
+	else if($ad['status'] == 3) $ad['status'] = 'deleted';
+	if($_SESSION['safarriStore']['id']) $ad['url'] = 'http://'.$_SERVER['HTTP_HOST'].'/ad-'.$ad['id'];
+	else $ad['url'] = 'http://'.SAFARRI.'/ad-'.$ad['id'];
+	$ad['target'] = '_self';
+	
+	return $ad;
+}
+
+//******************************* Oodle *********************************
+
+function getOodleAds($from='',$to='') {
+	//Add Catgor(y|ies)
+	//if($GLOBALS['page']['categories']) foreach($GLOBALS['page']['categories'] as $key=>$cat) $temp .= '%20|%20('.getBaseStr($cat).')';
+	if($GLOBALS['page']['categories']) {
+		$GLOBALS['adBox']['message'] .= '<div><b>Oodle does not support multi category queries:</b> <i>Ads from this provider will not show in the results.</i></div>';
+		return;
+	}
+	if($GLOBALS['page']['category']) $GLOBALS['adBox']['oodle']['params']['category'] = getOodleCat($GLOBALS['page']['category']['id'],$GLOBALS['page']['category']['oodleCat']);	//Add category specific params
+	
+	//Do Ordering
+	if($_REQUEST['latitude'] != 0.000000 && ($_REQUEST['order'] == 'distance' || (!$_REQUEST['distance'] && !$_REQUEST['order']))) $GLOBALS['adBox']['oodle']['params']['sort'] = array('key'=>'distance','reverse'=>false);
+	else if ($_REQUEST['order'] == 'datenew')		$GLOBALS['adBox']['oodle']['params']['sort'] = array('key'=>'date','reverse'=>false);
+	else if ($_REQUEST['order'] == 'dateold')		$GLOBALS['adBox']['oodle']['params']['sort'] = array('key'=>'date','reverse'=>true);
+	else if ($_REQUEST['order'] == 'pricecheap')	$GLOBALS['adBox']['oodle']['params']['sort'] = array('key'=>'price','reverse'=>false);
+	else if ($_REQUEST['order'] == 'pricespendy')	$GLOBALS['adBox']['oodle']['params']['sort'] = array('key'=>'price','reverse'=>true);
+	
+	//Add filters
+	$GLOBALS['adBox']['oodle']['params']['q'] = $_REQUEST['q'].' '.str_rot13('-ovxvav -cravf -ahqr -frk');
+	$arr = array();
+	if($_REQUEST['minprice'])							$arr['low'] = $_REQUEST['minprice'];
+	if($_REQUEST['maxprice'])							$arr['high'] = $_REQUEST['maxprice'];
+	if($arr)											$GLOBALS['adBox']['oodle']['params']['filters'][] = array('type'=>'price','params'=>$arr);
+	if($_REQUEST['type']) 								$GLOBALS['adBox']['oodle']['params']['dimensions'] = array_merge('ad_type_'.$_REQUEST['type'],$GLOBALS['adBox']['oodle']['params']['dimensions']);
+	if($_REQUEST['featured']) 							$GLOBALS['adBox']['oodle']['params']['filters'][] = array('type'=>'price','params'=>array('low'=>10000));
+	if($_REQUEST['picreq'] || $_REQUEST['featured'])	$GLOBALS['adBox']['oodle']['params']['dimensions'] = array_merge('has_photo_thumbnail',$GLOBALS['adBox']['oodle']['params']['dimensions']);
+	if($_REQUEST['latitude'] != 0.000000 && ($_REQUEST['distance'] || !$_REQUEST['order'] || $_REQUEST['order'] == 'distance')) $GLOBALS['adBox']['oodle']['params']['filters'][] = array('type'=>'distance','params'=>array('value'=>($_REQUEST['distance'] ? $_REQUEST['distance'] : 999),'units'=>'mi','latitude'=>$_REQUEST['latitude'],'longitude'=>$_REQUEST['longitude']));
+	
+	$GLOBALS['adBox']['oodle']['params']['filters'][] = array('type'=>'source','params'=>array('exclude'=>array('safarri','lycos','plentyoffish','myspace','okcupid','friendster','hotornot','datehookup','realtytrac.com')));
+	$GLOBALS['adBox']['oodle']['params']['user_key'] = md5($_SESSION['userId'].'3i0f0nv2jx8'); //Our user ids are secret... even from Oodle :-)
+	$GLOBALS['adBox']['oodle']['params']['partner_id'] = 'SAFARRI';
+	$GLOBALS['adBox']['oodle']['params']['region'] = 'usa';
+	$GLOBALS['adBox']['oodle']['params']['from'] = $from;
+	$GLOBALS['adBox']['oodle']['params']['to'] = $from + $to;
+	
+	//if(isAdmin()) print_r($GLOBALS['adBox']['oodle']['params']);
+	
+	lfunc(_mod.'xmlrpc');
+	$GLOBALS['adBox']['oodle']['client'] = new IXR_Client('http://www.oodle.com/api/');
+	if(!$GLOBALS['adBox']['oodle']['client']->query('get',$GLOBALS['adBox']['oodle']['params'])) $GLOBALS['adBox']['message'] .= '<div><b>Oodle could not be loaded:</b> <i>Ads from this provider will not show in the results.</i></div>';
+	else {
+		$arr = $GLOBALS['adBox']['oodle']['client']->getResponse();
+		$GLOBALS['adBox']['oodle']['totalAds'] = $arr['total'];
+		$GLOBALS['adBox']['details']['totalAds'] += $GLOBALS['adBox']['oodle']['totalAds'];
+		$i=0;
+		//If there is no $to we are below a full page provider which has "filled"
+		if($to) foreach($arr['items'] as $key=>$ad) {
+			$GLOBALS['adBox']['oodle']['loadedAds']++;
+			
+			$ad['aggregator'] = 'oodle';
+			foreach($ad as $key=>$val) {
+				if($key == 'employeetype' || $key == 'sellertype' || $key == 'shippingregionid' || $key == 'specifics' || $key == 'aggregator' || $key == 'privateparty' || $key == 'partner_id' || $key == 'body' || $key == 'geo_used_lat' || $key == 'geo_used_lon' || $key == 'address' || $key == 'addresslocation' || $key == 'registration' || $key == 'has_photo' || $key == 'location' || $key == 'create_time' || $key == 'locationcode' || $key == 'category_attr' || $key == 'thumb' || $key == 'title' || $key == 'price' || $key == 'id' || $key == 'url' || $key == 'latitude' || $key == 'longitude' || $key == 'image_alt' || $key == 'image_width' || $key == 'image_height'|| $key == 'image_uri' || $key == 'itemlocation' || $key == 'sbody') continue;
+				if($key == 'source') $val = substr($val,0,40);
+				else if($key == 'category_name') $key = 'Category';
+				else $key = ucwords(str_replace('_',' ',$key));
+				
+				$ad['specifics'] .= ' <span class="spec">'.$key.':</span> '.$val;
+			}
+			
+			$ad['title'] = preg_replace(array('/\\/','/^(\$[0-9]*(\.)?[0-9]*)( - )?/'), '', $ad['title']);
+			$ad['description'] = $ad['sbody'];
+			$ad['dateSeconds'] = $ad['create_time'];
+			$ad['date'] = doDate($ad['create_time'],'short');
+			if(!$ad['thumb']) $ad['thumb'] = '/images/icons/noimage.png';
+			else $ad['hasThumb'] = true;
+			$ad['price'] = '$'.number_format($ad['price'],2);
+			if($ad['addresslocation']) $ad['location'] = $ad['addresslocation'];
+			if($ad['address']) $ad['location'] = $ad['address'].', '.$ad['location'];
+			if($ad['latitude'] && $_REQUEST['showdist'] !== false) $ad['location'] .= ': <b>'.round(SQRT((69.1 * ($_REQUEST['latitude'] - $ad['latitude'])) * (69.1 * ($_REQUEST['latitude'] - $ad['latitude'])) + (53.0 *($_REQUEST['longitude'] - $ad['longitude'])) * (53.0 *($_REQUEST['longitude'] - $ad['longitude']))),1).'</b> miles';
+			$ad['lat'] = $ad['latitude'];
+			$ad['lon'] = $ad['longitude'];
+			$ad['target'] = '_blank';
+			$GLOBALS['adBox']['ads'][] = $ad;
+		}
+		$GLOBALS['adBox']['details']['loadedAds'] += $GLOBALS['adBox']['oodle']['loadedAds'];
+	}
+}
+
+function getOodleCat($id, $str="") {
+	if($str) return $str;
+	$row = $_SERVER['db']->getRow("SELECT parent, oodleCat FROM classifieds_categories WHERE id = '{$id}'");	
+	if($row['oodleCat'])		return $row['oodleCat'];
+	else if($row['parent'])		return getOodleCat($row['parent']);
+}
+
+//****************************** Base ******************************
+
+function getBaseAds($from='',$to='') {	
+	//Category Mapping
+	if($GLOBALS['page']['categories']) {																		//Add QuickBrowse params
+		$temp = '';
+		foreach($GLOBALS['page']['categories'] as $key=>$cat) $temp .= '%7C%28'.getBaseStr($cat).'%29';
+		$GLOBALS['adBox']['base']['params'] .= '%28'.substr($temp,3).'%29';
+	}
+	else if($GLOBALS['page']['category']) $GLOBALS['adBox']['base']['params'] .= '%20'.getBaseStr($GLOBALS['page']['category']['id']);	//Add category specific params
+	
+	//Filters
+	if($_REQUEST['q'])				$GLOBALS['adBox']['base']['params'] .= '%20'.rawurlencode(trim($_REQUEST['q'])).'';
+	if($_REQUEST['maxprice']) 		$GLOBALS['adBox']['base']['params'] .= '%20%5Bprice%20%3C%20'.$_REQUEST['maxprice'].'%20USD%5D';
+	if($_REQUEST['type'])			$GLOBALS['adBox']['base']['params'] .= '%20%5Bitem%20type%3A%20'.rawurlencode(strtolower($_SERVER['db']->getOne("SELECT type FROM classifieds_types WHERE typeId = ".$_REQUEST['type']))).'%5D';
+	if($_REQUEST['minprice']) 		$GLOBALS['adBox']['base']['params'] .= '%20%5Bprice%20%3E%20'.$_REQUEST['minprice'].'%20USD%5D';
+	if($_REQUEST['featured'])		$GLOBALS['adBox']['base']['params'] .= '%20%5Bprice%20%3E%201000%20USD%5D'; //Entry Page Junk Filter
+	//if($_REQUEST['picreq'] || $_REQUEST['featured']) $GLOBALS['adBox']['base']['params'] .= '%5Bimage%20link%5D';
+	$GLOBALS['adBox']['base']['params'] .= '%20-fatdoor%20%5Bitem%20type%3A%20-personals%5D%20%5Bitem%20type%3A%20-profiles%5D%20%5Bitem%20type%3A%20-jobs%5D'.str_rot13('%20-frk%20-ahqr%20-tnl%20-cbea');; //Filter myspace personals, yahoo jobs, and other junk..
+	
+	//$GLOBALS['adBox']['base']['params'] .= '%20%5Bimage_link%3Atrue%5D';
+	
+	//Earth Filters
+	if($_REQUEST['latitude'] != 0.000000 && $_REQUEST['distance']) {
+		$GLOBALS['adBox']['base']['params'] .= '%20%5blocation%3A@'.($_REQUEST['latitude'] >= 0 ? '%2b' : '').$_REQUEST['latitude'].($_REQUEST['longitude'] >= 0 ? '%2b' : '').$_REQUEST['longitude'].'%2b'.$_REQUEST['distance'].'mi%5d';
+		if($_REQUEST['distance'] > 100) $GLOBALS['adBox']['base']['params'] .= '&crowdby=%5Bx%20%3D%20location%28location%29%3A%20if%20%28min%28dist%28x%2C%20@%22'.$_REQUEST['latitude'].$_REQUEST['longitude'].'%22%29%29%20%3C%2025%29%20then%20%22group1%22%20else%20%22group2%22%20%5D%3A50';
+		/* //Here is how the crowding works:
+		crowdby=
+			[x = location(location):
+			 if (min(dist(x, @"Mountain View, California, USA")) < 10)
+			   then "group1"
+			   else "group2"
+			]:2*/
+	}
+	
+	//Ordering
+	if ($_REQUEST['order'] == 'datenew')			$GLOBALS['adBox']['base']['params'] .= '&orderby=modification_time&sortorder=descending';
+	else if ($_REQUEST['order'] == 'dateold')		$GLOBALS['adBox']['base']['params'] .= '&orderby=modification_time&sortorder=ascending';
+	else if ($_REQUEST['order'] == 'pricecheap')	$GLOBALS['adBox']['base']['params'] .= '&orderby=price%28float%20USD%29&sortorder=ascending';
+	else if ($_REQUEST['order'] == 'pricespendy')	$GLOBALS['adBox']['base']['params'] .= '&orderby=price%28float%20USD%29&sortorder=descending';
+	else if	($_REQUEST['latitude'] != 0.000000 && !$_REQUEST['distance']) 	$GLOBALS['adBox']['base']['params'] .= /*rawurlencode('[location(location)]').*/'&orderby='.rawurlencode('[x = location(location): neg(min(dist(x, @'.($_REQUEST['latitude'] >= 0 ? '+' : '').$_REQUEST['latitude'].($_REQUEST['longitude'] >= 0 ? '+' : '').$_REQUEST['longitude'].')))]');
+	else if($_REQUEST['featured'])					$GLOBALS['adBox']['base']['params'] .= '&orderby=modification_time&sortorder=descending';
+	
+	//Provide our API Key
+	$GLOBALS['adBox']['base']['params'] .= '&key=ABQIAAAAef5FCsGcSNBBQL6yyH6JdhSh3ca_5rXV7lpmnZ5RJuLXYJ2znRTt0fHlpeaYXAG5AXXLqk-DkMMguw';
+	if(!$from) $from = 1;
+	
+	//Append Pagination
+	$GLOBALS['adBox']['base']['params'] .= '&start-index='.$from.'&max-results='.$to;
+	
+	//Get File
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_URL, 'http://www.google.com/base/feeds/snippets?bq='.$GLOBALS['adBox']['base']['params']);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
+	$data = curl_exec($ch);
+	curl_close($ch);
+	
+	//if(isAdmin()) test('http://www.google.com/base/feeds/snippets?bq='.$GLOBALS['adBox']['base']['params']);
+	
+	//Parse RSS
+	$tags = array();
+	$parser = xml_parser_create();
+	xml_parser_set_option( $parser, XML_OPTION_CASE_FOLDING, 0 );
+	xml_parser_set_option( $parser, XML_OPTION_SKIP_WHITE, 1 );
+	xml_parse_into_struct( $parser, $data, $tags );
+	xml_parser_free($parser);
+	
+	//Add more dimensions to DOM array
+	$elements = array();
+	$stack = array();
+	$i = 0;
+	foreach ($tags as $tag) {
+		if($tag['tag'] == 'link' && $tag['attributes']['rel'] == 'alternate') $elements[$tag['tag']] = $tag['attributes']['href'];
+		else if($tag['type'] == 'complete' && $tag['value']) $elements[$tag['tag']] = $tag['value'];
+		else if ($tag['type'] == 'open') {
+			if($tag['tag'] == 'entry') {
+				$stack[count($stack)] = &$elements;
+				$elements = &$elements['items'][$i++];
+			}
+			else {
+				$elements[][$tag['tag']]['attributes'] = $tag['attributes'];
+				$elements[$tag['tag']]['children'] = array();
+				$stack[count($stack)] = &$elements;
+				$elements = &$elements[$tag['tag']]['children'];
+			}
+		}
+		else if ($tag['type'] == "close") {
+			$elements = &$stack[count($stack) - 1];
+			unset($stack[count($stack) - 1]);
+		}
+	}
+	
+	$GLOBALS['adBox']['base']['totalAds'] = $elements['feed']['children']['openSearch:totalResults'];
+	$GLOBALS['adBox']['details']['totalAds'] += $GLOBALS['adBox']['base']['totalAds'];
+	
+	if($elements['feed']['children']['items']) {
+		$i=0;
+		foreach($elements['feed']['children']['items'] as $key=>$ad) {
+			$ad['aggregator'] = 'base';
+			if($ad['g:image_link'] && $ad['g:image_link'] != 'http://pics.ebaystatic.com/aw/pics/listings/camera_64x15.gif') {
+				$ad['thumb'] = $ad['g:image_link']; //urldecode(substr($ad['g:image_link'],36,(strpos($ad['g:image_link'],'&',37) - 36))); //str_replace('&size=6','&size=2',$ad['g:image_link']);
+				$ad['hasThumb'] = true;
+			}
+			else $ad['thumb'] = '/images/icons/noimage.png';
+			$ad['id'] = substr(strrchr($ad['id'],'/'),1);
+			$ad['provider_id'] = $ad['g:id'];
+			$ad['title'] = ucwords(strtolower(substr($ad['title'],0,75)));
+			$ad['description'] = $ad['content'];
+			$ad['type'] = ucwords($ad['g:listing_type']);
+			$ad['date'] = str_replace('-','/',substr($ad['published'],2,8));
+			$ad['dateSeconds'] = strtotime($ad['published']);
+			$ad['location'] = str_replace(array(', ',','),', ',trim($ad['g:location'], " ,"));
+			$ad['priceType'] = str_replace('usd','',$ad['g:price_type']);
+			$ad['price'] = '$'.number_format($ad['g:price'],2);
+			$ad['target'] = '_blank';
+			$ad['url'] = $ad['link'];
+			
+			//if($_REQUEST['tpl'] == 'earth') $ad['description'] .= print_r($ad,true);
+			
+			if($ad['location'] && $_REQUEST['showdist'] !== false) {
+				$temp = func(_mod.'location','getLocation',$ad['location']);
+				if($temp) $ad['location'] .= ': <b>'.func(_mod.'location','getDistance',$temp['latitude'],$temp['longitude'],$_REQUEST['latitude'],$_REQUEST['longitude']).'</b> miles';
+			}
+			
+			if($ad['g:product_review'])		$ad['specifics'] .= ' <span class="spec">Rating:</span> '.round($ad['g:product_review'],1);
+			if($ad['g:condition']) 			$ad['specifics'] .= ' <span class="spec">Condition:</span> '.$ad['g:condition'];
+			if($ad['g:year']) 				$ad['specifics'] .= ' <span class="spec">Year:</span> '.$ad['g:year'];
+			if($ad['g:bathrooms'] > 0) 		$ad['specifics'] .= ' <span class="spec">Bathrooms:</span> '.round($ad['g:bathrooms']);
+			if($ad['g:bedrooms'] > 0) 		$ad['specifics'] .= ' <span class="spec">Bedrooms:</span> '.$ad['g:bedrooms'];
+			if($ad['g:amenities']) 			$ad['specifics'] .= ' <span class="spec">Amenities:</span> '.$ad['g:amenities'];
+			if($ad['g:amenity'])			$ad['specifics'] .= ' <span class="spec">Amenities:</span> '.$ad['g:amenity'];
+			if($ad['g:brand']) 				$ad['specifics'] .= ' <span class="spec">Brand:</span> '.$ad['g:brand'];
+			if($ad['g:provider_class'])		$ad['specifics'] .= ' <span class="spec">Provider:</span> '.$ad['g:provider_class'];
+			if($ad['g:zoning'])				$ad['specifics'] .= ' <span class="spec">Zoning:</span> '.$ad['g:zoning'];
+			if($ad['g:property_type'])		$ad['specifics'] .= ' <span class="spec">Land Type:</span> '.$ad['g:property_type'];
+			if($ad['g:mls_name'])			$ad['specifics'] .= ' <span class="spec">Realtor:</span> '.$ad['g:mls_name'];
+			if($ad['g:broker'])				$ad['specifics'] .= ' <span class="spec">Broker:</span> '.$ad['g:broker'];
+			if($ad['g:agent'])				$ad['specifics'] .= ' <span class="spec">Agent:</span> '.$ad['g:agent'];
+			if($ad['g:mls_listing_id'])		$ad['specifics'] .= ' <span class="spec">Mls id:</span> '.$ad['g:mls_listing_id'];
+			if($ad['g:property_taxes'])		$ad['specifics'] .= ' <span class="spec">Taxes:</span> '.$ad['g:property_taxes'];
+			if($ad['g:airport_city_code'])	$ad['specifics'] .= ' <span class="spec">Airport Code:</span> '.$ad['g:airport_city_code'];
+			if($ad['g:number_of_rooms'])	$ad['specifics'] .= ' <span class="spec">Rooms:</span> '.$ad['g:number_of_rooms'];
+			if($ad['g:hotel_chain'])		$ad['specifics'] .= ' <span class="spec">Hotel Chain:</span> '.$ad['g:hotel_chain'];
+			if($ad['g:label'])				$ad['specifics'] .= ' <span class="spec">Label:</span> '.$ad['g:label'];
+			if($ad['g:make']) 				$ad['specifics'] .= ' <span class="spec">Make:</span> '.$ad['g:make'];
+			if($ad['g:vehicle_type']) 		$ad['specifics'] .= ' <span class="spec">Vehicle Type:</span> '.$ad['g:vehicle_type'];
+			if($ad['g:engine']) 			$ad['specifics'] .= ' <span class="spec">Engine:</span> '.$ad['g:engine'];
+			if($ad['g:door_count']) 		$ad['specifics'] .= ' <span class="spec">Doors:</span> '.$ad['g:door_count'];
+			if($ad['g:transmission']) 		$ad['specifics'] .= ' <span class="spec">Transmission:</span> '.$ad['g:transmission'];
+			if($ad['g:trim']) 				$ad['specifics'] .= ' <span class="spec">Trim:</span> '.$ad['g:trim'];
+			if($ad['g:drivetrain']) 		$ad['specifics'] .= ' <span class="spec">Drivetrain:</span> '.$ad['g:drivetrain'];
+			if($ad['g:mileage']) 			$ad['specifics'] .= ' <span class="spec">Mileage:</span> '.$ad['g:mileage'];
+			if($ad['g:category']) 			$ad['specifics'] .= ' <span class="spec">Category:</span> '.$ad['g:category'];
+			
+			if($_REQUEST['geocode']) { //Auto address geocode
+				$ch = curl_init();		
+				curl_setopt($ch, CURLOPT_URL, 'http://maps.google.com/maps/geo?q='.urlencode($ad['location']).'&output=csv&key=ABQIAAAAef5FCsGcSNBBQL6yyH6JdhQulgWP0YppCiC2zuG-T_hyCOz-XhSW_Kret7hOiLtsf3RIO_twETZTFQ');
+				curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 0.3);
+				curl_setopt($ch, CURLOPT_HEADER, 0);
+				curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+				curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+				$temp = explode(',',curl_exec($ch));
+				curl_close($ch);
+				$ad['lat'] = $temp[2];
+				$ad['lon'] = $temp[3];
+				$GLOBALS['adBox']['details']['geocodes'] += 1;
+			}
+			
+			$GLOBALS['adBox']['ads'][] = $ad;
+			$GLOBALS['adBox']['base']['loadedAds']++;
+		}
+		$GLOBALS['adBox']['details']['loadedAds'] += $GLOBALS['adBox']['base']['loadedAds'];
+	}
+}
+
+function getBaseStr($id, $str="") {
+	$row = $_SERVER['db']->getRow("SELECT parent, baseStr, baseStrCat, title FROM classifieds_categories WHERE id = '{$id}'");	
+	if(!$row['baseStr'] && !$row['baseStrCat'] && $row['title'] != 'Other') $row['baseStr'] = $row['title'];
+	if($row['id'] == $_REQUEST['id']) $str .= rawurlencode($row['baseStrCat']);
+	if($row['parent'] == 0) return rawurlencode($row['baseStr']).$str;
+	else return getBaseStr($row['parent'], rawurlencode($row['baseStr']).$str);
+}
+
+?>

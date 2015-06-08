@@ -1,0 +1,262 @@
+<?
+loginCheck('<b>Please login to access your control panel.</b>','end');
+
+if($_SESSION['plexpediaGroup']['id'] && ($_SESSION['plexpediaGroup']['usId'] != $_SESSION['userId'] && !isAdmin())) redirect('/index','You do not have administrative permissions for group # '.$_SESSION['plexpediaGroup']['id']);
+
+if($_SESSION['groupName'] && !$_POST) {
+	$_POST['name'] = $_SESSION['plexpediaGroup']['name'];
+	$_POST['sname'] = $_SESSION['plexpediaGroup']['link'];
+	$_POST['skin'] = $_SESSION['plexpediaGroup']['skin'];
+	$_POST['theme'] = $_SESSION['plexpediaGroup']['theme'];
+	$_POST['description'] = $_SESSION['plexpediaGroup']['description'];
+	$_POST['hometext'] = $_SESSION['plexpediaGroup']['homeText'];
+	$_POST['hometext'] = str_replace("<br />","",$_POST['hometext']);
+	$_POST['adsensecode'] = $_SESSION['plexpediaGroup']['adsensecode'];
+	$_REQUEST['access'] = $_SESSION['plexpediaGroup']['access'];
+}
+if(!$_POST['type'])			$_POST['type'] = $_SESSION['plexpediaGroup']['type'];
+if(!$_POST['catgroups'])	$_POST['catgroups'] = $_SESSION['plexpediaGroup']['catgroups'];
+
+if($_REQUEST['submit']) {
+	if($_REQUEST['addcontributor']) {
+		if($_REQUEST['addcontributor'] == $_SESSION['userName']) $_errors = '<li>You are already on the access list!</li>';
+		else {
+			if(!$userId = $_SERVER['serverdb']->getOne("SELECT `userId` FROM `members` WHERE `userName` = '{$_REQUEST['addcontributor']}'")) $_errors = '<li>The member you attempted to add to the list does not exist!</li>';
+			else {
+				if ($_SERVER['db']->getOne("SELECT `userId` FROM `group_members` WHERE `userId` = '{$userId}' AND `groupId` = '{$_SESSION['plexpediaGroup']['id']}'")) $_errors = '<li>The member you attempted to add to the list already exists!</li>';
+				else {
+					$_SERVER['db']->execute("INSERT INTO `group_members` (`groupId`,`userId`) VALUES ('{$_SESSION['plexpediaGroup']['id']}','{$userId}')");
+					if($_SERVER['db']->errorMsg()) $_errors .= '<div class="ebox"><h4>There were errors adding a member to the list:</h4>'.$_SERVER['db']->errorMsg().'<p><em>Please Try Again</em></p></div>';
+				}
+			}
+		}
+		unset($_POST['addcontributor']);
+	}
+	
+	if($_REQUEST['remcontributor']) {
+		if($_REQUEST['remcontributor'] == $_SESSION['userName']) $_errors = '<li>You cannot remove yourself from the access list!</li>';
+		else {
+			$userId = $_SERVER['serverdb']->getOne("SELECT `userId` FROM `members` WHERE `userName` = '{$_REQUEST['remcontributor']}'");
+			if (!$_SERVER['db']->getOne("SELECT `userId` FROM `group_members` WHERE `userId` = '{$userId}' AND `groupId` = '{$_SESSION['plexpediaGroup']['id']}'")) $_errors = '<li>The member you attempted to remove was not on the list!</li>';
+			else {
+				$_SERVER['db']->execute("DELETE FROM `group_members` WHERE `userId` = '{$userId}' AND `groupId` = '{$_SESSION['plexpediaGroup']['id']}'");
+			}
+		}
+		unset($_POST['remcontributor']);
+	}
+	
+	if(!$_POST['name']) $_errors .= "<li>You forgot to fill in your group's name!</li>";
+	$_POST['sname'] = preg_replace("/^\.^\-[\W]/i","",str_replace(array('www.','http://','https://'),'',strtolower($_POST['sname'])));
+	if(!$_POST['sname']) $_errors .= "<li>Your group needs a short name</li>";
+	else if($_SERVER['db']->getOne("SELECT id FROM groups WHERE link = '{$_POST['sname']}' AND id != '{$_SESSION['plexpediaGroup']['id']}'")) $_errors .= "<li>There is already a group with the domain name you specified - Please try another.</li>";
+	else if($_POST['sname'] != $_SESSION['plexpediaGroup']['link'] && strpos($_POST['sname'],'.') && !strpos(file_get_contents('http://'.$_POST['sname']),'atiserver::notice::domopen')) $_errors .= "<li>Congradulations on purchasing a custom domain name! Custom names currently require a simple setup process on our side. Please <a href=\"/contact\" target=\"blank\">contact us</a> with your new domain name, and we will get everything set up for you!</li>";
+	if(!$_POST['description']) $_errors .= "<li>Your group needs a description</li>";
+	if(!$_POST['hometext']) $_errors .= "<li>Your group needs some text for the home page!</li>";
+	
+	if($_FILES['logo']['size']) { //newly selected images overwrite
+		$image = func(_mod.'imageuploader','imageuploader','logo',1000,200);
+		if ($image == 1) 		$_errors .= "<li>You forgot to select an image file!<br /><em>(Please click the browse button)</em></li>";
+		else if ($image == 2) 	$_errors .= "<li>The logo file you selected was not an image!<br /><em>(Please select a different file)</em></li>";
+		else if ($image == 3) 	$_errors .= "<li>Errors were experienced while processing your logo!<br /><em>(Please try again)</em></li>";
+		else {
+			$_SESSION['plexpediaGroup']['logo'] = $image;
+			$_SESSION['plexpediaGroup']['logoSmall'] = func(_mod.'imageuploader','getThumbnailImageName',$image);
+		}
+	}
+	else if($_REQUEST['submit'] == 'Clear Logo') {
+		$_SESSION['plexpediaGroup']['logo'] = '';
+		$_SESSION['plexpediaGroup']['logoSmall'] = '';
+	}
+	
+	if($_POST['location']) {
+		$location = func(_mod.'location','getLocation',$_REQUEST['location']);
+		if(!$location) $errors .= "<li>Your Location could not be located!</li>";
+	}
+	
+	if($_POST['homeblock'])		$_POST['homeblock'] = 1;
+	if($_POST['homeitems'])		$_POST['homeitems'] = 1;
+	if($_POST['tellafriend'])	$_POST['tellafriend'] = 1;
+	
+	if(!$_POST['skin'] || $_POST['skin'] != $_SESSION['plexpediaGroup']['skin']) $_POST['theme'] = '';
+	if($_POST['skin'] && !$_POST['theme']) $_POST['theme'] = $_SERVER['serverdb']->getOne('SELECT id FROM themes WHERE skinId = '.$_POST['skin'].' ORDER BY title DESC');
+	
+	if(!$_errors){
+		dbReplace('site','groups',array(
+			'id' => $_SESSION['plexpediaGroup']['id'],
+			'usId' => $_SESSION['userId'],
+			'name' => stripSlashes($_POST['name']),
+			'link' => $_POST['sname'],
+			'skin' => $_POST['skin'],
+			'theme' => $_POST['theme'],
+			'logo' => $_SESSION['plexpediaGroup']['logo'],
+			'logoSmall' => $_SESSION['plexpediaGroup']['logoSmall'],
+			'description' => stripSlashes($_POST['description']),
+			'homeText' => stripSlashes($_POST['hometext']),
+			'startDate' => $_SESSION['plexpediaGroup']['startDate'],
+			'access' => $_POST['access'],
+			'catgroups' => $_POST['catgroups'],
+			'level' => $_SESSION['plexpediaGroup']['level'],
+			'customLinks' => $_SESSION['plexpediaGroup']['customLinks'],
+			'customURLs' => $_SESSION['plexpediaGroup']['customURLs'],
+			'type' => $_POST['type'],
+		));
+		
+		if(dbError()) $message .= '<div class="ebox"><h4>There were errors modifying Your group:</h4>'.dbError().'<p><em>Please Try Again</em></p></div>';
+		else {
+			if(strpos($_POST['sname'],'.')) {
+				$temp = $_POST['sname'];
+				//Set Up ATIServer alias map
+				if($_POST['sname'] != $_SESSION['plexpediaGroup']['link']) {
+					//die(_root.'/serve/aliases/'.$_POST['sname']);
+					///var/www/serve/aliases/papawheely.com
+					$temp2 = fopen(_root.'/serve/aliases/'.$_POST['sname'], 'w');
+					fwrite($temp2, PLEXPEDIA);
+					fclose($temp2);
+				}
+			}
+			else $temp = $_POST['sname'].'.'.PLEXPEDIA;
+			
+			//Add url to users "stats view" admin privileges
+			updateUserPrivileges('stats',$_SESSION['plexpediaGroup']['link'],$temp);
+			
+			//Remove old file
+			if(strpos($_SESSION['plexpediaGroup']['link'],'.') && $_POST['sname'] != $_SESSION['plexpediaGroup']['link']) {
+				unlink(_root.'/serve/aliases/'.$_SESSION['plexpediaGroup']['link']);
+			}
+			
+			if(!$_SESSION['groupName']) redirect('http://'.$temp.$_SERVER['superDomain'].'/index','<b>Your group was inserted successfully!</b><br />You are now inside your group, and can begin adding content.');
+			else redirect('http://'.$temp.$_SERVER['superDomain'].'/control/group','Your Group Updated Successfully!'); //redirect('http://'.$temp.$_SERVER['superDomain'].'/index');
+			//else redirect('http://'.$temp.$_SERVER['superDomain'].'/index'); //redirect('http://'.$temp.$_SERVER['superDomain'].'/index');
+		}
+	}
+	else {
+		$message .= '<div class="ebox"><h4>There were errors with your submission:</h4><ul>'.$_errors.'</ul></div>';
+	}
+}
+
+if($_SESSION['plexpediaGroup']['id']) {
+	if($_SESSION['plexpediaGroup']['logoSmall']) $logo = '<img src="'.$_SESSION['plexpediaGroup']['logoSmall'].'" alt="" /><br />';
+	$title = 'Managing Group "'.$_SESSION['plexpediaGroup']['name'].'"';
+}
+else {
+	$title = 'Adding new group';
+	$_SESSION['plexpediaGroup']['homeBlock'] = true;
+	$_SESSION['plexpediaGroup']['homeItems'] = true;
+}
+
+$rs = $_SERVER['db']->execute("SELECT `userId` FROM `group_members` WHERE `groupId` = '{$_SESSION['plexpediaGroup']['id']}'");
+if($rs) { while ($temp = $rs->FetchRow()) {
+		$temp['userName'] = $_SERVER['serverdb']->getOne("SELECT `userName` FROM `members` WHERE `userId` = '{$temp['userId']}'");
+		$activeContributors .= ', <a href="/user/about-name-'.encrypt($temp['userName'],'url').'">'.$temp['userName'].'</a>';
+} }
+
+$access[$_REQUEST['access']] = ' selected';
+if($_POST['skin']) {
+	$rs = $_SERVER['serverdb']->execute('SELECT id, title FROM themes WHERE skinId = '.$_POST['skin'].' ORDER BY title DESC');
+	if($rs) while ($temp = $rs->FetchRow()) $themes .= '<option value="'.$temp['id'].'"'.($_POST['theme'] == $temp['id'] ? ' selected' : '').'>'.$temp['title'].'</option>';
+}
+
+$return .= $message.'
+<form enctype="multipart/form-data" method="post">
+<table class="outer">
+  <tr>
+	<th colspan="2">Group Details</th>
+  </tr>
+  <tr>
+	<td class="lcol" width="20%">Name:</td>
+	<td class="rcol"><input class="input" name="name" type="text" id="name" value="'.$_POST['name'].'"></td>
+  </tr>
+  <tr>
+    <td class="lcol">Domain Name:</td>
+	<td class="rcol"><input class="input" name="sname" type="text" id="sname" value="'.$_POST['sname'].'"></td>
+  </tr>
+  <!--
+  <tr>
+	<td class="lcol">Logo:</td>
+	<td class="rcol">'.$logo.'<input name="logo" id="logo" type="file" value="" /><input name="submit" type="submit" value="Clear Logo"></td>
+  </tr>
+  -->
+  <tr>
+	<td class="lcol">Description:</td>
+	<td class="rcol"><input class="input" name="description" type="text" id="description" value="'.$_POST['description'].'" style="width:100%;" />
+  </tr>
+  
+  <tr>
+	<th colspan="2">Group Access Permissions</th>
+  </tr>
+  
+  <tr>
+	<td class="lcol">Access Level:</td> 
+	 <td class="rcol">
+	 <select name="access" class="input">
+		<option value="4"'.$access['4'].'>Select: Anyone can access, only "Access List" can submit new items</option>
+		<option value="2"'.$access['2'].'>Exclusive: Anyone can access, only "Access List" can submit new items or comment on existing items</option>
+	 	<option value="1"'.$access['1'].'>Public: Anyone can access, submit, and comment</option>
+		<option value="3"'.$access['3'].'>Private: Group is only accessible by members on "Access List"</option>
+	 </select>
+	 </td>
+  </tr>
+  <tr>
+	<th colspan="2">Member "Access List"</th>
+  </tr>
+  <tr>
+	<td class="lcol">Current Members:</td>
+	<td class="rcol">
+		<a href="/user/about-name-'.encrypt($_SESSION['userName'],'url').'">'.$_SESSION['userName'].' (me)</a>'.$activeContributors.'
+	</td>
+  </tr>
+  <tr>
+	<td class="lcol">Add Member:</td>
+	<td class="rcol"><input class="input" name="addcontributor" type="text" id="addcontributor" value="'.$_POST['addcontributor'].'"></td>
+  </tr>
+  <tr>
+	<td class="lcol">Remove Member:<em></em></td>
+	<td class="rcol"><input class="input" name="remcontributor" type="text" id="remcontributor" value="'.$_POST['remcontributor'].'"></td>
+  </tr>
+  
+  <tr>
+	<th colspan="2">Customization</th>
+  </tr>
+  
+  <tr>
+	<td class="lcol">Skin:</td>
+	<td class="rcol">
+	<select name="skin">
+		<option value="">Automatic</option>
+		<option value="8"'.($_POST['skin'] == '8' ? ' selected' : '').'>Custom</option>
+		<option value="5"'.($_POST['skin'] == '5' ? ' selected' : '').'>Clean</option>
+		<option value="3"'.($_POST['skin'] == '3' ? ' selected' : '').'>Vibrant</option>
+		<option value="2"'.($_POST['skin'] == '2' ? ' selected' : '').'>Modern</option>
+		<option value="7"'.($_POST['skin'] == '7' ? ' selected' : '').'>High Tech</option>
+	</select>
+  </tr>
+  
+  '.($themes ? '
+  <tr>
+	<td class="lcol">Theme:</td>
+	<td class="rcol">
+	<select name="theme">
+		'.$themes.'
+	</select>
+  </tr>
+  ' : '').'
+  
+  <tr>
+	<td class="lcol">Home Page Text:</td>
+	<td class="rcol">
+	'.func(_mod.'textbox', 'textbox', 'hometext', $_POST['hometext']).'
+  </tr>
+  <tr>
+	<td colspan="2" class="drow">
+	<div class="boldBorder"><input name="submit" type="submit" class="bold" value="Submit"></div>
+	</td>
+  </tr>
+</table>
+</form>';
+
+setPageConst('title',$_SESSION['userName'].'\'s Control Panel > Group Administration');
+setPageConst('bct','<a href="/index">Home</a> > <a href="index">'.$_SESSION['userName'].'\'s Control Panel</a> > Group');
+
+setPageBlock('blockFancy',$title,$return);
+
+?>

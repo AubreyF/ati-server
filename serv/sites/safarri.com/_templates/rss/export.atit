@@ -1,0 +1,41 @@
+<?
+
+setPagePref('template',false);
+setPageHeader('cache-control','public, max-age=86400');
+setPageHeader('Content-Type','application/rss+xml');
+
+if($adBox['ads']) foreach($adBox['ads'] as $key=>$ad) {
+	if(!$ad) continue; //This item has been cleared by the pagination system
+	
+	$adBox['content'] .= '
+	<item>
+		<title><![CDATA['.$ad['type'].' '.$ad['price'].($ad['priceType'] ? ' ' : '').$ad['priceType'].': '.$ad['title'].' '.$ad['date'].']]></title>
+		<guid><![CDATA['.$ad['url'].']]></guid>
+		<link><![CDATA['.$ad['url'].']]></link>
+		<description><![CDATA['.br2nill($ad['description']).']]></description>
+		'.($ad['hasThumb'] ? '<media:thumbnail url="'.$ad['thumb'].'" />' : '').'
+		'.($ad['pic'] || $ad['hasThumb'] ? '<media:content url="'.($ad['pic'] ? $ad['pic'] : $ad['thumb']).'" type="image/jpeg" />' : '').'
+		<media:title type="plain"><![CDATA['.$ad['title'].']]></media:title>
+		'.($ad['date'] ? '<pubDate>'.($ad['dateSeconds'] ? date('r',$ad['dateSeconds']) : $ad['date']).'</pubDate>' : '').'
+	</item>';
+}
+
+$content = '<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:media="http://search.yahoo.com/mrss/">
+	<channel>
+		<title>'.$page['ltitle'].'</title>
+		<link>http://'.SAFARRI.'/browse'.build_url(array('tpl')).'</link>
+		<description>Classifieds powered by '.SAFARRI.' - The free online classifieds website!</description>
+		<language>en-us</language>
+		<lastBuildDate>'.date('r').'</lastBuildDate>
+		<generator>Safarri.com</generator>
+		<atom:link rel="search" title="Safarri" href="http://safarri.com/data/search/search.xml" type="application/opensearchdescription+xml" />
+		<opensearch:Query role="request" searchTerms="'.$_REQUEST['q'].'" startPage="'.$_REQUEST['adpage'].'" />
+		<opensearch:totalResults>'.$adBox['details']['totalAds'].'</opensearch:totalResults>
+		<opensearch:startIndex>'.($_REQUEST['adsppage'] * abs($_REQUEST['adpage'] - 1)).'</opensearch:startIndex>
+		<opensearch:itemsPerPage>'.$_REQUEST['adsppage'].'</opensearch:itemsPerPage>
+		'.$adBox['content'].'
+	</channel>
+</rss>';
+
+?>

@@ -1,0 +1,15 @@
+<?
+
+function columns() {
+	$funcs = func_get_args();
+	$xtra = array_shift($funcs);
+	if(!$xtra) $xtra = 'width="100%" border="0"';
+
+	foreach ($funcs as $val) {
+		$return .= '<td valign="top">'.$val.'</td>';
+	}
+	
+	return '<table '.$xtra.'>'.$return.'</table>';
+}
+
+?>

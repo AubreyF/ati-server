@@ -1,0 +1,34 @@
+<?
+
+setPagePref('template',false);
+setPageHeader('cache-control','public, max-age=86400');
+//setPageHeader('Content-Type','application/rss+xml');
+
+if($items) foreach($items as $key=>$thread) $content .= '
+	<item>
+		<title><![CDATA['.(!$_REQUEST['show'] && $thread['type'] ? $thread['type'].': ' : '').$thread['title'].($thread['description'] ? ' - '.$thread['description'] : '').']]></title>
+		<guid><![CDATA['.$thread['link'].']]></guid>
+		<link><![CDATA['.$thread['link'].']]></link>
+		<description><![CDATA['.$thread['text'].']]></description>
+		<media:title type="plain"><![CDATA['.$thread['title'].']]></media:title>
+		'.($thread['picture'] ? '<media:thumbnail url="'.$thread['picture'].'" />' : '').'
+		'.($thread['time'] ? '<pubDate>'.date('r',$thread['time']).'</pubDate>' : '').'
+	</item>
+';
+
+$content = '<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:media="http://search.yahoo.com/mrss/">
+	<channel>
+		<title>'.$page['title'].'</title>
+		<link>http://'.$_SERVER['HTTP_HOST'].'/index'/*browse'.build_url(array('tpl')).'*/.'</link>
+		<language>en-us</language>
+		<generator>ATIServer</generator>
+		<opensearch:Query role="request" searchTerms="'.$_REQUEST['q'].'" startPage="'.$_REQUEST['page'].'" />
+		<opensearch:totalResults>'.$page['pagination']['items'].'</opensearch:totalResults>
+		<opensearch:startIndex>'.$page['pagination']['offset'].'</opensearch:startIndex>
+		<opensearch:itemsPerPage>25</opensearch:itemsPerPage>
+		'.$content.'
+	</channel>
+</rss>';
+
+?>

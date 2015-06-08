@@ -1,0 +1,239 @@
+/********************************************************************/
+/************* ATISERVER GLOBAL ELEMENT STYLING SHEET ***************/
+/********************************************************************/
+
+/* Basic Elements */
+
+body { font-family:verdana,arial,tahoma,sans-serif; font-size:12px }
+img { border:0px; }
+td, tr { padding:0px; margin:0px; text-align:center; }
+form { margin:0; }
+ul, ol { text-align:left;  }
+
+/* Text */
+
+.boldText, .btxt { font-weight:bold; }
+li.btxt ul { font-weight:normal; }
+.italicText, .itxt { font-style:italic; }
+.bigText, .ltxt { font-size:1.2em; font-weight:bold; }
+.hText, .htxt { font-size:1.5em; font-weight:bolder; }
+.smallText, .stxt { font-size:0.8em; }
+.sptxt { vertical-align:super; font-size:0.7em; }
+.sbtxt { vertical-align:sub; font-size:0.7em; }
+.quoteText, .qtxt, .ptxt, .imgbox { background-color:#F7FFF5; font-size:0.9em; font-style:italic; font-family:Andale Mono, Courier, monospace; padding:10px; padding-left:30px; border:1px dashed #999999; max-height:400px; overflow:auto; }
+.ptxt { white-space:pre; }
+
+/* Box Model */
+
+.noPad { padding:0px !important; }
+.hidden { display:none; }
+.inline,:hover>.hidden { display:inline !important; }
+.scroll { overflow:auto; }
+.stretch, .str { width:100%; display:block; }
+
+/* Alignment */
+
+.laln, .laln a { text-align:left !important;  }
+.caln { text-align:center !important; }
+.raln { text-align:right !important; }
+
+/* Floating */
+
+.lflt/*, .lflt a*/ { float:left !important;  }
+.nflt { float:none !important; }
+.rflt, .imgr { float:right !important; }
+
+/* Misc */
+
+.imgw { display:inline-block; max-width:100%; text-decoration:none; }
+.imgx, .imgt { display:block; border:1px solid #dddddd; padding:3px; max-width:100%; height:auto; }
+.imgx:hover, .imgt:hover { border:1px solid #cccccc; padding:3px; background-color:#eeeeee; }
+.imgw div { position:relative; margin-top:-33px; text-align:center; margin-bottom:20px; margin-right:46px; margin-left:9px; height:15px; padding:5px; background-color:#FFFFFF; width:auto; opacity:.85; }
+.imgw div.rflt { margin-right:0px; width:30px; }
+.anchor { position:relative; top:-40px; }
+.imgbox { float:right; padding:10px; margin:10px; clear:both; }
+.imgbox img { width:200px; }
+
+/* Tool Tips */
+
+.tool-tip { width:200px; z-index:13000; font-size:11px; margin:20px; border:1px solid #B5CF74; color:#3E4F14; background:#CFDFA7; opacity:0.9; }
+.tool-title { display:none; }
+.tool-text { padding:8px; }
+
+/* Accordions */
+
+.acdn>div.content { padding-left:10px; padding-right:10px; }
+
+/* Tables */
+
+.columns { width:100%; border-spacing:0px; }
+.columns .column { vertical-align:top; }
+.columns .column { padding-left:15px;  }
+.columns .column:first-child { padding-left:0;  }
+.equal2column .column { width:50%; }
+
+.outer { border-collapse:collapse; margin-top:5px; width:100%; border-spacing:0px; }
+.header, th { height:30px; line-height:30px; background-color:#215992; text-align:center; padding:0; padding-left:3px; padding-right:3px; }
+.header, .header a, th, th>a { color:#FFFFFF; font-weight:bold; }
+.header .text { text-align:center; color:#FFFFFF; }
+
+.footer { color:#333333; background-color:#BBBBBB; border:1px solid #999999; border-top:none; padding:3px; }
+.outer .dull, .outer .rcol, .even, .outer .rcol, .odd, .outer .shiny, .outer .lcol, .outer td { padding:3px; }
+.even, .outer .shiny, .outer .lcol { background-color:#FDFDFD; }
+.odd, .outer .dull, .outer .rcol, .outer .dcol { background-color:#FAFAFA; }
+.outer .even td, .outer .odd td, .outer .lcol, .outer .rcol, .outer .dcol, .outer .drow, .outer .srow, form.outer>div { border-bottom:1px solid #DDDDDD; }
+.outer .even:last-child, .outer .odd:last-child, .outer .lcol:last-child, .outer .rcol:last-child, .outer .dcol:last-child, .outer .drow:last-child, .outer .srow:last-child, form.outer>div:last-child { border-bottom:none !important; }
+.outer .even td:hover, .outer .odd td:hover { font-style:italic; }
+.outer .even td, .outer .odd td { border-left:1px solid #999999; }
+.outer .even td:first-child, .outer .odd td:first-child { border-left:none; }
+.outer .lcol { border-right:1px solid #999999; color:#666666; height:20px; width:180px; font-weight:bold; line-height:20px; white-space:nowrap; }
+.outer .dcol { width:40%; }
+.outer .srow { height:1.5em; }
+.even a, .odd a { text-decoration:none; }
+.outer .dcol, .desc { color:#333333; font-style:italic; font-size:10px;/*padding-top:3px; padding-bottom:6px;*/}
+.title { font-weight:bold; }
+.locked { background:#F7F7F7; border:1px solid #F1F1F1; color:#333333; }
+.hilight, .hover:hover, .hover:hover .content { background-color:#D8E7F7;}
+.hover:hover a { color:#FF9966; }
+.hoverLight:hover { background-color:#DDDDDD; }
+
+/* Div Forms */
+
+form.outer>div, form.auto>div { min-height:28px; white-space:nowrap; line-height:28px; }
+form.outer>div>input, form.outer>div>select, form.auto>div>input { float:right; width:75%; margin:0; }
+form.narrow>div>input, form.narrow>div>input:hover, form.narrow>div>select, form.narrow>div>select:hover, form.narrow>div>.inputelement, form.narrow>div>.inputelement:hover { width:50%; }
+.medium { height:75px !important; }
+.medium>textarea { height:69px; }
+
+form.outer { margin-bottom:30px; }
+form.outer>div { height:28px; color:#666666; font-weight:bold; text-align:center; }
+form.outer input, form.outer select, form.outer input:hover, form.outer .inputelement, form.outer .inputelement:hover, form.outer textarea, form.outer textarea:hover { color:#000000; line-height:20px; font-weight:normal; float:right; width:75%; margin:0; padding-left:5px; }
+form.outer>div.text, form.fields>div.text { line-height:12px; height:auto; white-space:normal; font-size:10px; padding:10px; }
+
+form.fields>div { height:27px; line-height:23px; }
+
+/* Inputs */
+
+input, select, textarea, .inputelement { color:#000000; display:block; text-decoration:none; text-align:center; width:auto; background-color:#FBFBFB; border:1px solid #003399; /*font-style:italic;*/ font-size:12px; text-decoration:none; margin:0; padding:0; height:20px; line-height:20px !important; }
+submit { font-weight:bold; border:1px solid #999999; width:100%; background-color:#FAFAFA; }
+textarea, .mceEditorIframe { height:50px; }
+input:hover, select:hover, textarea:hover, .boldLink:hover { color:#000000; background-color:#FFFFFF; border:1px solid #CC0000; font-style:normal; text-decoration:none; }
+input:focus, select:focus { outline:1px solid #FFCC99; }
+input[type='hidden'] { display:none; }
+input[type='radio'], input[type='radio']:hover, input[type='checkbox'], input[type='checkbox']:hover { display:inline !important; }
+input[type='radio'] { margin:1px 0 0px 10px !important; position:relative; top:3px; width:auto !important; height:auto !important; }
+input[type='submit'], form.outer input[type='submit'], form.outer input[type='button'] { width:100%; }
+
+.outer .mceLayout { margin:-3px !important; margin-left:-4px !important; }
+.outer input, .outer .inputelement, .outer textarea, .outer .mceEditorIframe { text-align:left; border:none; border-left:1px solid #003399; margin:-3px; margin-left:-4px; position:relative; min-height:22px; padding-left:4px; padding-top:6px; font-style:italic; }
+.outer input:hover, .rcol .inputelement:hover, form.outer .inputelement:hover, .outer textarea:hover, .rcol .mceEditorIframe:hover { border:none; border-left:1px solid #FF0000 !important; /*margin:-3px; margin-left:-4px;*/ font-style:normal; }
+.outer .inputelement, .outer .inputelement:hover { padding:0px; height:28px; }
+.outer .inputelement .text { height:22px; padding-left:4px; padding-top:6px; }
+.outer .upload { background-color:#FFFFFF; border-width:0; }
+.rcol>input, .rcol>.inputelement, .rcol textarea, .rcol .mceEditorIframe { width:100%; }
+.rcol .mceEditorIframe { margin-left:-9px !important; padding:0; background-color:none; }
+.mceSelectList { margin-top:5px !important; height:13px !important; font-style:normal; }
+
+.header input, .header .inputelement { margin-top:3px; margin-right:3px; }
+
+.header>.inputelement, .header>td>.inputelement { background:none; }
+.header>.inputelement, .header>.inputelement:hover, .header>td>.inputelement, .header>td>.inputelement:hover { border-width:0 !important; }
+.header .inputelement .text { padding-top:1px; }
+
+/* Extra Inputs */
+
+.inputelement { cursor:pointer; }
+.inputelement .text { white-space:nowrap; overflow:hidden; }
+.inputlist { position:absolute; min-width:130px; left:0; margin:0px; margin-left:-1px; padding:0px; list-style:none; z-index:500; border:1px solid #003399; font-style:italic; text-align:center; }
+.inputlist li { padding:2px; padding-left:15px; padding-right:15px; background-color:#FBFBFB; opacity:0.98; }
+.inputlist li:first-child { padding-top:10px; }
+.inputlist li:last-child { padding-bottom:10px; }
+.inputlist .selected { background-color:#FFFFFF; font-style:normal; border-left:1px solid #CC0000; margin-left:-1px; border-right:1px solid #CC0000; margin-right:-1px; }
+input.light, textarea.light { border:1px solid #999999; }
+
+/* Links */
+
+a, .link { text-decoration:underline; color:#666666; font-style:normal; }
+a:hover { text-decoration:overline; font-style:normal; }
+a.hover, a:hover.hover { text-decoration:none; }
+td.hover a { display:block; min-height:18px; }
+:focus { outline:none; } /* Remove that stupid dotted border many browsers draw around elements with focus... */
+a:focus { font-style:italic; }
+a:hover, .lbtn:hover, .link:hover, .acdn .title:hover { cursor:pointer !important;  }
+a:hover, .link:hover, .acdn .title:hover { color:#FF9966; }
+
+.lbar { background-color:#FCFCFC; border:1px solid #DDDDDD; color:#333333; text-align:center; padding:4px; -moz-border-radius:5px; -webkit-border-radius:5px; }
+.lbar a, .lbtn { color:#000000; text-decoration:none; padding:4px; white-space:nowrap; }
+.lbar a { margin-right:4px; }
+.lbtn.down, .lbtn:hover { background-color:#FFFFFF; }
+.lbar a:hover, .lbar .down, .lbar .down:hover { background-color:#FFFFFF; border-left:1px #DDDDDD solid; border-right:1px #DDDDDD solid; padding-left:3px; text-decoration:none; padding-right:3px; }
+.lbar .down { font-weight:bold; }
+.lbar img, .footer img { margin:-3px; margin-right:3px; }
+.lbar .inputelement { margin-top:-4px; border:none; height:23px !important; line-height:23px !important; background-color:none; }
+.lbar .lflt, .lbar .rflt { padding-top:0; }
+
+.lbtn { display:inline-block; margin:2px; }
+.lbtn, input[type='submit'], .acdn>.title { text-align:center; line-height:20px; height:20px; border:1px solid #999999; background-color:#FAFAFA; color:#333333; padding:0 10px; -moz-border-radius:5px; -webkit-border-radius:5px; }
+.lbtn:hover, a:hover .lbtn, input[type='submit']:hover { background-color:#FFFFFF; color:#FF9966; text-decoration:none; cursor:pointer; border:1px solid #999999 !important; }
+.lbtn:before, .button:before, .acdn .title:before { content:"» "; }
+.back:before { content:"« "; }
+a.bold, .lbtn.bold, .acdn .title, input[type='submit'].bold, input[type='submit'].bold:hover { display:block; height:30px !important; line-height:30px !important; font-weight:bold; margin-top:3px; margin-bottom:3px; }
+.linkBox, .linkBox:hover, .linkBlock, .linkBlock:hover { cursor:pointer; color:inherit; text-decoration:none; }
+.llst, .llst a,.lbtn { text-align:center; }
+.llst img { vertical-align:text-top; float:left; }
+.llst ul, .llst ol { margin-left:-20px }
+.llst li>a { text-align:left; }
+.llst li>a, .llst tr>td>a, .llst>a { text-decoration:none; display:block; padding:3px; }
+.llst li>a:hover, .llst tr>td>a:hover, .llst>a:hover { /*background-color:#FFFFFF;*/ border:1px solid #999999; padding:2px; }
+.llst .down { background-color:#F1F1F1; border:1px solid #999999; padding:2px; }
+.llst li>.desc { margin-top:3px; }
+.llst .l2a { width:48%; float:left; }
+.llst .l2b { width:48%; float:right; }
+.lbtns { text-align:center; }
+.lbtns img { padding:1px; }
+.lbtns img:hover { background-color:#FFFFFF; border:1px solid #999999; padding:0; }
+
+/* Paragraph Formatting */
+
+.section, .sect { padding-left:30px; text-align:left; padding-bottom:20px; }
+.section>.title, .sect .title { height:100px; margin-left:-25px; line-height:32px; padding-left:10px; font-size:15px; font-weight:bold; margin-bottom:-60px; }
+.section .sub>.title, .sect .sub>.title { margin-left:-10px; margin-top:20px; }
+
+/* Auto Hiding Elements */
+
+.hoverTainer { display:inline; float:left; }
+.hoverTainer .trigger { display:block; }
+.hoverTainer .hoverBox { display:none; }
+a:hover>.hoverBox, .hoverTainer:hover .hoverBox { display:block; position:absolute; width:180px; margin-left:-100px; }
+.hoverBox .header { margin:-10px; margin-bottom:10px; }
+.hideShow { color:#333333; }
+.hideShow .title { text-align:center; font-weight:normal; background-color:#F1F1F1; border:1px solid #999999; padding:1px; display:block; text-decoration:none; }
+.hideShow .content { border:1px solid #999999; border-top:0; }
+.hideShow .closed { display:none; }
+.jumpLink .content { position:absolute; display:none; }
+.jumpLink:hover .content { display:block; }
+
+/* Paragraph Formatting */
+
+.header { margin-top:5px; }
+.content, .hoverBox { border:1px solid #999999; border-top:none; background-color:#FAFAFA; padding:10px; padding-bottom:5px; }
+.dull { color:#777777; font-size:0.9em; }
+
+/* White Space */
+
+.slender, .slim { width:80%; margin:auto; }
+.slim { width:auto !important; }
+.slender { max-width:700px; }
+.slst>li, .slst>a { margin-bottom:20px; }
+.sub, .acdn .content { margin-left:10px; margin-right:10px; }
+
+/* Alerts */
+
+.ebox, .etxt, .nbox, .mbox { margin:20px; padding:20px;  background-color:#006699; border:1px solid #999999; color:#FFFFFF; text-align:center; }
+.etxt, .dtxt { margin:0; padding:5px; }
+.dtxt { background-color:#FF0000; color:#FFFFFF; text-align:center; }
+.mbox { background-color:#F9F9F9; color:#666666; text-align:center; border:1px dashed #333333; }
+.nbox { background-color:#F2F2F2; color:#000000; }
+.ebox .title, .nbox .title { margin-left:-20px; margin-right:-20px; margin-top:-20px; margin-bottom:20px; padding:5px; font-weight:bold; font-size:12px; background-color:#0274A1; color:#FFFFFF; }
+.mbox .title { margin:-14px; margin-bottom:3px; color:#FFFFFF; padding:3px; font-weight:bold; background-color:#006699; border:2px solid #000000; }
+.ebox a, .ebox li a, .ebox form.outer > div { color:#FFFFFF; }

@@ -1,0 +1,195 @@
+<?
+setPageConst('title','Cybernetics');
+
+setPage('
+<style type="text/css">
+
+</style>
+','head');
+
+setPage('
+	
+	<h3>Cybernetics:</h3>
+	<i>Currently providing digital media format conversion - soon to include automated tools for ip tracing, dns server lookups, etc...</i>
+'.pFunc('columns','','
+		
+	<!-- Media Convert Form -->
+	<STYLE>
+	.mediaconvert { font : 10px geneva, verdana, arial, sans-serif; color: #000000; margin:0px; }
+	a.mediaconvert { font : 10px geneva, verdana, arial, sans-serif; color: #000000; margin:0px; }
+	a.mediaconvert2 { font : bold 14px geneva, verdana, arial, sans-serif; color: #0000FF; margin:0px; text-transform:none; }
+	.mediaconvertbt { border : 1px solid #808080; font : 10px geneva, verdana, arial, sans-serif; margin:0px; }
+	.texteOpt { font : 10px geneva, verdana, arial, sans-serif; color: #000000; margin:0px; }
+	</STYLE>
+	<script type="text/javascript" src="http://www.media-convert.com/js/srv.php"></script>
+	<script type="text/javascript" src="http://www.media-convert.com/p_js/exten.js"></script>
+	<script type="text/javascript" src="http://www.media-convert.com/p_js/extdef.js"></script>
+	<script type="text/javascript" src="http://www.media-convert.com/js/jsen.js"></script>
+	<script type="text/javascript" src="http://www.media-convert.com/js/js1.js"></script>
+	<script type="text/javascript" src="http://www.media-convert.com/p_js/preset2.js"></script>
+	<script type="text/javascript" src="http://www.media-convert.com/p_js/p_intype.js"></script>
+	<script type="text/javascript" src="http://www.media-convert.com/p_js/p_outtype.js"></script>
+	<script type="text/javascript" src="http://www.media-convert.com/p_js/p_js2.js"></script>
+	
+	<table cellspacing=0 cellpadding=4 align=center style="border: 1px solid #808080" bgcolor="#FAFAFA"><tr><td>
+	<form target="tfrm"  enctype="multipart/form-data" name=formmc method=post action=\'\'>
+	<!-- PARTENER ID --><input type=hidden name=part value="1260">
+	<input type=hidden name=rec value=0><input type=hidden name=sid value="">
+	<table cellpadding=3 cellspacing=0 border=0 width=100%>
+	<tr>
+		<td><center><a class=mediaconvert2 href="http://media-convert.com">FREE ON-LINE CONVERSION</a></center></td>
+	</tr>
+	<tr>
+	<td>
+	<span class=mediaconvert><b>SELECT SOURCE <input onchange=\'if (this.checked==true) { formmc.urlin.disabled=false; formmc.fichier.disabled=true; }\' value=1 checked type=radio name=inputmode> URL <input value=2 onchange=\'if (this.checked==true) { formmc.urlin.disabled=true; formmc.fichier.disabled=false; }\' type=radio name=inputmode>FILE<br/></b></span>
+	</td>
+	</tr>
+	<tr>
+	<td>
+	<input onchange=\'checkurlext(formmc,document);setvp(formmc);\' class=mediaconvert size=64 type=text name=urlin value=\'http://\'><br/>
+	</td>
+	</tr>
+	<tr>
+	<td>
+	<input disabled onChange="testchamps2(document.formmc);setoptions(formmc.format2,formmc.option1,formmc.format1,formmc,document);setvp(formmc);" class=mediaconvert size=48 type=file name="fichier" enctype="multipart/form-data">
+	</td>
+	</tr>
+	<tr>
+	<td>
+	
+	<table>
+	<tr>
+	<td><span class=mediaconvert><b>INPUT</b></span></td>
+	<td><select class=mediaconvert name="format1" onChange="javascript:format1change(formmc,document);setvp(formmc);"><option value=0>AUTODETECT</option></select></td>
+	</tr>
+	<tr>
+	<td><span class=mediaconvert><b>OUTPUT</b></span></td>
+	<td><select class=mediaconvert onchange="setoptions(this,formmc.option1,formmc.format1,formmc,document);setvp(formmc);" name=format2></select></td>
+	</tr>
+	<tr><td></td><td><div id="vp"></div></td></tr>
+	</table>
+	
+	</td>
+	</tr>
+	<tr>
+	<td>
+		<div id="homeoptions"></div>
+	</td>
+	</tr>
+	<tr>
+	<td>
+		<input type=checkbox name=accept value=1><a class=mediaconvert target="_blank" href="http://media-convert.com/convert/#conditions">I accept the terms</a> 
+		<input type=button class=mediaconvertbt onClick="javascript:if (p_valconv2(formmc)) { p_startupload(formmc,\'en\'); }" name=Ok value=\'GO !\'>
+		<input type=hidden name=pg value=envoi>
+	</td>
+	</tr>
+	
+	<tr><td>
+	<div id=\'pgbar\'></div>
+	</td></tr>
+	</table>
+	</form>
+	<iframe id="frm" name="tfrm" frameborder=0 style="display:none;"></iframe>
+	</td></tr></table>
+	
+	<script language="JavaScript" type="text/javascript">
+	<!--
+	p_init();
+	//-->
+	</script>
+	
+	
+	<!-- End Media Convert Form -->
+
+','
+		
+	<!-- Media Convert Form -->
+	<STYLE>
+	.mediaconvert { font : 10px geneva, verdana, arial, sans-serif; color: #000000; margin:0px; }
+	a.mediaconvert { font : 10px geneva, verdana, arial, sans-serif; color: #000000; margin:0px; }
+	a.mediaconvert2 { font : bold 14px geneva, verdana, arial, sans-serif; color: #0000FF; margin:0px; text-transform:none; }
+	.mediaconvertbt { border : 1px solid #808080; font : 10px geneva, verdana, arial, sans-serif; margin:0px; }
+	.texteOpt { font : 10px geneva, verdana, arial, sans-serif; color: #000000; margin:0px; }
+	</STYLE>
+	<script type="text/javascript" src="http://www.media-convert.com/p_js/srv_idoc.php"></script>
+	<script type="text/javascript" src="http://www.media-convert.com/p_js/exten_idoc.js"></script>
+	<script type="text/javascript" src="http://www.media-convert.com/p_js/extdef_idoc.js"></script>
+	<script type="text/javascript" src="http://www.media-convert.com/js/jsen.js"></script>
+	<script type="text/javascript" src="http://www.media-convert.com/js/js1.js"></script>
+	<script type="text/javascript" src="http://www.media-convert.com/p_js/p_intype_idoc.js"></script>
+	<script type="text/javascript" src="http://www.media-convert.com/p_js/p_outtype_idoc.js"></script>
+	<script type="text/javascript" src="http://www.media-convert.com/p_js/p_js2.js"></script>
+	
+	<table cellspacing=0 cellpadding=4 align=center style="border: 1px solid #808080" bgcolor="#FAFAFA"><tr><td>
+	<form target="tfrm"  enctype="multipart/form-data" name=formmc method=post action=\'\'>
+	<!-- PARTENER ID --><input type=hidden name=part value="1260">
+	<input type=hidden name=rec value=0><input type=hidden name=sid value="">
+	<table cellpadding=3 cellspacing=0 border=0 width=100%>
+	<tr>
+		<td><center><a class=mediaconvert2 href="http://media-convert.com">FREE ON-LINE CONVERSION</a></center></td>
+	</tr>
+	<tr>
+	<td>
+	<span class=mediaconvert><b>SELECT SOURCE <input onchange=\'if (this.checked==true) { formmc.urlin.disabled=false; formmc.fichier.disabled=true; }\' value=1 checked type=radio name=inputmode> URL <input value=2 onchange=\'if (this.checked==true) { formmc.urlin.disabled=true; formmc.fichier.disabled=false; }\' type=radio name=inputmode>FILE<br/></b></span>
+	</td>
+	</tr>
+	<tr>
+	<td>
+	<input onchange=\'checkurlext(formmc,document);setvp(formmc);\' class=mediaconvert size=64 type=text name=urlin value=\'http://\'><br/>
+	</td>
+	</tr>
+	<tr>
+	<td>
+	<input disabled onChange="testchamps2(document.formmc);setoptions(formmc.format2,formmc.option1,formmc.format1,formmc,document);setvp(formmc);" class=mediaconvert size=48 type=file name="fichier" enctype="multipart/form-data">
+	</td>
+	</tr>
+	<tr>
+	<td>
+	
+	<table>
+	<tr>
+	<td><span class=mediaconvert><b>INPUT</b></span></td>
+	<td><select class=mediaconvert name="format1" onChange="javascript:format1change(formmc,document);setvp(formmc);"><option value=0>AUTODETECT</option></select></td>
+	</tr>
+	<tr>
+	<td><span class=mediaconvert><b>OUTPUT</b></span></td>
+	<td><select class=mediaconvert onchange="setoptions(this,formmc.option1,formmc.format1,formmc,document);setvp(formmc);" name=format2></select></td>
+	</tr>
+	<tr><td></td><td><div id="vp"></div></td></tr>
+	</table>
+	
+	</td>
+	</tr>
+	<tr>
+	<td>
+		<div id="homeoptions"></div>
+	</td>
+	</tr>
+	<tr>
+	<td>
+		<input type=checkbox name=accept value=1><a class=mediaconvert target="_blank" href="http://media-convert.com/convert/#conditions">I accept the terms</a> 
+		<input type=button class=mediaconvertbt onClick="javascript:if (p_valconv2(formmc)) { p_startupload(formmc,\'en\'); }" name=Ok value=\'GO !\'>
+		<input type=hidden name=pg value=envoi>
+	</td>
+	</tr>
+	
+	<tr><td>
+	<div id=\'pgbar\'></div>
+	</td></tr>
+	</table>
+	</form>
+	<iframe id="frm" name="tfrm" frameborder=0 style="display:none;"></iframe>
+	</td></tr></table>
+	
+	<script language="JavaScript" type="text/javascript">
+	<!--
+	p_init();
+	//-->
+	</script>
+	
+	
+	<!-- End Media Convert Form -->
+
+'));
+
+?>

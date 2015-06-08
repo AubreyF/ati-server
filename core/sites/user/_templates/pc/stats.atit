@@ -1,0 +1,367 @@
+<?
+if(!$_REQUEST['mode'] || $_REQUEST['mode'] == 'analyzer') {
+	$_links['Summary'] = '#summary';
+	$_links['Urls'] = '#urls';
+	//$_links['Errors'] = '#errors';
+	$_links['Visitors'] = '#visitors';
+	$_links['Hits'] = '#hits';
+}
+else if($_REQUEST['mode'] == 'comparison') {
+	$_links['Monthly'] = '#monthly';
+	$_links['Daily'] = '#daily';
+}
+?>
+
+
+
+<form id="statsForm" name="statsForm" method="post" action="stats">
+	<?=pFuncStart()?>
+	
+	<script type="text/javascript">
+	<!--
+	function toggleCriteria(){
+		document.statsForm.submit();
+		/*
+		if(document.getElementById("mode").value == "analyzer") {
+			document.getElementById("linkBar").style.display="block";
+			document.getElementById("dateUrl").style.display="block";
+		}
+		else if(document.getElementById("mode").value == "comparison") {
+			document.getElementById("linkBar").style.display="none";
+			document.getElementById("dateUrl").style.display="block";
+		}
+		else if(document.getElementById("mode").value == "custom") {
+			document.getElementById("linkBar").style.display="none";
+			document.getElementById("dateUrl").style.display="none";
+		}
+				alert(document.getElementById("mode").value);	
+		*/
+	}
+	//-->
+	</script>
+
+	<table class="outer">
+	<tr>
+		<td class="rcol"><b>Mode:</b></td>
+		<td align="left" class="lcol">
+		<input id="mode" name="mode" type="radio" value="analyzer" onClick="toggleCriteria();"<? if(!$_REQUEST['mode'] || $_REQUEST['mode'] == 'analyzer') echo 'checked';?> /> Analyzer
+		<input id="mode" name="mode" type="radio" value="comparison" onClick="toggleCriteria();"<? if($_REQUEST['mode'] == 'comparison') echo 'checked';?> /> Comparison
+		<input id="mode" name="mode" type="radio" value="user" onClick="toggleCriteria();"<? if($_REQUEST['mode'] == 'user') echo 'checked';?> /> User
+		</td>
+		<? if($_REQUEST['mode'] == 'user') { ?>
+		<td class="rcol"><b>User:</b></td>
+		<td align="left" class="lcol">
+		<input name="user" id="user" type="text" size="20" value="<?=$_REQUEST['user']?>" />
+		</td>
+		<? } else { ?>
+		<td class="rcol"><b>File Filter:</b></td>
+		<td align="left" class="lcol">
+		<input name="url" id="url" type="text" size="20" value="<?=$_REQUEST['url']?>" />
+		</td>
+		<? } ?>
+	</tr>
+	
+	
+	<tr id="dateUrl">
+	<td class="rcol"><span style="float:right;">From:</span><br /><b>Timeframe:</b><br /><span style="float:right;">To:</span></td>
+	<td align="left" class="lcol">
+	
+	<select onChange="autoDate(this.selectedIndex,'ftime');">
+	  <option>Automatic</option>
+	  <option>Today</option>
+	  <option>Yesterday</option>
+	  <option>One Week Ago</option>
+	  <option>One Month Ago</option>
+	  <option>This Month</option>
+	  <option>Last Month</option>
+	</select>
+	<input name="ftime" id="ftime" type="text" size="8" value="<?=$_REQUEST['ftime']?>" />
+	<br /><br />
+	<select onChange="autoDate(this.selectedIndex,'ttime');">
+	  <option>Automatic</option>
+	  <option>Today</option>
+	  <option>Yesterday</option>
+	  <option>One Week Ago</option>
+	  <option>One Month Ago</option>
+	  <option>This Month</option>
+	  <option>Last Month</option>
+	</select>
+	<input name="ttime" id="ttime" type="text" size="8" value="<?=$_REQUEST['ttime']?>" /></td>
+	
+	<script type="text/javascript">
+	<!--
+	function autoDate(val,id) {
+		if(val == 1) {
+			document.getElementById(id).value = '<?=date("Ymd")?>';
+		}
+		else if(val == 2) {
+			document.getElementById(id).value = '<?=date("Ymd",strtotime("-1 day"))?>';
+		}
+		else if(val == 3) {
+			document.getElementById(id).value = '<?=date("Ymd",strtotime("-1 week"))?>';
+		}
+		else if(val == 4) {
+			document.getElementById(id).value = '<?=date("Ymd",strtotime("-1 month"))?>';
+		}
+		else if(val == 5) {
+			document.getElementById(id).value = '<?=date("Ymd",strtotime("-".(date("d")-1)." days"))?>';
+		}
+		else if(val == 6) {
+			document.getElementById(id).value = '<?=date("Ymd",strtotime("-1 month -".(date("d")-1)." days"))?>';
+		}
+	
+	}
+	//-->
+	</script>
+	<td class="rcol"><b>Domain:</b></td>
+	<td align="left" class="lcol">
+	<?
+		if($_SESSION['userAdminPrivleges'] == '*') {
+			foreach($GLOBALS['preferences']['addonDomains'] as $domain=>$temp) {
+				if($_REQUEST['domains'] && strpos($_REQUEST['domains'],$domain) !== false) $sel = ' selected';
+				else $sel = '';
+				$domains .= '<option value="'.$domain.'"'.$sel.'>'.$domain.'</option>';
+			}
+		}
+		else {
+			preg_match('/stats=([^;]*)/',$_SESSION['userAdminPrivleges'], $temp);
+			foreach(explode(',',$temp[1]) as $key=>$domain) {
+				if($_REQUEST['domains'] && strpos($_REQUEST['domains'],$domain) !== false) $sel = ' selected';
+				else $sel = '';
+				$domains .= '<option value="'.$domain.'"'.$sel.'>'.$domain.'</option>';
+			}
+		}
+	?>
+	
+	<select name="domains" id="domains" size="3" style="float:left;"><?=$domains?></select>
+	</td>
+	</tr>
+	</table>
+	<span class="small">(All numbers are estimated. Browser Cashes, Crawlers, Dynamic IP Addresses, and Web Accelerators make perfect statistics impossible :-)</span>
+	<br /><br />
+	 
+	<div class="boldBorder"><input class="boldButton" type="submit" name="Submit" value="Update Statistics" /></div>
+	
+	<p><? if($_links) echo pFunc('lbar',$_links)?></p>
+	
+	<noscript><h2>Your browser does not support JavaScript.<br />You will need to enable it to enjoy the full benifits of the statistical analyzer</h2></noscript>
+		
+	<?=pFuncEnd('block','Criteria')?>
+	
+	<? if($_errors) echo pFunc('block','Warnings','<div style="max-height:4em; overflow:auto;">'.$_errors.'</div>'); ?>
+	  
+	<? if(!$_REQUEST['mode'] || $_REQUEST['mode'] == 'analyzer') { ?>
+	
+	<a name="summary" class="anchor"></a>
+	<? if(count($_hits['summary'])) { echo pFuncStart(); ?>
+		
+	<table width="100%" border="0">
+	<tr><td valign="bottom" width="180">
+		<?=func(_mod.'graphs','barGraph',$_hits['summary'])?>
+	</td>
+	<td>
+		<div class="even bar1">Hits: <b><?=$_hits['summary']['hits']?></b></b></div>
+		<div class="odd bar2">Page Hits: <b><?=$_hits['summary']['pages']?></b></div>
+		<div class="even bar3">Pages: <b><?=$_hits['summary']['pagesSeperate']?></b></div>
+		<div class="odd bar4">Visitors: <b><?=$_hits['summary']['visitors']?></b> Ips, <b><? echo ($_hits['users']['memberHits'] + $_hits['users']['guestHits']); ?></b> Users (<b><?=$_hits['users']['memberHits']?></b> Members,  <b><?=$_hits['users']['guestHits']?></b> Guests)</div>
+	</td></tr>
+	</table>
+
+	<? echo pFuncEnd('block','Summary'); } ?>
+	
+	<a name="urls" class="anchor"></a>
+	<? if($_hits['urls']) { echo pFuncStart(); ?>
+		<?
+		foreach ($_hits['urls'] as $domain=>$temp) {
+			//Paginate and Sort
+			$pagination = func(_mod.'pagination','pagination',$temp['hits'],25,'urlspage');
+			$counter = 0;
+			$t=array();
+			foreach ($temp['pages'] as $k => $r) $t[$k] = $r['views'];
+			array_multisort($t, SORT_DESC, $temp['pages']);
+		?>
+		<div class="header"><b>Showing <?=$temp['hits']?> pages total for url <?=$domain?>:</b></div>
+		<?	
+		?>
+		<?=$pagination['string']?>
+		<?	
+			foreach ($temp['pages'] as $path=>$temp2) {
+				$counter++;
+				if($counter < $pagination['offset']) continue;
+				if($counter > $pagination['limit']) break;
+				(($counter % 2) == 0) ? $class = 'odd' : $class = 'even';
+		?>
+				<div class="<?=$class?>" style="font-size:small; overflow:auto;"><?=$path?>: <b><?=$temp2['views']?> views</b></div>
+		<?	
+			}
+		?>
+		<?=$pagination['string']?>
+		<?
+		}
+		?>
+	<? echo pFuncEnd('block','Urls'); } ?>
+	
+	<a name="visitors" class="anchor"></a>
+	<? if($_hits['users']['members'] || $_hits['users']['guests'] || $_hits['users']['ips']) { echo pFuncStart(); ?>
+		
+		<b>Showing <?=$_hits['users']['memberHits']?> members total:</b>
+		<?	
+		$pagination = func(_mod.'pagination','pagination',$_hits['users']['memberHits'],25,'memberspage');
+		?>
+		<?=$pagination['string']?>
+		<table class="outer">
+		<tr>
+			<th>User Agent (last used) - Session Cookie</th>
+			<th>IP (last Used)</th>
+			<th>Files/Pages</th>
+			<th>Date</th>
+		</tr>
+		<?
+		$counter = 0;
+		foreach ($_hits['users']['members'] as $key=>$temp) {
+				$counter = $counter + 1;
+				(($counter % 2) == 0) ? $class = 'odd' : $class = 'even';
+				if($counter > $pagination['offset'] && $counter < $pagination['limit']) {
+		?>
+		 <tr class="<?=$class?>">
+			<td><?=$temp['userAgent']?><br /><a href="/user/about-cookie-<?=$temp['userCookie']?>"><?=$temp['userCookie']?></a></td>
+			<td><?=$temp['userIp']?></td>
+			<td><?=$temp['fileHits']?> / <?=$temp['pageHits']?></td>
+			<td><?=$temp['lastDate']?></td>
+		  </tr>
+		<?
+			}
+		}
+		?>
+		</table>
+		
+		<b>Showing <?=$_hits['users']['guestHits']?> guests total:</b>
+		
+		<?	
+		$pagination = func(_mod.'pagination','pagination',$_hits['users']['guestHits'],25,'guestspage');
+		?>
+		<?=$pagination['string']?>
+		<table class="outer">
+		<tr>
+			<th>User Agent (last used) - Session Cookie</th>
+			<th>IP (last Used)</th>
+			<th>Files/Pages</th>
+			<th>Date</th>
+		</tr>
+		<?
+		$counter = 0;
+		foreach ($_hits['users']['guests'] as $key=>$temp) {
+				$counter = $counter + 1;
+				(($counter % 2) == 0) ? $class = 'odd' : $class = 'even';
+				if($counter > $pagination['offset'] && $counter < $pagination['limit']) {
+		?>
+		 <tr class="<?=$class?>">
+			<td><?=$temp['userAgent']?><br /><a href="/user/about-cookie-<?=$temp['userCookie']?>"><?=$temp['userCookie']?></a></td>
+			<td><?=$temp['userIp']?></td>
+			<td><?=$temp['fileHits']?> / <?=$temp['pageHits']?></td>
+			<td><?=$temp['lastDate']?></td>
+		  </tr>
+		<?
+			}
+		}
+		?>
+		</table>
+		
+		<b>Showing <?=$_hits['users']['ipHits']?> ips total:</b>
+		
+		<?	
+		$pagination = func(_mod.'pagination','pagination',$_hits['users']['ipHits'],25,'ipspage');
+		?>
+		<?=$pagination['string']?>
+		<table class="outer">
+		<tr>
+			<th>User Agent (last used) - Session Cookie (last Used)</th>
+			<th>Ip</th>
+			<th>Files/Pages</th>
+			<th>Date</th>
+		</tr>
+		<?
+		$counter = 0;
+		foreach ($_hits['users']['ips'] as $key=>$temp) {
+				$counter = $counter + 1;
+				(($counter % 2) == 0) ? $class = 'odd' : $class = 'even';
+				if($counter > $pagination['offset'] && $counter < $pagination['limit']) {
+		?>
+		 <tr class="<?=$class?>">
+			<td><?=$temp['userAgent']?><br /><a href="/user/about-cookie-<?=$temp['userCookie']?>"><?=$temp['userCookie']?></a></td>
+			<td><?=$temp['userIp']?></td>
+			<td><?=$temp['fileHits']?> / <?=$temp['pageHits']?></td>
+			<td><?=$temp['lastDate']?></td>
+		  </tr>
+		<?
+			}
+		}
+		?>
+		</table>
+	
+	<? echo pFuncEnd('block','Visitors'); } ?>
+	
+	<a name="referrers" class="anchor"></a>
+	<? if($_hits['referrers']) { echo pFuncStart(); ?>
+		
+		<b>Showing <?=$_hits['summary']['hits']?> hits total:</b>
+		<?=$_hits['pagination']['referrers']['string']?>
+		<table class="outer">
+		<tr>
+			<th>Date - Duration</th>
+			<th>Requested File - Session Cookie</th>
+		</tr>
+		<?
+		$counter = 0;
+		foreach ($_hits['visits'] as $key=>$temp) {
+			$counter = $counter + 1;
+			(($counter % 2) == 0) ? $class = 'odd' : $class = 'even';
+			if($lastTime) $duration = dateOffset($temp['requestTime'] - $lastTime);
+		?>
+		 <tr class="<?=$class?>">
+			<td><?=doDate($temp['requestTime'],'long')?><br /><?=$duration?></td>
+			<td><div style="overflow:auto;"><b><?=$temp['requestUrl']?></b><br /><?=$temp['userCookie']?></div></td>
+		  </tr>
+		<?
+			$lastTime = $temp['requestTime'];
+		}
+		?>
+		</table>
+	
+	<? echo pFuncEnd('block','Referrers'); } ?>
+	
+	<? } else if($_REQUEST['mode'] == 'comparison') { ?>
+		
+	<a name="monthly" class="anchor"></a>
+	<?=pFuncStart()?>
+	
+	<? foreach ($_hits['monthlyComparison'] as $date=>$temp) { ?>
+		<div style="width:150px; height:200px; float:left;">
+		<?=func(_mod.'graphs','barGraph',$temp,100,$_hits['monthlyComparisonMax'])?>
+		<div class="header"><?=$date?>:</div>
+		<div class="odd bar1">Visitors: <b><?=$temp['visitors']?></b></div>
+		<div class="even bar2">Page Hits: <b><?=$temp['pages']?></b></div>
+		<div class="odd bar3">Pages: <b><?=$temp['seperatePages']?></b></div>
+		</div>
+	<? } ?>
+	<br clear="all" /><br />
+	<?=pFuncEnd('block','Monthly Comparison:')?>
+	
+	<a name="daily" class="anchor"></a>
+	<?=pFuncStart()?>
+	
+	<? foreach ($_hits['dailyComparison'] as $date=>$temp) { ?>
+		<div style="height:100px; float:left; font-size:10px; text-align:center;">
+		<div class="header"><?=$date?>:</div>
+		<?=func(_mod.'graphs','barGraph',$temp,60,$_hits['dailyComparisonMax'],'small',true)?>
+		</div>
+	<? } ?>
+	
+	<br clear="all" />
+	<span class="bar1">Seperate Visitors</span> / <span class="bar2">Pages</span> / <span class="bar3">Seperate Pages</span>
+		
+	<?=pFuncEnd('block','Daily Comparison:')?>
+	
+	<? } ?>
+	
+</form>

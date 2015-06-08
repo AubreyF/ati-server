@@ -1,0 +1,2 @@
+'network'=>'atinetwork',
+'database'=>array('sitedb'=>'safarri','userFields' => 'userId,safarriLastCategory,safarriStyle,safarriPurchaseMethods'),

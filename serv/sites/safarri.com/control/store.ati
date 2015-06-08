@@ -1,0 +1,297 @@
+<?
+loginCheck('<b>Please login to access your control panel.</b>','end');
+
+if($_SESSION['safarriStore']['id'] && ($_SESSION['safarriStore']['usId'] != $_SESSION['userId'] && !isAdmin())) redirect('/index','You do not have administrative permissions for store # '.$_REQUEST['id']);
+
+if($_SESSION['safarriStore']['id'] && !$_POST) {
+		$_POST['name'] = $_SESSION['safarriStore']['name'];
+		$_POST['sname'] = $_SESSION['safarriStore']['link'];
+		$_POST['description'] = $_SESSION['safarriStore']['description'];
+		$_POST['hometext'] = br2nill($_SESSION['safarriStore']['homeText']);
+		$_POST['adsensecode'] = $_SESSION['safarriStore']['adsenseCode'];
+}
+
+if($_REQUEST['submit']) {
+	
+	if($_REQUEST['addcontributor']) {
+		if($_REQUEST['addcontributor'] == $_SESSION['userName']) $_errors = '<li>You are already a contributor!</li>';
+		else {
+			if(!$_SERVER['serverdb']->getOne("SELECT userId FROM members WHERE userName = '{$_REQUEST['addcontributor']}'")) $_errors = '<li>The user you attempted to add does not exist!</li>';
+			else {
+				if ($_SERVER['db']->getOne("SELECT userName FROM store_contributors WHERE userName = '{$_REQUEST['addcontributor']}' AND storeId = '{$_REQUEST['id']}'")) $_errors = '<li>The contributor you attempted to add already exists!</li>';
+				else {
+					$_SERVER['db']->execute("INSERT INTO store_contributors (storeId,userName) VALUES ('{$_REQUEST['id']}','{$_REQUEST['addcontributor']}')");
+					
+					if($_SERVER['db']->errorMsg()) $_errors .= '<div class="ebox"><h4>There were errors adding contributor:</h4>'.$_SERVER['db']->errorMsg().'<p><em>Please Try Again</em></p></div>';
+					unset($_POST['addcontributor']);
+				}
+			}
+		}
+	}
+	
+	if($_REQUEST['remcontributor']) {
+		if($_REQUEST['remcontributor'] == $_SESSION['userName']) $_errors = '<li>You cannot remove yourself a contributor!</li>';
+		else {
+			if (!$_SERVER['db']->getOne("SELECT userName FROM store_contributors WHERE userName = '{$_REQUEST['remcontributor']}' AND storeId = '{$_REQUEST['id']}'")) $_errors = '<li>The contributor you attempted to remove does not exist!</li>';
+			else {
+				$_SERVER['db']->execute("DELETE FROM store_contributors WHERE userName = '{$_REQUEST['remcontributor']}' AND storeId = '{$_REQUEST['id']}'");
+
+				if($_SERVER['db']->errorMsg()) $_errors .= '<div class="ebox"><h4>There were errors removing contributor:</h4>'.$_SERVER['db']->errorMsg().'<p><em>Please Try Again</em></p></div>';
+				unset($_POST['remcontributor']);
+			}
+		}
+	}
+	
+	if(!$_POST['name']) $_errors .= "<li>You forgot to fill in your store's name!</li>";
+	$_POST['sname'] = preg_replace("/^\.^\-[\W]/i","",str_replace(array('www.','http://','https://'),'',strtolower($_POST['sname'])));
+	if(!$_POST['sname']) $_errors .= "<li>Your store needs a short name</li>";
+	else if($_SERVER['db']->getOne("SELECT id FROM stores WHERE link = '{$_POST['sname']}' AND id != '{$_SESSION['safarriStore']['id']}'")) $_errors .= "<li>There is already a store with the short name you specified!</li>";
+	else if($_POST['sname'] != $_SESSION['safarriStore']['link'] && strpos($_POST['sname'],'.') && !strpos(file_get_contents('http://'.$_POST['sname']),'atiserver::error#1509')) $_errors .= "<li>Your domain must be configured properly before it can be used!</li>";
+	if(!$_POST['description']) $_errors .= "<li>Your store needs a desription</li>";
+	if(!$_POST['hometext']) $_errors .= "<li>Your store needs some text for the home page!</li>";
+	
+	if($_FILES['logo']['size']) { //newly selected images overwrite
+		$image = func(_mod.'imageuploader','imageuploader','logo',1000,200);
+		if ($image == 1) 		$_errors .= "<li>You forgot to select an image file!<br /><em>(Please click the browse button)</em></li>";
+		else if ($image == 2) 	$_errors .= "<li>The logo file you selected was not an image!<br /><em>(Please select a different file)</em></li>";
+		else if ($image == 3) 	$_errors .= "<li>Errors were experienced while processing your logo!<br /><em>(Please try again)</em></li>";
+		else {
+			$_SESSION['safarriStore']['logo'] = $image;
+			$_SESSION['safarriStore']['logoSmall'] = func(_mod.'imageuploader','getThumbnailImageName',$image);
+		}
+	}
+	else if($_REQUEST['submit'] == 'Clear Logo') {
+		$_SESSION['safarriStore']['logo'] = '';
+		$_SESSION['safarriStore']['logoSmall'] = '';
+	}
+	
+	if($_POST['location']) {
+		$location = func(_mod.'location','getLocation',$_REQUEST['location']);
+		if(!$location) $errors .= "<li>Your Location could not be located!</li>";
+	}
+	
+	if($_POST['homeblock']) $_POST['homeblock'] = 1;
+	if($_POST['homeads']) $_POST['homeads'] = 1;
+	if($_POST['tellafriend']) $_POST['tellafriend'] = 1;
+	
+	if(!$_errors){
+		
+		dbReplace('site','stores',array(
+			'id'=> $_SESSION['safarriStore']['id'], 
+			'name'=> stripSlashes($_POST['name']),
+			'link'=> $_POST['sname'],
+			'description'=> stripSlashes($_POST['description']),
+			'homeText'=> stripSlashes($_POST['hometext']),
+			'startDate'=> $_SESSION['safarriStore']['startDate'],
+			'allowRegular'=> $_POST['allowregular'],
+			'allowAnonymous'=> $_POST['allowanonymous'],
+			'homeBlock'=> $_POST['homeblock'],
+			'homeAds'=> $_POST['homeads'],
+			'tellAFriend'=> $_POST['tellafriend'],
+			'usid'=> $_SESSION['userId'],
+			'lat'=> $location['latitude'], 
+			'lon'=> $location['longitude'],
+			'city'=> $location['city'], 
+			'state'=> $location['state'],
+			'adsenseCode'=> $_POST['adsensecode'],
+			'logo'=> $_SESSION['safarriStore']['logo'],
+			'logoSmall'=> $_SESSION['safarriStore']['logoSmall'],
+		));
+		
+		/*
+		$_SERVER['db']->replace('stores',array(		//insert ad into the database!
+		'id'=> $_SESSION['safarriStore']['id'], 
+		'name'=> stripSlashes($_POST['name']),
+		'link'=> $_POST['sname'],
+		'description'=> stripSlashes($_POST['description']),
+		'homeText'=> stripSlashes($_POST['hometext']),
+		'startDate'=> $_SESSION['safarriStore']['startDate'],
+		'allowRegular'=> $_POST['allowregular'],
+		'allowAnonymous'=> $_POST['allowanonymous'],
+		'homeBlock'=> $_POST['homeblock'],
+		'homeAds'=> $_POST['homeads'],
+		'tellAFriend'=> $_POST['tellafriend'],
+		'usid'=> $_SESSION['userId'],
+		'lat'=> $location['latitude'], 
+		'lon'=> $location['longitude'],
+		'city'=> $location['city'], 
+		'state'=> $location['state'],
+		'adsenseCode'=> $_POST['adsensecode'],
+		'logo'=> $_SESSION['safarriStore']['logo'],
+		'logoSmall'=> $_SESSION['safarriStore']['logoSmall']
+		),'id',$autoquote = true);
+		*/
+		
+		if($_SERVER['db']->errorMsg()) $message .= '<div class="ebox"><h4>There were errors modifying Your store:</h4>'.$_SERVER['db']->errorMsg().'<p><em>Please Try Again</em></p></div>';
+		else {			
+			if(strpos($_POST['sname'],'.')) {
+				$temp = $_POST['sname'];
+				
+				//Set Up ATIServer alias map
+				if($_POST['sname'] != $_SESSION['safarriStore']['link']) {
+					$temp2 = fopen(_root.'/serv/aliases/'.$_POST['sname'], 'w');
+					fwrite($temp2, SAFARRI);
+					fclose($temp2);
+				}
+			}
+			else $temp = $_POST['sname'].'.'.SAFARRI;
+			
+			//Add url to users "stats view" admin privileges
+			updateUserPrivileges('stats',$_SESSION['safarriStore']['link'],$temp);
+			
+			//Remove old file
+			if(strpos($_SESSION['safarriStore']['link'],'.') && $_POST['sname'] != $_SESSION['safarriStore']['link']) {
+				unlink(_root.'/serv/aliases/'.$_SESSION['safarriStore']['link']);
+			}
+			
+			if(!$_SESSION['safarriStore']['id']) redirect('http://'.$temp.'/control/store','Your store was inserted successfully!');
+			else redirect('http://'.$temp.'/control/store','Your store was updated successfully!');
+		}
+	}
+	else {
+		$message .= '<div class="ebox"><h4>There were errors with your submission:</h4><ul>'.$_errors.'</ul></div>';
+	}
+}
+
+if($_SESSION['safarriStore']['id']) {
+	if($_SESSION['safarriStore']['logoSmall']) $logo = '<img src="'.$_SESSION['safarriStore']['logoSmall'].'" alt="" /><br />';
+}
+else {
+	//$_SESSION['safarriStore']['homeBlock'] = true;
+	//$_SESSION['safarriStore']['homeAds'] = true;
+}
+
+$rs = $_SERVER['db']->execute("SELECT userName FROM store_contributors WHERE storeId = '{$_REQUEST['id']}'");
+if($rs) { while ($temp = $rs->FetchRow()) {
+	$activeContributors .= ', <a href="/user/about-name-'.encrypt($temp['userName'],'url').'">'.$temp['userName'].'</a>';
+} }
+
+if($_SESSION['safarriStore']['allowRegular'] == true || $_POST['allowregular'] == true) $allowRegular = ' selected';
+if($_SESSION['safarriStore']['allowAnonymous'] == true || $_POST['allowanonymous'] == true) $allowAnonymous = ' selected';
+
+if($_SESSION['safarriStore']['homeBlock'] == true || $_POST['homeblock'] == true) 	$homeBlock = ' checked';
+if($_SESSION['safarriStore']['homeAds'] == true || $_POST['homeads'] == true) 		$homeAds = ' checked';
+if($_SESSION['safarriStore']['tellAFriend'] == true || $_POST['tellafriend'] == true) 	$tellAFriend = ' checked';
+
+
+$return .= $message.'
+<form enctype="multipart/form-data" method="post">
+	<table class="outer">
+	  <tr>
+		<th colspan="2">Store Details</th>
+	  </tr>
+	  <tr>
+		<td class="lcol">Name:</td>
+		<td class="rcol"><input class="input" name="name" type="text" id="name" value="'.$_POST['name'].'"></td>
+	  </tr>
+	  <tr>
+		<td class="lcol"><a href="/tips-id-7" target="_help">>> Domain</a>:</td>
+		<td class="rcol"><input class="input" name="sname" type="text" id="sname" value="'.$_POST['sname'].'"></td>
+	  </tr>
+	  <!--<tr>
+		<td class="lcol">Logo:</td>
+		<td class="rcol">'.$logo.'<input name="logo" id="logo" type="file" value="" /><input name="submit" type="submit" value="Clear Logo"><br /><em>Max 200 X 1000 px</td>
+	  </tr>-->
+	  <tr>
+		<td class="lcol">Description:</td>
+		<td class="rcol"><input class="input" name="description" type="text" id="description" value="'.$_POST['description'].'" />
+	  </tr>
+	  <tr>
+		<td class="lcol">Home Text:</td>
+		<td class="rcol">
+		'.func(_mod.'textbox', 'textbox', 'hometext', $_POST['hometext']).'
+	  </tr>
+	  <tr>
+		<td colspan="2">
+		<div class="boldBorder"><input name="submit" type="submit" class="bold" value="Update Store"></div>
+		</td>
+	  </tr>
+	  <tr>
+		<th colspan="2">Selling Permissions:</th>
+	  </tr>
+	  <tr>
+		<td class="lcol">Members:</td> 
+		 <td class="rcol">
+		 <select name="allowregular" class="input">
+			 <option value="0">Only Myself, and Members on Access List May Post Items</option>
+			 <option value="1"'.$allowRegular.'>All Members May Post Items</option>
+		 </select>
+		 </td>
+	  </tr>
+	  <tr>
+		<td class="lcol">Guests:</td> 
+		 <td class="rcol">
+		 <select name="allowanonymous" class="input">
+			 <option value="0">Guests may not post items</option>
+			 <option value="1"'.$allowAnonymous.'>Guests may post items</option>
+		 </select>
+		 </td>
+	  </tr>
+	  <tr>
+		<th colspan="2">Member Access List:</th>
+	  </tr>
+	  <tr>
+		<td class="lcol">Add Member: </td>
+		<td class="rcol"><input class="input" name="addcontributor" type="text" id="addcontributor" value="'.$_POST['addcontributor'].'"></td>
+	  </tr>
+	  <tr>
+		<td class="lcol">Remove Member: <em></em></td>
+		<td class="rcol"><input class="input" name="remcontributor" type="text" id="remcontributor" value="'.$_POST['remcontributor'].'"></td>
+	  </tr>
+	  <tr>
+		<td class="lcol">Active:</td>
+		<td class="rcol">
+			<a href="/user/about-name-'.encrypt($_SESSION['userName'],'url').'">'.$_SESSION['userName'].' (me)</a>'.$activeContributors.'
+		</td>
+	  </tr>
+	  <tr>
+		<th colspan="2">Store Advertisements</th>
+	  </tr>
+	  <tr>
+		 <td class="lcol" rowspan="2">Adsense</td>
+		 <td class="desc">
+		 	To make money from advertisements on your store, you will need a Google Adsense account. 
+			<ol class="small">
+			<li>Visit <a href="http://www.google.com/adsense/" target="_blank">Google.com/adsense</a>.</li>
+				<li>Apply for an account.</li>
+				<li>Log in, and click on "My Account".</li>
+				<li>Scroll to "Property info", copy your "AdSense for Content" code, and paste it into the appropriate field on this page.</li>
+				<li>You will start making money on the ad clicks in your store!</li>
+			</ol>
+		 </td>
+	  </tr><tr>
+		<td class="rcol">
+			<input name="adsensecode" type="text" value="'.$_POST['adsensecode'].'">
+		</td>
+	  </tr>
+	  <tr>
+		<th colspan="2">Store Preferences</th>
+	  </tr>
+	  <tr>
+		 <td class="lcol"><input name="homeblock" type="checkbox"'.$homeBlock.'></td>
+		 <td class="rcol">Put a border around the home page text<br /><em>(Disable if you want to do a totally custom html home page)</em></td> 
+	  </tr>
+	  <tr>
+		 <td class="lcol"><input name="homeads" type="checkbox"'.$homeAds.'></td>
+		 <td class="rcol">Show random classifieds on the home page</td> 
+	  </tr>
+	  <!--<tr>
+		 <td class="lcol"><input name="tellafriend" type="checkbox"'.$tellAFriend.'></td>
+		 <td class="rcol">Add a "Tell a Friend" link to the linkbar</td> 
+	  </tr>-->
+	  <tr>
+		<td colspan="2">
+		<div class="boldBorder"><input name="submit" type="submit" class="bold" value="Update Store"></div>
+		</td>
+	  </tr>
+	</table>
+</form>';
+
+setPageConst('title',$_SESSION['userName'].'\'s Control Panel > Store');
+setPageConst('bct','<a href="/index">Home</a> > <a href="index">'.$_SESSION['userName'].'\'s Control Panel</a> > Store');
+
+setPageBlock('blockFancy','Control Panel > '.($_SESSION['safarriStore']['id'] ? 'Managing "'.$_SESSION['safarriStore']['name'].'"' : 'Creating a Store!'),
+	$return
+);
+
+?>

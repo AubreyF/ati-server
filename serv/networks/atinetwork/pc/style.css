@@ -1,0 +1,54 @@
+/********************************************************************/
+/*********************** NETWORK PC STYLE SHEET *********************/
+/********************************************************************/
+
+body { margin:0px; padding:0px; margin-top: 35px; }
+
+.ATITopBar { z-index:9999; position:fixed; top:0px; left:0px; right:0px; min-width:800px;  background:url("/_n/atinetwork/pc/img/nbbg.png") repeat-x; height:40px; line-height:30px; font-weight:bold; color:#000099; font-size:10px; font-family: verdana,tahoma,sans-serif; }
+.ATIMenu a, .ATIMenu li ul li ul li a, .ATIMenu li ul li ul li a:hover { text-decoration:none; color:#000099; font-weight:bold; }
+.guestLogin { font-style:italic; font-size:9px; width:160px; margin:auto; margin-top:10px; }
+
+.ATIMenu, .ATIMenu li { margin:0; padding:0; }
+.ATIMenu a { display:block; }
+.ATIMenu li { list-style: none; }
+.ATIMenu>li { float:left; }
+.ATIMenu>li>a { padding-left:10px; padding-right:10px; }
+.ATIMenu>li>a:hover { background-image:url("/_n/atinetwork/pc/img/nbh.png"); }
+.ATIMenu li ul { clear:both; padding:0; position:absolute; margin-left:-62px; }
+.ATIMenu>li>ul>li { height:30px; line-height:25px; vertical-align:middle; background-image:url("/_n/atinetwork/pc/img/nbst.png"); text-align:center; width:215px; }
+.ATIMenu li ul li, .ATIMenu li ul li a, .ATIMenu li ul li a:hover { color:#FFFFFF; }
+.ATIMenu>li>ul>li>ul { color:#000099; }
+.ATIMenu li ul li ul { /*position:absolute; top:30px; left:0; float:none; */ width:215px; margin-left:0px; background-image:url("/_n/atinetwork/pc/img/nbs.png"); background-position:bottom; padding-bottom:20px; font-size:10px; }
+.ATIMenu li ul li ul li { line-height:normal; width:183px; margin-left:16px; margin-right:21px; height:auto; float:none; }
+.ATIMenu li ul li ul li a, .ATIMenu li ul li ul li a:hover { position:relative; margin-top:10px; height:18px; line-height:18px; margin:0; }
+.ATIMenu li ul li ul li a:hover { background-image:url("/_n/atinetwork/pc/img/nbsh.png"); }
+.ATIMenu li ul { display:none; text-align:center; }
+.ATIMenu li:hover ul { display:block; }
+
+.ATIMenu .sep img { float:none; }
+.ATIMenu form input { font-size:10px; color:#FFFFFF; background-color:#0066CC; border-width:1px; }
+.ATIMenu form input:hover { background-color:#0066FF; }
+
+.ATINews { position:absolute; left:330px; right:330px; text-decoration:none; color:#FF0000; }
+
+#ATILogo { float:left; }
+#ATITools { right:220px; top:0; position:fixed; }
+#ATISettings { margin-right:158px; }
+#ATITools, #ATISettings { float:right; }
+#ATISettings>li>ul>li { background:url(/_n/atinetwork/pc/img/nbsettings.png); width:220px; text-align:center; color:#FFFFFF; }
+#ATISettings li ul ul { margin-left:25px; top:30px; padding-left: 4px; width:187px; }
+#ATISettings a { float:left; display:block; padding-top:5px; padding-left:6px; color:#999999; }
+#ATISettings a > img { margin-left:-5px; }
+#ATISettings a:hover, #ATISettings .down { margin:-1px; border:1px solid #999999; background:none; }
+#ATISettings .down, #ATISettings .down:hover { background:#FFFFFF; }
+#ATISettings div { margin-left:8px; }
+#ATISettings .sep { clear:both; margin-bottom:10px; margin-left:0px; color:#555555; height:18px; line-height:18px; width:183px; background-image:url("/_n/atinetwork/pc/img/nbsh.png"); }
+#ATISettings .theme { margin-left:10px; margin-bottom:50px; }
+#ATISettings .theme>a { height:25px; width:75px; }
+#ATISettings .lang>a { height:53px; width:50px; padding-left:5px; }
+#ATISettings .lbtn, #ATISettings .lbtn:hover { margin-left:12px; width:153px; margin-top:5px; margin-bottom:0px; padding:0; }
+#ATISettings li ul  { display:block; }
+#ATISettings li ul li ul  { display:none; }
+#ATISettings li:hover ul { display:block; }
+
+#nfooter { text-align:center; margin:auto; width:900px; }

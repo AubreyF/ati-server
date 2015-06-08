@@ -1,0 +1,21 @@
+<?
+
+setPageHeader('cache-control','public, max-age=86400');
+setPageHeader('Content-Type','application/json');
+
+//Ad List
+if($adBox['ads']) foreach($adBox['ads'] as $key=>$ad) if($ad) $adBox['content'] .= ',{"title":"'.addslashes($ad['title']).'","price":"'.$ad['price'].'","date":"'.($ad['dateSeconds'] ? date('r',$ad['dateSeconds']) : $ad['date']).'","priceType":"'.$ad['priceType'].'","url":"'.addslashes($ad['url']).'","description":"'.addslashes(nl2nill($ad['description'])).'","pic":"'.$ad['pic'].'","thumb":"'.$ad['thumb'].'","location":"'.addslashes($ad['location']).'","specs":"'.addslashes($ad['specifics']).'","provider":"'.$ad['aggregator'].'"}';
+
+//Provider List
+foreach($adBox['details']['sources'] as $name=>$val) $providers .= ',{"name":"'.addslashes($name).'","page":"'.$adBox[$name]['pageAds'].'","total":"'.$adBox[$name]['totalAds'].'","domain":"'.addslashes($val['domain']).'","weight":"'.$_REQUEST[$name.'ads'].'"}';
+
+//Filters
+//$filters .= ',{"name":"Featured Only","param":"featured","vals":["Auto":"","Yes":"true","No":"false"],"val":"'.$_REQUEST['featured'].'"}';
+$filters .= ',{"name":"Picture","param":"picreq","type":"ro","val":"'.$_REQUEST['picreq'].'"}';
+//$filters .= ',{"name":"Type","param":"type","vals":[],"val":"'.$_REQUEST['picreq'].'"}';
+//			<div><div>Photo:</div><select class="input" name="picreq"><option value="">Optional</option><option value="true"'.($_REQUEST['picreq'] ? ' selected' : '').'>Required</option></select></div>
+
+//Content!
+$content = '{"items":['.substr($adBox['content'],1).'],"providers":['.substr($providers,1).'],"message":"'.addslashes($adBox['message']).'","stats":{"totalads":"'.$adBox['details']['totalAds'].'","adsppage":"'.$_REQUEST['adsppage'].'"},"location":{"latitude":"'.$_REQUEST['latitude'].'","longitude":"'.$_REQUEST['longitude'].'","str":"'.$_REQUEST['location'].'"},"filters":['.substr($filters,1).'],"title":"'.$page['title'].'"}';
+
+?>

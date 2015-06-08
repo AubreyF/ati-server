@@ -1,0 +1,43 @@
+<?
+
+//********************************** Ad Hotlinks *********************************
+
+if($_SERVER['HTTP_HOST_SUB'] && is_numeric($_SERVER['HTTP_HOST_SUB'])) redirect('http://'.$_SERVER['HTTP_HOST_TOP'].'/ad-'.$_SERVER['HTTP_HOST_SUB']);
+
+//********************************** Store Manager *********************************
+
+$temp = '';
+if($_SERVER['HTTP_HOST_TOP'] != SAFARRI) $temp = $_SERVER['HTTP_HOST']; //Custom Domain
+else if($_SERVER['HTTP_HOST_SUB']) $temp = $_SERVER['HTTP_HOST_SUB']; //Safarri Subdomain
+
+if($temp) { //Were in a store
+	$_SESSION['safarriStore'] = $_SERVER['db']->getRow("SELECT * FROM stores WHERE link = '{$temp}'");
+	if($_SESSION['safarriStore']) {
+		$_SESSION['safarriStore']['sql'] = " AND storeid = '{$_SESSION['safarriStore']['id']}'";
+		if($_SESSION['safarriStore']['showSold']) $_SESSION['safarriStore']['sql'] .= ' AND status < 3'; //Ad status: 0 = running, 1 = sale pending, 2 = sold, 3 = deleted
+		else $_SESSION['safarriStore']['sql'] .= ' AND status < 2';
+		$_SESSION['storeName'] = $_SESSION['safarriStore']['name'];
+		setPageConst('logoText',$_SESSION['storeName'],'skin');
+		
+		setPageConst('networkLinks','
+			<li><a title="This Store powered by Safarri!" href="http://'.SAFARRI.'">This Store Powered By Safarri.com</a></li>
+		','network');
+		
+		setPageConst('networkLink','
+			<a href="http://'.SAFARRI.'/index" title="PlexPedia" id="ATILogo"><img src="http://'.ATIHOME.'/_n/atinetwork/pc/img/navbarsafarri.png" alt="Safarri - Free Online Classifieds" /></a>
+		','network');
+		
+		setPageConst('networkFooter',/*'
+			This "'.$_SESSION['groupName'].'" Group is powered by PlexPedia.<br />
+			<a href="http://'.PLEXPEDIA.'/index">Plexpedia</a> can power your own free group too!
+		*/'','network');
+	}
+	//test($_SESSION,$_SERVER);
+	//buildPage();
+}
+else {
+	$_SESSION['safarriStore']['sql'] = ' AND (soldDate = 0 OR soldDate > '.time().') AND a.status < 2'; //Don't show sold or deleted ads on Safarri
+}
+if(!$_SESSION['storeName']) $_SESSION['storeName'] = 'Safarri';
+
+?>

@@ -1,0 +1,3 @@
+<?
+redirect('http://forum.'.$_SERVER['HTTP_HOST_TOP']);
+?>

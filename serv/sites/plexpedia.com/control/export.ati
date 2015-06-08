@@ -1,0 +1,93 @@
+<?
+loginCheck('<b>Please login to access your control panel.</b>','end');
+
+$sql = "SELECT `id`, `title`, `date`, `soldDate` FROM `classifieds_items` WHERE `usId` = '{$_SESSION['userId']}'";
+
+if($_REQUEST['show'] == 'sold') {
+	$sql .= " AND `soldDate` != ''";
+	$soldChecked = 'checked';
+}
+else if($_REQUEST['show'] == 'all') {
+	$sql .= "";
+	$allChecked = 'checked';
+}
+else {
+	$sql .= " AND `soldDate` = ''";
+	$unsoldChecked = 'checked';
+}
+if($_REQUEST['title']) $sql .= " AND MATCH(title,description) AGAINST ('{$_REQUEST['title']}' IN BOOLEAN MODE)";
+if($_REQUEST['id']) $sql .= " AND id = ".$_REQUEST['id'];
+
+
+if($_SESSION['plexpediaGroup']['id']) {	
+	$sql .= " AND `groupid` = '{$_SESSION['plexpediaGroup']['id']}'";
+	$title = '<h4>Managing all my items in '.$_SESSION['plexpediaGroup']['name'].':</h4>';
+}
+else {
+	$title .= '<h4>Managing all my items on Plexpedia:</h4>';
+}
+
+$sql .= " ORDER BY `date` DESC";
+
+$rs = $_SERVER['db']->execute($sql);
+$items = $rs->RecordCount();
+
+if($items) {
+	
+	$items = $rs->RecordCount();
+	$pagination = func(_mod.'pagination','pagination',$items,30);
+	$sql .= " LIMIT {$pagination['offset']},{$pagination['limit']}";
+	$rs = $_SERVER['db']->execute($sql);
+	
+	$return .= '
+	<p>'.$pagination['string'].'</p>
+	
+	<table class="outer">
+	  <tr>
+		<th width="200">Actions</th>
+		<th>Title</th>
+		<th>Date</th>
+	  </tr>
+	  ';
+	
+	while ($item = $rs->FetchRow()) {	
+		$counter ++;
+		(($counter % 2) == 0) ? $class = 'even' : $class = 'odd';
+
+		$items += 1;
+		
+		if(!$item['soldDate']) $itemLinks = '<a href="/submit-id-'.$item['id'].'-step-marksold">Mark Sold</a> - <a href="/submit-id-'.$item['id'].'-step-modify">Edit</a>';
+		else $itemLinks = '<a href="/submit-id-'.$item['id'].'-step-markunsold">Mark Unsold</a>';
+
+		$return .= '
+		<tr class="'.$class.'">
+			<td><a href="/item-'.$item['id'].'">View</a> - '.$itemLinks.'</td>
+			<td class="hover" onclick="document.location.href=\'/item-'.$item['id'].'\'" >'.strip_tags($item['title']).'</td>
+			<td>'.doDate($item['date'],'short').'</td>
+		</tr>';
+	}
+	$return .= '</table>';
+}
+else {
+	$return .= '<div class="ebox">There are currently no items in this view!</div>';
+}
+
+
+setPageConst('title',$_SESSION['userName'].'\'s Control Panel > Items');
+setPageConst('bct','<a href="/index">Home</a> > <a href="/control/index">'.$_SESSION['userName'].'\'s Control Panel</a> > Items');
+
+setPageBlock('blockFancy','Control Panel',
+	'<a href="index" class="lbtn"><< Back to Control Panel</a><a href="/submit" class="lbtn">>> Submit Item</a>'
+	.$title.
+	'
+	<form method="post" action="items">
+	<b>Filter:</b> <input type="ritemio" name="show" id="show" value="unsold" '.$unsoldChecked.'> Unsold Items <input type="ritemio" name="show" id="show" value="sold" '.$soldChecked.'> Sold Items <input type="ritemio" name="show" id="show" value="all" '.$allChecked.'> All Items
+	<b>Title:</b> <input name="title" id="title" type="text" value="'.$_REQUEST['title'].'" size="14">
+	<b>Id:</b> <input name="id" id="id" type="text" value="'.$_REQUEST['id'].'" size="5">
+	<input type="submit" value="Update Filter">
+	</form>
+	'
+	.$return
+);
+
+?>

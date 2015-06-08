@@ -1,0 +1,239 @@
+<?
+loginCheck('<b>Please complete the easy and free signup process to send secure private messages.</b>');
+
+//****************** SEND A PRIVATE MESSAGE *************************
+
+if($_REQUEST['mode'] == 'send') {
+	$_REQUEST['username'] = str_replace('***','-',$_REQUEST['username']);
+	setPagePref('deadEndPage');
+	
+	if($_REQUEST['submit'] == 'Send Message') {
+		if($_REQUEST['inreplyto']) $_REQUEST['regarding'] = $_REQUEST['inreplyto'];
+		
+		$pm = func(_mod.'pm','pmSend',$_REQUEST['username'],$_REQUEST['subject'],$_REQUEST['text'],array('regarding'=>$_REQUEST['regarding']));
+		if($pm !== true) $errors = $pm;
+		else redirect($_SESSION['lastPage'],'Your message was successfully sent to '.ucwords($_REQUEST['username']).'!');
+	}
+	
+	setPageConst('title','Private Messaging > Send Message');
+	setPageConst('bct','<a href="/index">Home</a> > <a href="/user/index">ATI Tools</a> > <a href="/user/pm">Private Messaging</a> > Send Message');
+	
+	setPageBlock('blockFancy','Sending Message','
+	<!--<div class="lbar">
+		<a href="'.$_SESSION['lastPage'].'"><< Back to Last Page</a><a href="pm"><< Back to Private Messages</a>
+	</div>-->
+	
+	'.$errors.'
+	
+	<form method="post">
+	<table class="outer narrow">
+		<tr> 
+		  <td class="lcol">To:</td>
+		  <td class="rcol"><input class="input" name="username" type="text" id="username" value="'.$_REQUEST['username'].'" size="20"></td>
+		</tr>
+		<tr> 
+		  <td class="lcol">Subject:</td>
+		  <td class="rcol"><input class="input" name="subject" type="text" id="subject" value="'.$_REQUEST['subject'].'" size="50"></td>
+		</tr>
+		<tr> 
+		  <td class="lcol">Text:</td>
+		  <td class="rcol">'.func(_mod.'textbox', 'textbox', 'text', $_REQUEST['text']).'</tr>
+		<tr> 
+		  <td colspan="2">
+			<div class="boldBorder"><input id="submit" type="submit" name="submit" value="Send Message" class="bold"></div>
+		  </td>
+		</tr>
+		</table>
+		<input name="regarding" type="hidden" id="regarding" value="'.encrypt($_REQUEST['regarding'],'url').'">
+	</form>
+	
+	<div class="desc">Note: Your email address will be included with this message - and the recipient can respond via email, or with the messaging system.</div>
+	');
+	
+	if(is_numeric($_REQUEST['inreplyto'])) {
+		$pm = $_SERVER['serverdb']->getRow("SELECT * FROM `pms` WHERE `id` = '{$_REQUEST['inreplyto']}'");
+		if($pm && (strtolower($pm['to']) == strtolower($_SESSION['userName']) || strtolower($pm['from']) == strtolower($_SESSION['userName']))) {
+			
+			setPageBlock('block','Replying To:','
+				<div class="header"><div class="rflt">From: <b>'.$pm['from'].'</b> - date: '.doDate($pm['date'],'short').''.$pm['xtra'].'</div><div class="">'.$pm['subject'].'</div></div>
+				<div class="content" padding:15px;">
+				'.$pm['text'].'
+				</div>
+			');
+		}
+	}
+	
+	buildPage();
+}
+
+//****************** DELETE A PRIVATE MESSAGE *************************
+
+else if($_REQUEST['mode'] == 'delete' || $_REQUEST['mode'] == 'undelete') {
+	if(!$_REQUEST['id']) redirect($_SESSION['lastPage'],'You must specify the id of the pm');
+	
+	if($_REQUEST['mode'] == 'delete') $cat = '-1';
+	else $cat = '\'\'';
+	
+	if(strpos($_REQUEST['id'],',')) { //multiple
+		$categories = explode(',',$_REQUEST['id']);
+		foreach ($categories as $key=>$val) {
+			$_SERVER['serverdb']->execute("UPDATE `pms` SET `cat` = {$cat} WHERE `id` = '{$val}' AND `to` = '{$_SESSION['userName']}'");
+		}
+	}
+	else $_SERVER['serverdb']->execute("UPDATE `pms` SET `cat` = {$cat} WHERE `id` = '{$_REQUEST['id']}' AND `to` = '{$_SESSION['userName']}'");
+}
+
+
+//****************** VIEW A PRIVATE MESSAGE *************************
+
+
+else if($_REQUEST['id']) {
+	$pm = $_SERVER['serverdb']->getRow("SELECT * FROM `pms` WHERE `id` = '{$_REQUEST['id']}'");
+	if(!$pm) redirect($_SESSION['lastPage'],'The message you attempted to view could not be found');
+	else if(trim(strtolower($pm['to'])) != strtolower($_SESSION['userName']) && strtolower($pm['from']) != strtolower($_SESSION['userName'])) redirect($_SESSION['lastPage'],$_SESSION['userName'].': The message you specified could not be viewed');
+	$pm['read'] += 1;
+	if(is_numeric($pm['regarding'])) $pm['regarding'] = '<a href="pm-id-'.$pm['regarding'].'">Message in reply to >></a>';
+	else if($pm['regarding']) $pm['regarding'] = 'This message was sent regarding '.$pm['regarding'];
+	
+	setPageConst('title','Private Messaging > Reading Message');
+	setPageConst('bct','<a href="/index">Home</a> > <a href="/user/index">ATI Tools</a> > <a href="/user/pm">Private Messaging</a> > Read Message');
+	
+	if(strtolower($pm['to']) != strtolower($_SESSION['userName'])) { //We sent this
+		$extras .= '<div class="footer"><span style="float:right;">Read '.$pm['read'].' times by recepient</span>'.(!is_int($pm['regarding']) ? $pm['regarding'] : '').'&nbsp;</div>';
+	}
+	else if($_REQUEST['mark'] == 'unread') {
+		$_SERVER['serverdb']->execute("UPDATE `pms` SET `read` = '0' WHERE `id` = '{$_REQUEST['id']}'");
+		$extras .= '<div class="footer">{Marked Unread}</span>'.(!is_int($pm['regarding']) ? $pm['regarding'] : '').'&nbsp;</div>';
+	}
+	else {
+		$_SERVER['serverdb']->execute("UPDATE `pms` SET `read` = '{$pm['read']}' WHERE `id` = '{$_REQUEST['id']}'");
+		$extras .= '<div class="footer"><span style="float:right;">Read '.$pm['read'].' times <a href="pm-id-'.$_REQUEST['id'].'-mark-unread">{Mark Unread}</a></span>'.(!is_int($pm['regarding']) ? $pm['regarding'] : '').'&nbsp;</div>';
+	}
+	
+	setPageBlock('blockFancy','Reading Private Message','
+	<div class="lbar">
+		<a href="pm"><< Back to Private Messages</a><a href="pm-mode-delete-id-'.$pm['id'].'"><< Archive Message</a><a href="pm-mode-send-username-'.encrypt($pm['from'],'url').'-subject-'.encrypt('Re: '.str_replace('Re: ','',$pm['subject']),'url').'-inreplyto-'.$pm['id'].'">>> Reply to message</a><a href="pm-mode-send">>> New Message</a>
+	</div>
+	
+	<div class="header"><div class="rflt">From: <b>'.$pm['from'].'</b> - date: '.doDate($pm['date'],'short').''.$pm['xtra'].'</div><div class="">'.$pm['subject'].'</div></div>
+	<div class="content" style="padding:30px;">
+	'.$pm['text'].'
+	</div>
+	'.$extras.'
+	');
+	
+	buildPage();
+}
+
+
+//********************* VIEW ALL PRIVATE MESSAGES *************************
+
+
+$unreadMessages = 0;
+$messages = 0;
+
+if($_REQUEST['box'] == 'sent') {
+	$criteria = "`from` = '{$_SESSION['userName']}'";
+	$mailbox['sent'] = ' down';
+}
+else if($_REQUEST['box'] == 'archive') {
+	$criteria = "`cat` = -1 AND `to` = '{$_SESSION['userName']}'";
+	$rightButtons .= '<a href="#" onClick="doCheckedPms(\'undelete\');" class="lflt"><< Unarchive Checked</a>';
+	$mailbox['trash'] = ' down';
+}
+else {
+	$criteria = "`cat` != -1 AND `to` = '{$_SESSION['userName']}'";
+	$rightButtons .= '<a href="#" onClick="doCheckedPms(\'delete\');" class="lflt">>> Archive Checked</a>';
+	$mailbox['inbox'] = ' down';
+}
+
+$sql = "SELECT `from`, `to`, `id`, `subject`, `date`, `read`, `text` FROM `pms` WHERE ".$criteria." ORDER BY `date` desc";
+
+$rs = $_SERVER['serverdb']->execute($sql);
+if(!$rs) $pms = '<div class="ebox">Error: could not connect to database.</div>';
+else {
+	$items = $rs->RecordCount();
+	$pagination = func(_mod.'pagination','pagination',$items,30);
+	$sql .= $pagination['sql'];
+	$rs = $_SERVER['serverdb']->execute($sql);
+	if(!$rs->recordCount()) $pms = '<div class="ebox">You have no private messages in this view</div>';
+	
+	else {
+		while ($pm = $rs->FetchRow()) {	
+			$counter ++;
+			(($counter % 2) == 0) ? $class = 'odd' : $class = 'even';
+			
+			if($pm['read'] == 0) {
+				$unreadMessages += 1;
+				$class .= " boldText";
+			}
+			$messages += 1;
+			if($_REQUEST['box'] != 'sent') $cb = '<td><input name="'.$pm['id'].'" type="checkbox" /></td>';
+			
+			$rs2 = $_SERVER['serverdb']->execute("SELECT `id`, `subject`, `text` FROM `pms` WHERE `regarding` = ".$pm['id']." ORDER BY `date` desc");
+			if($rs2) while ($pm2 = $rs2->FetchRow()) {
+				$pm['replies'] .= '<a href="pm-id-'.$pm2['id'].'" title="'.strip_tags(addcslashes($pm2['subject'].": \n\n".substr($pm2['text'],0,400),'"')).'...">> </a>';
+			}
+			
+			$pms .= '
+			  <tr class="'.$class.'">
+				'.$cb.'
+				<td>'.$pm['replies'].'</td>
+				<td>'.$pm['from'].'</td>
+				<td>'.$pm['to'].'</td>
+				<td class="hover"><a href="pm-id-'.$pm['id'].'" title="'.strip_tags(addcslashes(substr($pm['text'],0,400),'"')).'...">'.$pm['subject'].'</a></td>
+				<td>'.doDate($pm['date'],'short').'</td>
+			  </tr>';
+		}
+		
+		if($_REQUEST['box'] != 'sent') $cb = '<th style="width:20px;"></th>';
+		
+		$pms = '
+		<form name="pms">
+		<table class="outer">
+		<tr>
+			'.$cb.'
+			<th></th>
+			<th>From</th>
+			<th>To</th>
+			<th>Subject</th>
+			<th>Date</th>
+		</tr>
+		'.$pms.'
+		</table>
+		</form>
+		';
+	}
+}
+
+setPageConst('title','Private Messaging');
+setPageConst('bct','<a href="/index">Home</a> > <a href="/user/index">ATI Tools</a> > Private Messaging');
+
+setPage(/*Block('blockFancy','Messaging',*/'
+<script type="text/javascript">
+<!--
+function doCheckedPms(mode) {
+	var form = window.document.pms;
+	var params = \'\';
+	var pms = \'\';
+	
+	for(i=0; i<form.length; i++) {
+		if(form[i].checked) pms = pms + form[i].name + ",";
+	}
+	if(pms) params = params + "-id-" + pms.substring(0,pms.length - 1);
+	if(params) params = "-mode-" + mode + params;
+	
+	window.location.href = "pm" + params + "";
+}
+-->
+</script>
+<div class="lbar">
+	'.$rightButtons.'
+	<a href="pm-mode-send" class="rflt">>> New Message</a>
+	<a href="pm" class="'.$mailbox['inbox'].'">Inbox</a><a href="pm-box-sent" class="'.$mailbox['sent'].'">Sent</a><a href="pm-box-archive" class="'.$mailbox['trash'].'">Archive</a>
+</div>
+'.$pms.'
+<div class="lbar">'.$pagination['string'].'</div>
+');
+
+?>

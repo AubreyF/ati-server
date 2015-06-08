@@ -1,0 +1,46 @@
+<?
+
+loginCheck('<b>Please login to access your control panel.</b>','end');
+if($_SESSION['plexpediaGroup']['id'] && ($_SESSION['plexpediaGroup']['usId'] != $_SESSION['userId'] && !isAdmin())) redirect('/index','You do not have administrative permissions for group # '.$_SESSION['plexpediaGroup']['id']);
+
+setPageConst('title','Group Administration Tools');
+setPageConst('bct','<a href="/index">Home</a> > <a href="index">'.$_SESSION['userName'].'\'s Control Panel</a> > Group Tools');
+SetPageConst('showAds',false,'skin');
+
+if($_REQUEST['access']) {
+	if($_REQUEST['confirmed']) {
+		$_SERVER['db']->execute('UPDATE `forum_threads` SET `access` = '.dbInt($_REQUEST['access']).' WHERE `groupId` = '.$_SESSION['plexpediaGroup']['id']);
+		setPage('
+			<div class="header">Access Levels Updated successfully!</div>
+			<div class="content">
+				<a href="grouptools" class="lbtn bold">Continue</a>
+				<br />
+			</div>
+		');
+	}
+	else {
+		setPage('
+			<div class="header">Confirm</div>
+			<div class="content">
+				<div class="btxt">Are you sure you wish to change the access level of all content in your group to '.($_REQUEST['access'] == 1 ? 'Public' : 'Private').'?</div><br /><br />
+				<a href="grouptools-access-'.$_REQUEST['access'].'-confirmed-true" class="lbtn bold">Confirm Access Level Change</a>
+				<a href="grouptools" class="lbtn bold back">Cancel Change</a>
+				<br />
+			</div>
+		');
+	}
+}
+
+else {
+
+	setPage('
+		<div class="header">Content Access Levels</div>
+		<div class="content llst">
+			<a href="grouptools-access-1">Set All Content to Public Access</a>
+			<a href="grouptools-access-2">Set All Content to Private Access</a>
+		</div>
+	');
+	
+}
+
+?>

@@ -1,0 +1,48 @@
+<?
+
+if($_SESSION['plexpediaGroup']['id']) {
+	$siteName		= $_SESSION['plexpediaGroup']['name']/*.' - '.$_SESSION['plexpediaGroup']['description']*/;
+	$logo			= $_SESSION['plexpediaGroup']['logo'];
+}
+else {
+	$logos			= array(2=>'/img/logos/2.png', 3=>'/img/logos/3.png');
+	$siteName		= 'Plexpedia';
+}
+
+if($navLinks != 'hide') {
+	$navLinks = array('Home' => 'http://'.$_SERVER['FAKE_HOST'].'/index');
+	
+	if(strpos($_SESSION['lastPage'],'/browse') && !strpos($_SERVER['FAKE_URI'],'/browse') && strpos($_SESSION['lastPage'],$_SERVER['HTTP_HOST'])) $navLinks['» '.$_SESSION['plexpediaGroup']['text']['contentName'].' «'] = $_SESSION['lastPage'];
+	else $navLinks[$_SESSION['plexpediaGroup']['text']['contentName']] = '/browse';
+	
+	if(!$_SESSION['plexpediaGroup']['text']['staticSite'] || $_SESSION['plexpediaGroup']['usId'] == $_SESSION['userId']) {
+		if($_SESSION['plexpediaGroup']['userCanSubmit'])		$navLinks['Submit'] = '/submit';
+		if(isLoggedIn())				$navLinks[ucwords($_SESSION['userName'])] = '/control/';
+	}
+	$searchBox		= array('action'=>'/browse','param'=>'q');
+	$showAds		= true;
+	//if(!$_SESSION['groupName'])		$logo = '/img/logos/'._skin.'.png';
+}
+
+setPageRes('tpl/style.css');
+
+/*$footer			= '
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src=\'" + gaJsHost + "google-analytics.com/ga.js\' type=\'text/javascript\'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-1255418-5");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+';*/
+
+if($_SESSION['plexpediaGroup']['id']) {
+	$rs = $_SERVER['db']->execute('SELECT title, id FROM `forum_threads` WHERE type = \'pge\' AND state != \'hidden\''.$_SESSION['plexpediaGroup']['groupSql'].' ORDER BY title');
+	while ($item = $rs->FetchRow()) {
+		$navLinks[$item['title']] = '/view-'.$item['id']; //'/'.encode($item['title'],'url');
+	}
+}
+
+?>

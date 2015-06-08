@@ -1,0 +1,228 @@
+<?
+
+loginCheck('<b>Please login to access your control panel.</b>','end');
+
+if($_SESSION['plexpediaGroup']['id'] && ($_SESSION['plexpediaGroup']['usId'] != $_SESSION['userId'] && !isAdmin())) redirect('/index','You do not have administrative permissions for group # '.$_SESSION['plexpediaGroup']['id']);
+
+if($_REQUEST['submit'] == 'add' || $_REQUEST['submit'] == 'Add Category' || $_REQUEST['submit'] == 'Add Sub Category') {
+	if($_REQUEST['type'] == "") $_REQUEST['type'] = $_REQUEST['typeh'];
+	
+	if(!$_REQUEST['title']) $errors .= '<li>You need to enter a category title</li>';
+	else $_SERVER['db']->execute('INSERT INTO `group_categories` (`parent`, `title`, `desc`, `type`, `groupId`) VALUES ('.dbInt($_REQUEST['parent']).', '.dbStr($_REQUEST['title']).', '.dbStr($_REQUEST['description']).', '.dbStr($_REQUEST['type']).', '.$_SESSION['plexpediaGroup']['id'].')');
+}
+else if($_REQUEST['submit'] == 'Update Category') {
+	if(!$_REQUEST['title']) $errors .= '<li>You need to enter a category title</li>';
+	//else if(!$_REQUEST['type']) $errors .= '<li>You need to select a category type</li>';
+	else $_SERVER['db']->execute('UPDATE `group_categories` SET `title` = '.dbStr($_REQUEST['title']).', `desc` = '.dbStr($_REQUEST['desc']).', `type` = '.dbStr($_REQUEST['type']).' WHERE `id` = '.dbInt($_REQUEST['catid']).' AND `groupId` = '.$_SESSION['plexpediaGroup']['id']);
+}
+else if($_REQUEST['submit'] == 'Delete Category') {
+	if($_REQUEST['confirmdelete'] != 'Yes') $errors .= '<li>You need to confirm category deletion</li>';
+	else if($_SERVER['db']->execute('SELECT id FROM group_categories WHERE parent = \''.dbInt($_REQUEST['catid']).'\'')->RecordCount()) $errors .= '<li>You need to delete all subcategories before deleting the category that contains them</li>';
+	else $_SERVER['db']->execute('DELETE FROM `group_categories` WHERE `id` = '.dbInt($_REQUEST['catid']).' AND `groupId` = '.$_SESSION['plexpediaGroup']['id']);
+}
+
+setPageConst('title','Group Category Administration');
+setPageConst('bct','<a href="/index">Home</a> > <a href="index">'.$_SESSION['userName'].'\'s Control Panel</a> > Group Categories');
+SetPageConst('showAds',false,'skin');
+setPage('
+	<script type="text/javascript">
+		var addcatbox;
+		var modcatbox;
+		
+		window.addEvent(\'domready\', function() {
+			addcatbox = $(\'addcat\');
+			addcatbox.set(\'slide\', {duration: \'long\', transition: \'elastic:out\'});
+			addcatbox.slide(\'hide\');
+			modcatbox = $(\'modcat\');
+			modcatbox.set(\'slide\', {duration: \'long\', transition: \'elastic:out\'});
+			modcatbox.slide(\'hide\');
+		});
+		
+		function addCat(pid) {
+			if(pid) $(\'addCatParent\').value = pid;
+			addcatbox.slide(\'in\');
+			modcatbox.slide(\'out\');
+		}
+		
+		function modCat(cid, title, desc, type) {
+			$(\'cattitle\').value = title;
+			$(\'catdesc\').value = desc;
+			$(\'cattypehidden\').value = type;
+			$$(\'.catId\').each(function(el) { el.value = cid; });
+			
+			if(type != "") $(\'showsubtype\').setStyle(\'display\',\'none\');
+			else $(\'showsubtype\').setStyle(\'display\',\'\');
+			
+			addcatbox.slide(\'out\');
+			modcatbox.slide(\'in\');
+		}
+		
+		function unCat() {
+			addcatbox.slide(\'out\');
+			modcatbox.slide(\'out\');
+		}
+	</script>
+	
+	<style type="text/css">
+		.mcont { height:160px; overflow:hidden; }
+		.dtree { margin-left:30%; text-align:left; display:block; line-height:16px; }
+		.dtree .node, .nodeSel, .nodeSel:hover { text-decoration:none; display:block; width:80%; }
+		.dtree .node:hover, .nodeSel:hover { background-color:#FFFFFF; }
+		.dtree img { float:left; }
+	</style>
+','head');
+
+foreach($_SERVER['plexDataTypes'] as $key=>$val) {
+	$temp .= '<option value="'.$key.'">'.$val['p'].'</option>';
+}
+
+setPage('
+	'.($errors ? '<div class="ebox"><ul>'.$errors.'</ul></div>' : '').'
+	
+	<div style="position:absolute; z-index: 5; left: 0; right: 0; height:0;" class="caln">
+		<div style="width:320px; margin:auto;">
+			<div id="addcat" class="ebox">
+				<div class="title">Adding a Category:</div>
+				
+				<form class="outer narrow" method="post" action="groupcats">
+					<div><input type="textarea" name="title" />Title:</div>
+					<div><input type="textarea" name="description" />Description:</div>
+					<div>
+						<select name="type">
+							<option></option>
+							'.$temp.'
+						</select>
+						Type:
+					</div>
+					
+					<input type="hidden" name="parent" id="addCatParent" value="0" />
+					
+					<input type="submit" name="submit" value="Add Category" />
+				</form>
+				
+				<br /><br />
+				
+				<a onClick="unCat();"><< Cancel</a>
+			</div>
+			<div id="modcat" class="modal ebox">
+				<div class="acdn" style="height:300px;">
+					<div class="title">Add Sub Category:</div>
+					<div>
+						<div class="mcont">
+						<form class="outer narrow" method="post" action="groupcats">
+							<div><input type="textarea" name="title" />Category Name:</div>
+							<div><input type="textarea" name="description" />Description:</div>
+							<div id="showsubtype">
+								<select name="type">
+									<option></option>
+									'.$temp.'
+								</select>
+								Type:
+							</div>
+							
+							<input type="hidden" name="parent" class="catId" value="" />
+							<input type="hidden" name="typeh" id="cattypehidden" value="" />
+							
+							<input type="submit" name="submit" value="Add Sub Category" />
+						</form>
+						</div>
+					</div>
+					
+					<div class="title">Update Category:</div>
+					<div>
+						<div class="mcont">
+						<form class="outer narrow mcont" method="post" action="groupcats">
+							<div><input type="textarea" name="title" id="cattitle" />Category Name:</div>
+							<div><input type="textarea" name="description" id="catdesc" />Description:</div>
+							<div>
+								<select name="type" id="cattype">
+									<option></option>
+									'.$temp.'
+								</select>
+								Type:
+							</div>
+							
+							<input type="hidden" name="catid" class="catId" value="" />
+							
+							<input type="submit" name="submit" value="Update Category" />
+						</form>
+						</div>
+					</div>
+					
+					<div class="title">Delete Category:</div>
+					<div>
+						<div class="mcont">
+						<form class="outer narrow" method="post" action="groupcats">
+							<div>
+								<select name="confirmdelete">
+									<option>No</option>
+									<option>Yes</option>
+								</select>
+								You Sure?
+							</div>
+							
+							<input type="hidden" name="catid" class="catId" value="" />
+							
+							<input type="submit" name="submit" value="Delete Category" />
+						</form>
+						</div>
+					</div>
+				</div>
+				<br />
+				<a onClick="unCat();"><< Cancel</a>
+			</div>
+		</div>
+	</div>
+');
+
+$temp = '';
+foreach($_SERVER['plexDataTypes'] as $key=>$val) {
+	if(!$val['p'] || $_SERVER['db']->execute('SELECT id FROM group_categories WHERE type = \''.$key.'\' AND groupId = \''.$_SESSION['plexpediaGroup']['id'].'\'')->RecordCount()) continue;
+	$temp .= '<div><a href="groupcats-submit-add-type-'.$key.'-title-'.urlencode($val['p']).'">Add "'.$val['p'].'" cat</a></div>';
+}
+
+$rs = $_SERVER['db']->execute('SELECT * FROM group_categories WHERE 1 '.$_SESSION['plexpediaGroup']['groupSql'].' ORDER BY title');
+if ($rs) {
+	while ($cat = $rs->FetchRow()) {
+		$categories .= "categories.add({$cat[id]},{$cat[parent]},'".($cat['type'] ? ($cat['title'] != $_SERVER['plexDataTypes'][$cat['type']]['p'] ? ' ('.$cat['type'].') ' : '') : '(none) ')."{$cat[title]}','javascript:modCat({$cat['id']},\\'".str_replace('"','',$cat['title'])."\\',\\'".str_replace('"','',$cat['desc'])."\\',\\'{$cat['type']}\\');','{$cat['desc']}');\n";
+	}
+}
+
+if($categories) {
+	setPageBlock('blockFancy','Group Category Administration','
+		<div class="qtxt"><b>Welcome to the category administration system!</b><br />• Click any category to modify it or add a subcategory to it,<br />• Add new base categories using the links on the left.</div>
+		<br /><br />
+		<div class="llst lflt">
+			'.$temp.'
+		</div>
+		<link rel="StyleSheet" href="/_inc/dtree/dtree.css" type="text/css" />
+		<script type="text/javascript" src="/_inc/dtree/dtree.js"></script>
+		<script type="text/javascript">
+		<!--
+		categories = new dTree(\'categories\');
+		categories.config.closeSameLevel = true;
+		//categories.add(0,-1,\'Add New Base Category\',\'javascript:addCat();\');
+		categories.add(0,-1,\''.$_SESSION['groupName'].'\',\'javascript:addCat();\');
+		'.$categories.'
+		document.write(categories);
+		//categories.openAll();
+		//-->
+		</script>
+		<br /><br /><br /><br /><br /><br /><br />
+	');
+}
+
+else {
+	setPageBlock('blockFancy','Group Categories','
+		<div class="btxt">PlexPedia empowers you with both categories and tags for organizing content in your group.</div>
+		<ul>
+			<li>Categories are precise, taxonomical classification system which must be set up before adding content to them.</li>
+			<li>Tags are an organic, <a href="http://en.wikipedia.org/wiki/Folksonomy">folksonomical</a> classification system which expands and (hopefully) organizes itself autmatically as people are adding content to your group.</li>
+		</ul>
+		<div class="desc">Your group is already set up for using tags. If you wish to take it to the next level of orginization, click the button below to begin setting up your categories.</div>
+		<br /><br />
+		<a onClick="addCat();" class="lbtn bold">Add First Category</a>
+	');
+}
+
+?>

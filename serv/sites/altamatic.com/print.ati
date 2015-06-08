@@ -1,0 +1,38 @@
+<?
+setPageConst('title','Printable Cryptographic Tools');
+
+setPage('
+	<style type="text/css">
+		.piclinks>a, .piclinks>div { display:block; float:left; padding:13px; width:200px; }
+		.piclinks>a:hover { padding:12px; border:1px solid #999999; }
+	</style>
+','head');
+
+setPage('
+	<img id="pimg" src="/img/share.png" />
+	<div id="ptitle">Printables:</div>
+	<div id="pdescs">Perhaps your supercomputer cluster was infiltrated by an enemy virus. Perhaps your adversaries are scanning for RF radiation and you can\'t turn your laptop on. Perhaps you are participating in a treasure hunt where they don\'t allow anything digital except text messaging... Whatever the case, these printables should form an integral part of your mobile toolset!</div>
+	<br />
+	<div class="piclinks" style="height:600px;">
+		<a href="/print/wheel.jpg" target="_blank" title="Solve Vingenere, Alberti, and Caesar ciphers with this printable cipher wheel!"><img src="/print/wheelt.jpg" /></a>
+		<a href="/print/misc.jpg" target="_blank"" title="Morse Code, Polybius Squares, Letter Frequencies, and more can be found on this sheet!"><img src="/print/misct.jpg" /></a>
+		<a href="/print/hiero.jpg" target="_blank" title="The printable biderectional hieroglyphic translation matrix!"><img src="/print/hierot.jpg" /></a>
+		<a href="/printpad" target="_blank" title="Secure, Random, On the fly One Time Pad generator!"><img src="/print/padt.jpg" /></a>
+		<div>
+			<div class="title"><< One Time Pad grid:</div>
+			<div class="desc">
+				The <a href="http://en.wikipedia.org/wiki/One-time_pad" target="_blank">one time pad</a> is amazingly secure, and can be performed with a pencil and pad of paper. To use:
+				<ol>
+					<li>Convert your plaintext letters to numbers (a=1, b=2)</li>
+					<li>Starting in the upper left grid square and moving to the right, add the numeric value of each square to the corresponding number in your plaintext using mod26 arithmetic (if you get a number above 26, "loop" and subtract 26).</li>
+					<li>Reverse process to decode</li>
+				</ol>
+				For maximum security, never reuse the pad<br />
+				These numbers by PHP\'s <a href="http://www.php.net/manual/en/function.mt-rand.php" target="_blank">mt_rand</a>
+			</div>
+		</div>
+	</div>
+	<div class="desc center">(Print black and white on 8.5" X 11" paper in "Portrait" mode)</div>
+');
+
+?>

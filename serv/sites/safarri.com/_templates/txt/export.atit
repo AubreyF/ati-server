@@ -1,0 +1,32 @@
+<?
+setPageHeader('Cache-Control','public, max-age=86400');
+setPageHeader('Content-Type','text/plain');
+
+if($_REQUEST['style'] == 'boxes') {
+	$bs = '---------------------------------------'.chr(10);
+	$be = '---------------------------------------'.chr(10).chr(10);
+	$ls = '- ';
+}
+else if($_REQUEST['style'] == 'deco') {
+	$bs = '#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'.chr(10);
+	$be = '';
+	$ls = '# ';
+}
+else {
+	$be = chr(10);	
+}
+
+if($adBox['ads']) foreach($adBox['ads'] as $key=>$ad) {
+	if(!$ad) continue; //This item has been cleared by the pagination system
+
+	if($ad['anonymous_user_details']) $seller = unserialize($ad['anonymous_user_details']);
+	else $seller = renderUser($ad['usid']);
+	
+	$content .= 
+$bs.$ls.$ad['type'].': '.$ad['title'].' - '.$ad['price'].' '.$ad['priceType'].($ad['location'] ? ' - '.$ad['location'] : '').'
+'.$ls.''.str_replace(array("\r\n","\n"),' ',strip_tags($ad['description'])).'
+'.$ls.'Posted By '.$seller['userName'].' ('.doPhone($seller['userPhone']).') on '.$ad['date'].'
+'.$ls.'http://'.SAFARRI.'/ad-'.$ad['id'].chr(10).$be;
+}
+
+?>

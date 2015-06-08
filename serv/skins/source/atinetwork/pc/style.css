@@ -1,0 +1,48 @@
+body {
+	background-color: #003399;
+	text-align:center;
+	color:#BBBBBB;
+	background-image:url("/tpl/pc/images/bg.png");
+}
+#bct, #bct a {
+	color: #FFFFFF;
+}
+
+.centerBlockTop {
+	border-spacing:0px;
+	margin-top:5px;
+	margin-right:auto;
+}
+.centerBlockTopLeft {
+	background-image:url("/tpl/pc/images/contentblocktopleft.png");
+	width: 20px;
+}
+.centerBlockTopCenter {
+	font-size: 0.9em;
+	color: #FFFFFF;
+	font-weight: bold;
+	padding: 2px;
+	padding-top: 5px;
+	background-image:url("/tpl/pc/images/contentblocktopcenter.png");
+	height:25px;
+}
+.centerBlockTopCenter a {
+	color: #FFFFFF;
+}
+.centerBlockTopRight {
+	background-image:url("/tpl/pc/images/contentblocktopright.png");
+	width: 20px;
+}
+.centerBlockContent {
+	background-color:#EEEEEE;
+	width: 100%;
+	border: 1px solid #999999;
+	padding: 3px;
+}
+
+#content {
+	color: #333333;
+	width:90%;
+	max-width: 1000px;
+	border-spacing: 0px;
+}

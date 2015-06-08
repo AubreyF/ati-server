@@ -1,0 +1,132 @@
+<?
+
+//****************************** Version Tracking ****************************
+
+$version = 2;
+if($_REQUEST['v'] && $_REQUEST['v'] < $version) $updateKml = true;
+
+//****************************** Necessary Headers ****************************
+
+setPageHeader('content-type','application/vnd.google-earth.kml+xml'); //Tell browser to download
+setPageHeader('Content-Disposition: attachment; filename="Safarri.kml"');
+
+//****************************** Set Up NetworkLink ****************************
+
+if($_REQUEST['m'] != 'l') {
+	setPage('<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://earth.google.com/kml/2.1">
+	<NetworkLink>
+		<name><![CDATA['.$page['title'].']]></name>
+		<Snippet><![CDATA['.$page['description'].']]></Snippet>
+		<Link>
+			<href><![CDATA[http://'.SAFARRI.generate_url().'-v-'.$version.'-m-l]]></href>
+			<viewFormat><![CDATA[latitude=[lookatLat]&longitude=[lookatLon]&range=[lookatRange]&tilt=[lookatTilt]&heading=[lookatHeading]&boxwest=[bboxWest]&boxsouth=[bboxSouth]&boxeast=[bboxEast]&boxnorth=[bboxNorth]]]></viewFormat>
+			<viewRefreshMode>onStop</viewRefreshMode>
+			<viewRefreshTime>3</viewRefreshTime>
+			<refreshMode>onInterval</refreshMode>
+			<refreshInterval>86400</refreshInterval>
+			<minRefreshPeriod>20</minRefreshPeriod>
+		</Link>
+	</NetworkLink>
+</kml>');
+}
+
+//******************************** List Ads *******************************
+
+else {
+	
+	foreach($adBox['ads'] as $key=>$ad) {
+		if(!$ad) continue; //This item has been cleared by the pagination system
+		
+		$adBox['content'] .= '
+	<Placemark>
+	<name><![CDATA['.$ad['type'].($ad['type'] && $ad['price'] > 1 ? ' - ' : '').$ad['price'].($ad['type'] || $ad['price'] > 1 ? ': ' : '').$ad['title'].']]></name>
+	  <Snippet></Snippet>
+	  <description><![CDATA[
+		<a href="'.$ad['url'].'">'.($ad['hasThumb'] ? '<img border="0" src="'.$ad['thumb'].'" /><br />' : '').'
+		<b><font color="#CC0000" size="+2">'.$ad['title'].':</font></b></a><br /><br />
+		
+		<font size="+1" weight="bold">'.$ad['price'].' '.$ad['priceType'].($ad['price'] > 1 && $ad['date'] ? ' - ' : '').$ad['date'].'</font><br />
+		<center><font size="-1">'.strip_tags($ad['specifics']).($ad['location'] ? '<br />'.$ad['location'] : '').'</font></center><br /><br />
+		
+		<table border="0" width="400"><tr>
+			<td>'.$ad['description'].'</td>
+			<td><ul>'.$ad['features'].'</ul></td>
+		</tr></table>
+		
+		<font size="-1"><img src="http://safarri.com/images/providers/ad'.$ad['aggregator'].'.png" vertical-align="top" /> This Item From '.ucwords($ad['aggregator']).'</font>
+	  ]]></description>
+	  <styleUrl>http://safarri.com/images/earth/styles.kml#ad</styleUrl>
+	  '.($ad['location'] ? '<address><![CDATA['.$ad['location'].']]></address>' : '').'
+	  '.($ad['lat'] != 0.000000 ? '<Point><altitudeMode>clampToGround</altitudeMode><coordinates>'.$ad['lon'].','.$ad['lat'].',0</coordinates></Point>' :'').'
+	</Placemark>
+	';
+	}
+	
+	foreach($adBox['details']['sources'] as $name=>$val) if($adBox[$name]['totalAds']) $providers .= '<b>'.ucwords($name).'</b> ('.($val['quantizer'] == 'fill' ? '~/~/'.(int)$adBox[$name]['pageAds'].'/'.number_format($adBox[$name]['totalAds']) : (int)$adBox[$name]['suggestedAds'].'/'.(int)$adBox[$name]['loadedAds'].'/'.(int)$adBox[$name]['pageAds'].'/'.number_format($adBox[$name]['totalAds'])).')<br />';
+	
+	setPage('<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://earth.google.com/kml/2.1">
+<Document>
+	<styleUrl>http://safarri.com/images/earth/styles.kml#adList</styleUrl>
+	'.($updateKml ? '
+	<Placemark>
+		<name><![CDATA[* UPGRADE YOUR FILTER *]]></name>
+		<Snippet></Snippet>
+		<description><![CDATA[
+			<font color="#CC0000" size="+2">New Filter Available:</font><br /><br /><br />
+			<i>The Safarri integration filter you are currently using needs to be updated to ensure maximum performance.</i><br />
+			Please click the graphic below to go to Safarri and update your filter file!<br /><br />
+		]]></description>
+		<styleUrl>http://safarri.com/images/earth/styles.kml#ad</styleUrl>
+	</Placemark>
+	' : '
+	<Placemark>
+		<name><![CDATA[* Safarri Statistics *]]></name>
+		<Snippet></Snippet>
+		<description><![CDATA[
+			<font color="#CC0000" size="+2">Safarri Statistics:</font><br /><br /><br />
+			<table border="0" width="400">
+				<tr>
+					<td>View Radius:</td>
+					<td><b>'.$_REQUEST['distance'].'</b> miles</td>
+				</tr>
+				<tr>
+					<td>Generation Time:</td>
+					<td><b>'.round(microtime_float() - $GLOBALS['constants']['pageBuildStart']).'</b> seconds<br /><font size="-1">('.$GLOBALS['adBox']['details']['loadTime'].' gathering & parsing - '.$GLOBALS['adBox']['details']['filterTime'].' filtering & geocoding ('.$GLOBALS['adBox']['details']['geocodes'].' items geocoded using the Google Maps geocoder))</font></td>
+				</tr>
+				<tr>
+					<td>Ad Providers:<br /><font size="-1">(Calc/Load/View/Total)</font></td>
+					<td>'.$providers.'</td>
+				</tr>
+				<tr>
+					<td>Specified Filters:</td>
+					<td>'.generate_url().'</td>
+				</tr>
+				<tr>
+					<td>Extras:</td>
+					<td><b>'.($_REQUEST['geocode'] ? 'Server' : 'Client').'</b> side geocoding mode</td>
+				</tr>
+			</table><br /><br />
+		]]></description>
+		<styleUrl>http://safarri.com/images/earth/styles.kml#ad</styleUrl>
+	</Placemark>
+	').
+	($adBox['content'] ? $adBox['content'] : '
+	<Placemark>
+		<name><![CDATA[* No Ads Found *]]></name>
+		<Snippet></Snippet>
+		<description><![CDATA[
+			<font color="#CC0000" size="+1">There are no ads which match your filter in this area:</font><br /><br /><br />
+			Please try zooming out, or "broadening" your search criteria by clicking the image below.
+			<br /><br />
+		]]></description>
+		<Point><altitudeMode>clampToGround</altitudeMode><coordinates>'.$_REQUEST['longitude'].','.$_REQUEST['latitude'].',0</coordinates></Point>
+		<styleUrl>http://safarri.com/images/earth/styles.kml#ad</styleUrl>
+	</Placemark>
+	').'
+</Document>
+</kml>');
+}
+
+?>

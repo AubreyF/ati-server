@@ -1,0 +1,85 @@
+<?
+$tplDefs += array('blockHelp'=>'sideBar2');
+
+function block($title,$content,$desc='') {
+	return '
+	<div class="bt">'.$title.'</div>
+	<div class="bg"><div class="left"></div><div class="right"></div><div class="text">'.$desc.'</div></div>
+	<div class="bc'.($desc ? ' bgpresent' : '').'">'.$content.'</div>
+	';
+}
+
+function blockSide($title,$content) {
+	return '
+	<div class="sbt">'.substr($title,0,23).':</div>
+	<div class="sb">'.$content.'</div>
+	';
+}
+
+function blockHelp($title,$content) {
+	setPage('
+	<script type="text/javascript">
+	<!--
+	function setHelp(title,message) {
+		document.getElementById("tipboxtitle").innerHTML = title;
+		document.getElementById("tipboxtext").innerHTML = message;
+	}
+	function clearHelp() {
+		document.getElementById("tipboxtitle").innerHTML = \''.addslashes($title).'\';
+		document.getElementById("tipboxtext").innerHTML = "'.nl2nill(addslashes($content)).'";
+	}
+	//-->
+	</script>
+	','head');
+	
+	return '
+	<div class="tb">
+		<div class="tbt" id="tipboxtitle">'.substr($title,0,23).'</div>
+		<div class="tbc" id="tipboxtext">'.$content.'</div>
+		<div class="tbb"></div>
+	</div>
+	<div class="hbspacer"></div>
+	';
+}
+
+function blockMessage($message) {
+	return '
+	<div id="message">
+		'.$message.'
+	</div>
+	';
+}
+
+function blockFancy($title,$content) {
+	return block($title,$content);
+}
+
+function blockContent($title,$content,$options='') {
+	return '
+	<div class="cbt"><div class="cbc"><div class="left"></div><div class="text">'.$title.'</div><div class="right"></div></div></div>
+	<div class="cb'.($options['nopad'] ? ' noPad' : '').'" style="'.($options['height'] ? 'height:'.$options['height'].'px;' : '').'"'.($options['id'] ? ' id="'.$options['id'].'"' : '').'>
+		'.$content.'
+	</div><br />
+	';
+}
+
+function blockHeaded($title,$desc='',$content='') {
+	return block($title,$content,$desc);
+}
+
+function blockComment($post,$user='') {
+	if(!$user) $user = renderMemberBasic($post['userId']);
+	foreach($post['links'] as $key=>$val) $links .= '<a href="'.$val.'">» '.$key.'</a>';
+	
+	return '
+		<div class="bt comment">'.$links.''.$post['title'].'</div>
+		<div class="bl comment">
+			<div class="user">'.$user['userFullName'].'</div><br />
+			'.doDate($post['date']).'<br />
+			'.($post['parentLink'] !== false ? ($post['parentLink'] ? '<a href="'.$post['parentLink'].'">« In Reply to</a>' : ''/*'<br />(In Reply to Item)'*/) : '').'
+		</div>
+		<div class="bc comment">'.$post['text'].'</div>
+	';
+}
+
+?>

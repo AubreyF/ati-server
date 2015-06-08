@@ -1,0 +1,140 @@
+<?
+loginCheck('<b>Please login to access your control panel.</b>','end');
+
+if($_REQUEST['submit']) {
+	
+}
+
+$sql = " SELECT `id`, `title`, `submitTime`, `state` FROM `forum_threads` WHERE `submitTime` != ''";
+
+if(isadmin()) {
+	if(array_key_exists('user',$_REQUEST)) $user = $_REQUEST['user'];
+	else $user = $_SESSION['userId'];
+	$critera .= '<b>UserId:</b> <input type="text" name="user" id="user" value="'.$user.'" size="14">';
+}
+else $user = $_SESSION['userId'];
+if($user) $sql .= " AND `userId` = '{$user}'";
+
+if($_REQUEST['title']) $sql .= " AND MATCH(title,description) AGAINST ('{$_REQUEST['title']}' IN BOOLEAN MODE)";
+if($_REQUEST['id']) $sql .= " AND id = ".$_REQUEST['id'];
+if($_SESSION['plexpediaGroup']['id']) $sql .= " AND `groupid` = '{$_SESSION['plexpediaGroup']['id']}'";
+
+$sql .= " ORDER BY `submitTime` DESC";
+$rs = $_SERVER['db']->execute($sql);
+if($rs) $items = $rs->RecordCount();
+if($items) {
+	$pagination = func(_mod.'pagination','pagination',$items,30);
+	$sql .= " LIMIT {$pagination['offset']},{$pagination['limit']}";
+	$rs = $_SERVER['db']->execute($sql);
+	
+	$return .= '
+	<div class="lbar">'.$pagination['string'].'</div>
+	<br />
+	<form method="post" action="items" name="items" id="itemform">
+	<table class="outer">
+	  <tr>
+		<th><input type="checkbox" onClick="doCheckedItems(\'toggle\',this.checked);" id="checkToggle" class="lflt" style="margin:5px;" /></th>
+		<th>Actions</th>
+		<th>Title</th>
+		<th>State</th>
+		<th>Date</th>
+	  </tr>
+	  ';
+	
+	while ($item = $rs->FetchRow()) {
+		$counter ++;
+		(($counter % 2) == 0) ? $class = 'even' : $class = 'odd';
+		$items += 1;
+		
+		$return .= '
+		<tr class="'.$class.' hoverLight">
+			<td><input name="'.$item['id'].'" id="cb'.$item['id'].'" type="checkbox" style="padding:5px;" onclick="doCheckedItems();" /></td>
+			<td align="center"><a href="/submit-id-'.$item['id'].'" class="lbtn">Edit</a> <a href="/view-'.$item['id'].'" class="lbtn">View</a></td>
+			<td><a style="display:block; height:30px; line-height:30px;" href="javascript:$(\'cb'.$item['id'].'\').checked = ($(\'cb'.$item['id'].'\').checked ? false : true); doCheckedItems();">'.strip_tags($item['title']).'</a></td>
+			<td align="center">'.$item['state'].'</td>
+			<td align="center">'.doDate($item['date'],'short').'</td>
+		</tr>';
+	}
+	$return .= '
+	</table>
+	<!--<div class="boldBorder"><input type="submit" value="Update Page Quantities!" class="bold" /></div><br /><br /><em>An item quantity of zero denotes a sold item. It will not show up in the browse system.</em>-->
+	</form>
+	<br /><div class="lbar">'.$pagination['string'].'</div>
+	';
+}
+else {
+	$return .= '<div class="ebox">There are currently no items in this view!</div>';
+}
+
+
+setPageConst('searchBox',array('action'=>'items','param'=>'q','desc'=>'My Ads'),'skin');
+setPageConst('title',$_SESSION['userName'].'\'s Control Panel > My Content');
+setPageConst('bct','<a href="/index">Home</a> > <a href="/control/index">'.$_SESSION['userName'].'\'s Control Panel</a> > My Content');
+setPageBlock('blockFancy','My Content'.($_SESSION['plexpediaGroup']['id'] ? ' in '.$_SESSION['plexpediaGroup']['id'] : ''),$return);
+setPage('
+	<script type="text/javascript">
+		var checkedActions;
+		
+		window.addEvent(\'domready\', function() {
+			/*$(\'viewselect\').addEvent(\'change\',function() {
+				$(\'viewform\').submit();
+			});*/
+			
+			checkedActions = $(\'checkedActions\');
+			checkedActions.set(\'slide\', {duration: \'long\', transition: \'elastic:out\'});
+			checkedActions.slide(\'hide\');
+		});
+		
+		function adAction(action) {
+			//$(\'withcheckedhidden\').value = action;
+			//$(\'viewselecthidden\').value = $(\'viewselect\').value;
+			$(\'itemform\').submit();
+		}
+		
+		function doCheckedItems(mode,val) {
+			var form = window.document.items;
+			
+			if(mode == \'toggle\') {
+				for(i=0; i<form.length; i++) form[i].checked = val;
+			}
+			else {
+				//$("checkToggle").checked = false;
+			}
+			
+			var checked = false;
+			for(i=0; i<form.length; i++) {
+				if(form[i].checked) checked = true;
+			}
+			if(checked) checkedActions.slide(\'in\');
+			else checkedActions.slide(\'out\');
+		}
+	</script>
+','head');
+
+setPageBlock('blockHelp','Tools:','
+	<div id="checkedActions" style="overflow:hidden; max-height:500px; overflow:auto;">
+		<div class="dtxt">With Checked Items:<br /><br />
+			<div class="llst" style="background-color:#FFFFFF;">
+				<a href="javascript:adAction(\'mrkunsld\');">> Mark UnSold</a>
+				<a href="javascript:adAction(\'mrksld\');">> Mark Sold</a>
+				<a href="javascript:adAction(\'mrkpnd\');">> Mark Pending</a>
+				<a href="javascript:adAction(\'mrkdel\');">> Mark Deleted</a>
+				'.$storeActions.'
+				<a href="javascript:adAction(\'xfrusr\');">> Transfer to user</a>
+			</div>
+		</div><br />
+	</div>
+	
+	<form method="get" id="viewform">
+		<div class="desc">Ads to View:</div>
+		<select name="view" id="viewselect">
+			<option value="all">All Ads</option>
+			<option value="unsold"'.$cbView['unsold'].'>Unsold and Pending</option>
+			<option value="sold"'.$cbView['sold'].'>Sold</option>
+			<option value="deleted"'.$cbView['deleted'].'>Deleted</option>
+		</select>
+		<!--<input type="submit" value="Update View" />--> 
+	</form>
+');
+
+?>

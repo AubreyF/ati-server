@@ -1,0 +1,21 @@
+<? if(isset($docType)) echo $doctype."\n<html>";
+else { ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<? 
+} 
+?>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title><?=$title?></title>
+<?=($css ? '<link rel="stylesheet" type="text/css" media="all" href="/_css-'.substr($css,1).($_REQUEST['source'] ? '-source-true' : '').'" />' : '')?>
+<?=($cssie ? '<!--[if IE]><link rel="stylesheet" type="text/css" media="all" href="/_css-'.substr($cssie,1).($_REQUEST['source'] ? '-source-true' : '').'" /><![endif]-->' : '')?>
+<?=($js ? '<script type="text/javascript" src="/_js-'.substr($js,1).($_REQUEST['source'] ? '-source-true' : '').'"></script>' : '')?>
+<?=$head?>
+</head>
+<body onload="<?=$onLoad?>" onunload="<?=$onUnload?>" onclick="<?=$onClick?>" <?=$body?>>
+
+<?=$content?>
+
+</body>
+</html>

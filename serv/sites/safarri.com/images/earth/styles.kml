@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://earth.google.com/kml/2.1">
+<Document>
+  <Style id="adList">
+    <ListStyle><ItemIcon><href>http://safarri.com/images/earth/list.png</href></ItemIcon></ListStyle>
+  </Style>
+  
+  <Style id="adDef">
+    <IconStyle><scale>0.7</scale><Icon><refreshMode>onExpire</refreshMode><href>http://safarri.com/images/earth/marker.png</href></Icon></IconStyle>
+	<LabelStyle><scale>0.8</scale></LabelStyle>
+	<BalloonStyle><text><![CDATA[<center>
+		$[description]
+		<br/>
+		<a href="http://safarri.com/earth-m-f"><img border="0" src="http://safarri.com/images/earth/pblogo.png" /></a><br />
+		<font size="-1" color="grey">(Click image to customize your viewing criteria)</font>
+	</center>
+	]]></text></BalloonStyle>
+  </Style>
+  
+  <Style id="adUp">
+	<IconStyle><scale>0.7</scale><Icon><refreshMode>onExpire</refreshMode><href>http://safarri.com/images/earth/markerup.png</href></Icon></IconStyle>
+	<LabelStyle><scale>0.9</scale></LabelStyle>
+	<BalloonStyle><text><![CDATA[<center>
+		$[description]
+		<br/>
+		<a href="http://safarri.com/earth-m-f"><img border="0" src="http://safarri.com/images/earth/pblogo.png" /></a><br />
+		<font size="-1" color="grey">(Click image to customize your viewing criteria)</font>
+	</center>]]></text></BalloonStyle>
+  </Style>
+
+  <StyleMap id="ad">
+    <Pair>
+      <key>normal</key>
+      <styleUrl>#adDef</styleUrl>
+    </Pair>
+    <Pair>
+      <key>highlight</key>
+      <styleUrl>#adUp</styleUrl>
+    </Pair>
+  </StyleMap>
+</Document>
+</kml>

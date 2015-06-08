@@ -1,0 +1,33 @@
+<?
+
+function quickBrowse($isBrowsing=true) {
+	
+	setPage('
+	<script type="text/javascript"><!--
+	function updateCategories(cats,selected) {
+		var isOneSelected = false;
+		if(cats) {
+			var categories = new Array();
+			categories = cats.split(\',\');
+			for(i=0; i<categories.length; i++) if(document.getElementById("cat" + categories[i])) document.getElementById("cat" + categories[i]).checked = selected;
+		}
+		for(i=0; i<document.forms[\'sidebarcats\'].elements.length; i++) if(document.forms[\'sidebarcats\'].elements[i].name != "-1" && document.forms[\'sidebarcats\'].elements[i].checked) isOneSelected = true;
+		if(isOneSelected == false) document.getElementById("cat-1").checked = true; 	//Check "all" box if no others are checked
+		else document.getElementById("cat-1").checked = false; 						//Uncheck "all" box if others are checked
+	}
+	--></script>
+	','head');
+		
+	setPageBlock('blockSide','Categories','
+		<form name="sidebarcats" id="sidebarcats" onSubmit="return doFilter();">
+		<input type="submit" value="» View Checked" />
+		<div style="padding:5px;">
+			<noscript><h4>Please enable javascript to use QuickBrowse.</h4></noscript>
+			'.cfunc(300,_fnc.'categorytree','catTreeBrowse',$_SESSION['safarriStore']['id']).'
+			'.($isBrowsing ? '<script type="text/javascript">updateCategories(\''.($_REQUEST['cat'] ? $_REQUEST['cat'] : -1).'\',true);</script>' : '').'
+		</div>
+		</form>
+	');
+}
+
+?>

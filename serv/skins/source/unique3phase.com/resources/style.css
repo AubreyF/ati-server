@@ -1,0 +1,87 @@
+body {
+	margin:0px;
+	background-color:#000000;
+	color:#000000;
+	text-align:center;
+	font-size:12px;
+	font-family: verdana,tahoma,sans-serif;
+	padding-bottom:20px;
+}
+
+#linkbar, #content, #logo, #footer { margin:auto; }
+
+#logo {
+	display:block;
+	width:740px;
+	height:100px;
+	background-image:url(logo.png);
+	margin-bottom:10px;
+}
+
+#linkbar {
+	height:30px;
+	background-image:url(lbc.png);
+	line-height:30px;
+	font-size:12px;
+	width:720px;
+	text-align:center;
+}
+#linkbar a {
+	display:table-cell;
+	line-height:30px;
+	height:60px;
+	width:90px;
+	color:#F3F3F3;
+	text-decoration:none;
+	border-left:1px solid #DD0000;
+	border-right:1px solid #DD0000;
+}
+#linkbar a:hover { border-left:1px solid #FFFFFF; border-right:1px solid #FFFFFF; background-image:url(lbh.png); color:#FFFFFF; }
+#linkbar .current, #linkbar .current:hover { color:#FFFFFF; font-weight:bold; border:0; background-image:url(lbd.png); }
+#linkbar .lbl { float:left; background-image: url(lbl.png); height:30px; width:10px; }
+#linkbar .lbr { float:right; background-image: url(lbr.png);  height:30px; width:10px; }
+
+#content {
+	background-color:#FFFFFF;
+	border:1px solid #DD0000;
+	border-top:0;
+	padding:20px;
+	width:678px;
+	min-height:400px;
+}
+
+#footer { display:block; background-image: url(footer.png); color:#000000; height:25px; width:720px; }
+#footer .content { display:none; }
+
+.block .title {
+	border-bottom:1px solid #DD0000;
+	color:#FFFFFF;
+	height:19px;
+	line-height:19px;
+	text-align:left;
+	background-image:url(cbl.png);
+	background-repeat:no-repeat;
+	margin-bottom:10px;
+	padding-left:10px;
+}
+.block {
+	padding-top:20px;
+	padding-bottom:20px;	
+}
+
+img { border-width:0px; }
+a { color:#333333; }
+a:hover { color:#CC0000; }
+.quote { border:1px solid #64A2E0; background-color:#D6EAFF; padding:10px; margin:20px; }
+.hidden { display:none; }
+
+.list { margin-left:30px; text-align:left; }
+.list .title { font-weight:bold; font-size:15px; margin-left:-40px; padding-bottom:5px; }
+.list li { padding-left:40px; padding-bottom:10px; }
+.list li ul li { margin-left:-50px; padding-left:5px; }
+
+.linklist a { text-decoration:none; display:block; padding:3px; }
+.linklist a:hover { background-color:#FFFFFF; border:1px solid #999999; padding:2px; }
+.linklist a:hover .hidden { display:inline; }
+.linklist .l2a { width:59%; float:left; }
+.linklist .l2b { margin-left:59%; width:35%; }

@@ -1,0 +1,100 @@
+<?
+
+setPageConst('title','ATIServer GUI Playground');
+
+setPage('
+	</script>
+	<style type="text/css">
+		.spacer { height:50px; }
+	</style>
+	
+	<div id="shader"></div>
+	<form>
+		<table class="outer">
+			<tr> 
+				<td class="lcol" id="name">Input:</td>
+				<td class="rcol"><input type="text"></td>
+			</tr>
+			<tr> 
+				<td class="lcol">Select:</td>
+				<td class="rcol"><select><option value="1">For Sale</option><option value="3">Wanted</option><option value="5">Lost</option><option value="6">Found</option></select></td>
+			</tr>
+			<tr>
+				<td class="lcol">WYSIWYG:</td>
+				<td class="rcol">'.func(_mod.'textbox', 'textbox', 'message').'</td>
+			</tr>
+		</table>
+		<input type="submit" value="Submit Button" class="bold">
+	</form>
+	
+	<div class="spacer"></div>
+	
+	<form class="outer">
+		<div>
+			<input type="text">
+			Input
+		</div>
+		<div>
+			<select><option value="1">For Sale</option><option value="3">Wanted</option><option value="5">Lost</option><option value="6">Found</option></select>
+			Select
+		</div>
+		<input type="submit" value="Submit Button">
+	</form>
+	
+	<div class="spacer"></div>
+	
+	<a href="#" class="lbtn bold">Link Button Bold</a>
+	<a href="#" class="lbtn">Link Button</a>
+	<a href="#" class="lbtn">Link Button</a>
+	
+	<div class="spacer"></div>
+	
+	<div class="lbar">
+		<a href="#" class="lflt">Left Align</a>
+		<a href="#" class="rflt">Right Align</a>
+		<a href="#" class="current">Current</a> <a href="#">LinkBar</a> <a href="#">LinkBar</a> <a href="#">LinkBar</a>
+	</div>
+	<div class="content sub">Sub Content</div>
+	
+	<div class="spacer"></div>
+	
+	<div class="header">Link List</div>
+	<div class="content llst">
+		<a href="#" class="current">Current</a> <a href="#">LinkBar</a> <a href="#">LinkBar</a> <a href="#">LinkBar</a>
+	</div>
+	
+	<div class="spacer"></div>
+	
+	<div class="sect">
+		<div class="title">Title</div>
+		Text
+		
+		<div class="sub">
+			<div class="title">Subtitle</div>
+			Subtext
+		</div>
+	</div>
+	
+	<div class="spacer"></div>
+	
+	<div class="acdn">
+		<div class="title">Accordion 1</div>
+		<div class="content">
+			Content
+		</div>
+		
+		<div class="title">Accordion 2</div>
+		<div class="content">
+			Content2
+		</div>
+	</div>
+	
+	<div class="spacer"></div>
+	
+	<div class="mbox">Message Box</div>
+	<div class="nbox">Notice Box</div>
+	<div class="etxt">Error Text</div>
+	<div class="ebox">Error Box</div>
+	
+');
+?>

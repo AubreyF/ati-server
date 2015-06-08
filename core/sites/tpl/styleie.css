@@ -1,0 +1,5 @@
+.linkList .l2b { margin-left:0; }
+.rcol textarea:hover, .rcol .mceEditorIframe:hover { padding-bottom:8px; } /* No idea why this is needed, but it keeps the .input styled textareas from getting 8 pixels shorter on hover... */
+form { margin:0; }
+.outer input, .outer .input:hover, .outer textarea, .outer textarea:hover, .outer .mceEditorIframe, .outer .mceEditorIframe:hover { margin:-4px; margin-left:-6px; }
+.outer .inputelement, .outer .inputelement:hover { margin:-3px; margin-left:-9px; }

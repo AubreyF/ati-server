@@ -1,0 +1,83 @@
+<?
+
+$tplDefs += array('blockHelp'=>'sideBar2');
+
+function block($title,$content) {
+	return '
+	<div class="boxtop"><div class="left"></div><div class="right"></div>'.$title.'</div>
+	<div class="boxcontent">
+	'.$content.'
+	</div>
+	';
+}
+
+function blockSide($title,$content) {
+	return '
+	<div class="boxtop"><div class="left"></div><div class="right"></div>'.$title.'</div>
+	<div class="boxcontent">'.$content.'</div>
+	';
+}	
+
+function blockBold($content) {
+	return '
+	<div class="boldboxtop"></div>
+	<div class="boldboxcontent">'.$content.'</div>
+	<div class="boldboxbot"></div>
+	';
+}
+
+function blockFancy($title,$content) {
+	return '
+	<div class="fancyboxtop"><div class="left"></div><div class="right"></div><img src="/_skn/pc/1/img/fbt'.preg_replace("/[^0-9a-z\.]/","",strtolower($title)).'.png"></div></div>
+	<div class="fancyboxcontent">'.$content.'</div>
+	';
+}
+
+function blockContent($title,$content) {
+	return '
+	<div class="contentboxtop"><div class="left"></div><div class="right"></div><img src="/_skn/pc/1/img/cb'.preg_replace("/[^0-9a-z\.]/","",strtolower($title)).'.png"></div></div>
+	<div class="contentboxcontent">'.$content.'</div>
+	';
+}
+
+function blockMessage($message) {
+	return '
+	<div id="messagebox">
+		<div class="left"></div>
+		<a href="'.$_SERVER['FAKE_URI'].'" title="Close Message"><div class="right"></div></a>
+		<div class="text">
+			<div class="title">Message Viewer:</div>
+			<div class="message">'.$message.'</div>
+		</div>
+	</div>
+	';
+}
+
+function blockHelp($title,$message,$floating=true) {
+	setPage('
+	<script type="text/javascript">
+	<!--
+	function setHelp(title,message) {
+		document.getElementById("tipboxtitle").innerHTML = title;
+		document.getElementById("tipboxtext").innerHTML = message;
+	}
+	function clearHelp() {
+		document.getElementById("tipboxtitle").innerHTML = \''.$title.'\';
+		document.getElementById("tipboxtext").innerHTML = "'.str_replace('"','\"',$message).'";
+	}
+	//-->
+	</script>
+	','head');
+		
+	return '
+	<div class="tipboxspacer">&nbsp;</div>
+	<div class="tipbox'.($floating ? ' tipboxfloating' : '').'">
+		<div class="tipboxtop"></div>
+		<div class="tipboxtitle" id="tipboxtitle">'.$title.'</div>
+		<div class="tipboxcontent" id="tipboxtext">'.$message.'</div>
+		<div class="tipboxbot"></div>
+	</div>
+	';
+}
+
+?>

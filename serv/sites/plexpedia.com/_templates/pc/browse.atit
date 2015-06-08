@@ -1,0 +1,116 @@
+<?
+
+$title = $page['title'];
+$bct = $page['bct'];
+
+if($catBox['title']) {
+	$counter = 1;
+	if($page['category']) {
+		$counter++;
+		$catBox['content'] .= '<td valign="top"><a class="category" href="/browse'.($page['category']['parent'] ? '-cat-'.$page['category']['parent'] : '').'"><img src="/img/folderup.png"/> Up</a>';
+	}
+	if($_SESSION['groupName'] && $categories = func(_mod.'dbtree','getChildTreeArray',catTable,$_REQUEST['cat'],(!$_SESSION['groupName'] ? 'AND minPowerBrowse <= '.$_SESSION['userPower'] : ((!isAdmin() && $_SESSION['plexpediaGroup']['usId'] != $_SESSION['userId'] && !$_SERVER['db']->getOne('SELECT groupId FROM group_members WHERE userId = "'.$_SESSION['userId'].'" AND groupId = "'.$_SESSION['plexpediaGroup']['id'].'"')) ? 'AND access <= 2' : '').' AND ('.substr($_SESSION['plexpediaGroup']['groupSql'],4).' OR parent != 0)').' ORDER BY title ASC',3)) {
+		foreach ($categories as $key=>$cat) {
+			//$catTypes[$cat['type']] = true;
+			$rs = $_SERVER['db']->execute("SELECT type FROM forum_threads WHERE cid = $cat[id] AND `state` != 'hidden'");
+			$ads = $rs->RecordCount();
+			$catBox['content'] .= '<td valign="top"><a class="category" title="'.$cat['title'].' - '.$cat['description'].'" href="/browse-cat-'.$cat['id'].'"><img src="/img/folderold.png"/> '.$cat['title'].'</a>';
+			if ($cat['children']) foreach ($cat['children'] as $subCat) $catBox['content'] .= '<a class="subcategory desc" title="'.$subCat['title'].' - '.$subCat['description'].'" href="/browse-cat-'.$subCat['id'].'"><img src="/img/foldersmallold.png" /> '.$subCat['title'].'</a>';
+			$catBox['content'] .= '</td>';
+			if ($counter++ % 4 == 0) $catBox['content'] .= '</tr><tr>';
+		}
+	}
+	
+	if(!$_REQUEST['show'] && !$catBox['content'] && !$_REQUEST['cat'] && !$_SESSION['plexpediaGroup']['text']['hideDataCats']) {
+		foreach ($_SERVER['plexDataTypes'] as $key=>$val) {
+			if(!$val['p']) continue;	//This data type is invisible
+			$count = $_SERVER['db']->execute('SELECT id FROM forum_threads WHERE type = \''.$key.'\' AND (state = \'active\' OR state = \'resolved\') '.$_SESSION['plexpediaGroup']['sql'])->RecordCount();
+			if($_SERVER['db']->execute('SELECT id FROM group_categories WHERE type = \''.$key.'\' AND groupId = \''.$_SESSION['plexpediaGroup']['id'].'\'')->RecordCount() || $count < 1) continue;
+			$catBox['content'] .= '<td valign="top"><a class="category" title="'.$count.' items" href="/browse-show-'.$key.'"><img src="/img/folderold.png"/> '.$val['p'].'</a>';
+			if ($counter++ % 4 == 0) $catBox['content'] .= '</tr><tr>';
+		}
+	}
+	
+	if($catBox['content']) $catBox['content'] = '<table style="width:100%;"><tr>'.$catBox['content'].'</tr></table><br />';
+}
+
+//****************** Pagination ********************
+
+if(!$rs = $_SERVER['db']->execute($threadBox['sql'])) error('The database is experiencing errors.','fatal');
+if($items = $rs->RecordCount()) {
+	if($items > 20) {
+		$pagination = func(_mod.'pagination','pagination',$items,20);
+		$threadBox['sql'] .= $pagination['sql'];
+		$rs = $_SERVER['db']->execute($threadBox['sql']);
+		$page['content'] .= '<div class="lbar">'.$pagination['string'].'</div>';
+	}
+	
+	$page['content'] .= '<table class="outer browseList">';
+	
+	$loggedIn = isLoggedIn();
+	while ($thread = $rs->FetchRow()) {
+		$counter ++;
+		(($counter % 2) == 0) ? $class = 'class="even"' : $class = 'class="odd"';
+		
+		$user = renderUser($thread['userId']);
+		$thread['replies'] = $_SERVER['db']->getOne('SELECT COUNT(*) FROM forum_posts WHERE tid = '.$thread['id']);
+		
+		if($thread['tags']) {
+			$temp = explode(';',$thread['tags']);
+			$thread['tags'] = '';
+			foreach($temp as $key=>$tag) $thread['tags'] .= ($thread['tags'] ? ', ' : '').'<b>'.$tag.'</b>';
+		}
+		
+		$page['content'] .= '
+			<tr '.$class.'>
+				<td><img src="'.($thread['picture'] ? $thread['picture'] : '/img/icon'.$thread['type'].'.png').'" /></td>
+				<td>
+					<a href="/view-'.$thread['id'].'" style="overflow: hidden;">
+						<div class="title">
+							'.($loggedIn ? '<span class="lflt">'.($thread['readTime'] ? ($thread['time'] > $thread['readTime'] ? '+' : '') : '*').'</span>' : '').' 
+							'.$thread['title'].'
+						</div>
+						<div class="desc" style="max-height:12px; overflow:hidden;">'.$thread['description'].'</div>
+						<div class="desc" style="max-height:25px; overflow:hidden;">'.$thread['tags'].'</div>
+					</a>
+				</td>
+				<td class="stats">
+					<div><div>'.ucwords($user['userName']).'</div>By:</div>
+					'.($thread['state'] != 'active' ? '<div><div>'.ucwords($thread['state']).'</div>Status:</div>' : '').'
+					'.($thread['replies'] ? '<div><div class="boldText">'.$thread['replies'].'</div>Replies:</div></div>' : '').'
+					<div><div class="desc">'.doDate($thread['submitTime'],'short').'</div>Date:</div>
+				</td>
+			</tr>
+		';
+	}
+	
+	$page['content'] .= '</table>';
+	
+	if($items > 15) $page['content'] .= '<div class="lbar">'.$pagination['string'].'</div>';
+}
+else { //THERE WERE NO ITEMS IN THIS CATEGORY
+	 $page['content'] = '
+	 <div class="ebox">
+	 <h4>No items to show in view:<div class="stxt itxt">Please try:</div></h4>
+	 <ul class="llst">'.$threadBox['noItemsErrorResolve'].'</ul>
+	 </div>';
+}
+
+/*
+if(!$_SESSION['forumShowMode'] || $_SESSION['forumShowMode'] == 'all') $formats['all'] = ' class="down"';
+else $formats[$_SESSION['forumShowMode']] = ' class="down"';
+setPageConst('formats','
+	<a href="'.do_url('show','all').'"'.$formats['all'].'><img src="/img/formatall.png" alt="Show All Items!" /></a>
+	<a href="'.do_url('show','art').'"'.$formats['art'].'<img src="/img/formatart.png" alt="Show Only Articles" /></a>
+	<a href="'.do_url('show','dis').'"'.$formats['dis'].'><img src="/img/formatdis.png" alt="Show Only Discussions" /></a>
+	<a href="'.do_url('show','nws').'"'.$formats['nws'].'><img src="/img/formatnws.png" alt="Show Only News!" /></a>
+	'.($bugCat ? '<a href="'.do_url('show','bug').'"'.$formats['bug'].'><img src="/img/formatbug.png" alt="Show Only Bugs!" /></a>' : '').'
+');
+*/
+
+//if($catBox['content']) setPageBlock('block',$catBox['title'],$catBox['content']);
+
+setPage($catBox['content'].$page['content']);
+$head .= '<link rel="alternate" type="application/rss+xml" title="RSS Feed of this page" href="/export.atis'.build_url(array('page')).'-tpl-rss" />';
+
+?>

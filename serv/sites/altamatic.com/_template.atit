@@ -1,0 +1,35 @@
+<?
+
+$siteName		= 'AltaMatic';
+$logos	 		= array(2=>'/img/logos/2.png',3=>'/img/logos/3.png');
+$background 	= '/img/bg.png';
+$navLinks 		= array('Index'=>'/index', 'Cryptography'=>'/crypt', 'Gadgets'=>'/gadget', 'Printables'=>'/print');
+$footer 		= '
+	<a href="http://my.statcounter.com/project/standard/stats.php?project_id=2434611&guest=1" target="_blank">
+		<script type="text/javascript" language="javascript">
+		var sc_project=2434611; 
+		var sc_invisible=0; 
+		var sc_partition=23; 
+		var sc_security="b13ca2a2"; 
+		var sc_text=2; 
+		var sc_remove_link=1; 
+		</script>
+		<script type="text/javascript" language="javascript" src="http://www.statcounter.com/counter/counter.js"></script><noscript><img  src="http://c21.statcounter.com/counter.php?sc_project=2434611&java=0&security=b13ca2a2&invisible=0" alt="counter free hit unique web" border="0"></noscript>
+		Views >>
+	</a>
+	<i>Happy Sleuthing!</i>
+	
+	<script type="text/javascript">
+	var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+	document.write(unescape("%3Cscript src=\'" + gaJsHost + "google-analytics.com/ga.js\' type=\'text/javascript\'%3E%3C/script%3E"));
+	</script>
+	<script type="text/javascript">
+	var pageTracker = _gat._getTracker("UA-1255418-4");
+	pageTracker._initData();
+	pageTracker._trackPageview();
+	</script>
+';
+
+$showAds		= true;
+
+?>

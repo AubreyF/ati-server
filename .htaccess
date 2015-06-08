@@ -1,0 +1,9 @@
+Options -Indexes
+
+<ifModule mod_rewrite.c>
+
+RewriteEngine on
+RewriteBase    /
+RewriteRule    ^(.*)  core/server/servant.php
+
+</ifModule>

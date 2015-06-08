@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+	<ShortName>Safarri</ShortName>
+	<LongName>Safarri.com - Syndicated Classifieds</LongName>
+	<Description>Search thousands of classifieds sites at once to find exactly what you are looking for!</Description>
+	<Tags>commerce classifieds buying selling</Tags>
+	<Developer>Aubrey Falconer</Developer>
+	<Image width="16" height="16" type="image/png">http://safarri.com/images/logos/small.png</Image>
+	<Image width="16" height="16" type="image/vnd.microsoft.icon">http://safarri.com/favicon.ico</Image>
+	<InputEncoding>UTF-8</InputEncoding> 
+	<Url type="text/html" template="http://safarri.com/browse-q-{searchTerms}" />
+	<Url type="application/rss+xml" template="http://safarri.com/export.atis-tpl-rss-q-{searchTerms}-page-{startPage?}"/>
+</OpenSearchDescription>

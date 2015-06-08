@@ -1,0 +1,165 @@
+<?
+
+if($_REQUEST['m'] == 'f') { //They came from Earth and are updating their filter
+	$message = '
+		<div class="title">Welcome, Earth User:</div>
+		Update your filters and download new ones here!<br />
+		<i>For ultra-precise filters, check out the "Power Browsing" tip.</i>
+	';
+}
+else { //New user
+	$message = '
+		<div class="title">Safarri + Google Earth:<!--<div class="desc">(Beta)</div>--></div>
+		Browse classifieds in real time 3D.<br />
+		<i>Discover local listings in a whole new way!</i>
+	';
+}
+
+setPageConst('title','3D Classifieds');
+setPageConst('bct','<a href="/index">Home</a> > Safarri + Google Earth');
+setPageConst('showAds',true);
+setPageRes('mbox');
+
+setPage('
+<style type="text/css">
+.earthbox .left { float:left; width:215px; height:200px; background-image:url(/images/earth/blockl.png); }
+.earthbox .arrow { float:left; width:50px; height:200px; background-image:url(/images/earth/blockl2.png); }
+.earthbox .right { float:right; width:35px; height:200px; background-image:url(/images/earth/blockr.png); }
+.earthbox .center { height:140px; margin-left:265px; margin-right:35px; padding-top:50px; margin-bottom:20px; background-image:url(/images/earth/blockc.png); }
+.earthbox .title { font-size:2em; font-weight:bold; color:#0066CC; text-decoration:none; margin-bottom:30px; }
+.earthbox .desc { margin-bottom:-10px; }
+.block { display:block; }
+.block>.icon { font-size:4em; color:#0066CC; padding:20px; padding-bottom:0px; float:left; }
+.block>.text, .block>.text:hover { height:100px; padding-right:20px; font-size:10px; color:#999999; }
+.block>.text>.title { padding-top:10px; padding-bottom:10px; font-size:13px; color:#0066CC; text-align:left; }
+.block>.text>.desc { color:#BBBBBB; }
+.faqs { text-align:left; }
+.faq { margin:10px; }
+.faq .q { color:#0066CC; }
+.faq .a { margin:5px; color:#A9A9A9; }
+.linkBlock:hover { background-color:#FFFFFF; }
+.linkBlock:hover .icon, .linkBlock:hover .title { color:#FF6600; }
+#earthSettings { width:220px; line-height:25px; float:right; padding-right:10px; }
+#earthSettings input, #earthSettings .inputelement { float:right; width:140px; clear:both; }
+</style>
+
+<script type="text/javascript"><!--
+	function earthFilterDownload() {
+		document.getElementById("earthFilterLink").href = "/export.atis-tpl-earth-cat-" + document.forms[\'earthSettings\'].elements["cat"].value + "-q-" + document.forms[\'earthSettings\'].elements["q"].value + "-geocode-" + document.forms[\'earthSettings\'].elements["geocode"].value + "-minprice-" + document.forms[\'earthSettings\'].elements["minprice"].value + "-maxprice-" + document.forms[\'earthSettings\'].elements["maxprice"].value;
+	}
+//--></script>
+','head');
+
+setPage('
+<div class="earthbox">
+	<div class="left"></div>
+	<div class="arrow"></div>
+	<div class="right"></div>
+	<div class="center caln">
+		'.$message.'
+	</div>
+</div>
+
+'.pFunc('columns','',
+	pfunc('blockContent','Let\'s Go!','
+		<div style="height:400px; overflow:hidden;">
+		<a class="block linkBlock" href="http://earth.google.com/download-earth.html" target="_blank">
+			<div class="icon">1</div>
+			<div class="text" style="height:90px;">
+				<div class="title"><img style="float:right;" src="/images/earth/download_earth.gif" />Set Up Earth:</div>
+				<br />(Proceed to next step once <span class="linkText">Google Earth</span> is running happily)
+			</div>
+		</a>
+		<div class="block">
+			<div class="icon">2</div>
+			<div class="text" style="height:170px;">
+				<div class="title">Set Up Safarri:</div>
+				<noscript class="desc">(Please enable JavaScript to use this feature)</noscript>
+				<form id="earthSettings">
+					<div><select class="input" name="geocode" title="Quick Display is better for fast internet connections - Fast Load is better for slow internet connections"><option value="">Quick Display</option><option value="true">Fast Load</option></select>Optimize:</div>
+					<!--<script type="text/javascript">
+						if(window.gecko) document.write(\'<div><input type="hidden" name="cat" id="cat" /><a id="catName" class="inputelement" href="/tpl/catselect.ati-stid-'.$_SESSION['safarriStore']['id'].'" rel="moodalbox 350px" title="Show Ads in this Category"></a>Category:</div>\');
+						else document.write(\'<div>'.cFunc(1,_fnc.'categorytree','catSelect').'Category:</div>\');
+					</script>
+					<noscript>-->
+					<div>'.cFunc(300,_fnc.'categorytree','catSelect').'Category:</div>
+					<!--</noscript>-->
+					<div><input class="input" type="text" name="q" value="'.htmlentities($_REQUEST['q']).'" title="Show Ads That Contain These Words" />Keywords:</div>
+					<div><input class="input" type="text" name="minprice" value="'.$_REQUEST['minprice'].'" title="Show Ads Above This Price" />Min Price:</div>
+					<div><input class="input" type="text" name="maxprice" value="'.$_REQUEST['maxprice'].'" title="Show Ads Below This Price" />Max Price:</div>
+				</form>
+			</div>
+		</div>
+		
+		<a class="block linkBlock" href="/export.atis-tpl-earth" onClick="earthFilterDownload();" id="earthFilterLink">
+			<div class="icon">3</div>
+			<div class="text" style="height:140px;">
+				<div class="title"><img style="float:right;" src="/images/earth/earth_feed.gif" />Connect Safarri:</div>
+				<ul style="margin-top:0; margin-left:40px;">
+					<li>Click Here to download Safarri.kml</li>
+					<li>Navigate to your download location</li>
+					<li>Double click Safarri.kml in your downloads - and view items that match your criteria in Google Earth!</li>
+				</ul>
+				<div class="desc">Delete the Safarri.kml file at your leisure.</div>
+			</div>
+		</a>
+		</div>
+	',itemList('nopad','fancy'))
+,
+	pfunc('blockContent','Tips and Tricks','
+		<div class="block">
+			<img class="icon" src="/images/earth/iconmarker.png" />
+			<div class="text">
+				<div class="title">Know your Markers:</div>
+				As you fly around, "Markers" will appear denoting items for sale. Click them to learn more about each item!
+			</div>
+		</div>
+		<div class="block">
+			<img class="icon" src="/images/earth/iconzoom.png" />
+			<div class="text">
+				<div class="title">Zoom In:</div>
+				When you are viewing a large area, Safarri only shows the "neatest" ads. Zoom in to see all the items!
+			</div>
+		</div>
+		<div class="block">
+			<img class="icon" src="/images/earth/iconbrowse.png" />
+			<div class="text">
+				<div class="title">Power Browsing:</div>
+				While browsing Safarri online, click the "Earth" button in the upper right of the browse page to import your current filter settings into Earth! 
+			</div>
+		</div>
+		<div class="block">
+			<img class="icon" src="/images/earth/iconlinks.png" />
+			<div class="text">
+				<div class="title"><a name="multiplefilters" class="anchor"></a>Multiple Safarri Filters:</div>
+				If you are looking for cars and land, you can download each seperate filter into Earth at the same time and toggle them on and off individually!
+			</div>
+		</div>
+	',itemList('nopad','fancy'))
+	).'
+	<div class="block">
+		<div class="header">In The News:</div>
+		<div class="content llst">
+			<a href="http://blog.oodle.com/2007/03/19/oodle-api-google-earth/" target="_blank">>> Safarri + Google Earth mentioned on the Official Oodle Blog</a>
+			<a href="http://www.gearthblog.com/blog/archives/2007/03/google_earth_classif.html" target="_blank">>> A nice article about Safarri + Google Earth by the "Google Earth Blog"</a>
+			<a href="http://www.ogleearth.com/2007/03/links_utah_geol.html" target="_blank">>> A quick mention of Safarri by "Ogle Earth"</a>
+		</div>
+	</div>
+	
+	
+	<div class="block">
+		<div class="header">Frequently Asked Questions:</div>
+		<div class="content faqs">
+			<div class="faq">
+				<div class="q">Why can\'t I select multiple categories in the category tree window in firefox?</div>
+				<div class="a">Because there is an even better way to browse multiple categories! See the "<a href="#multiplefilters">Multiple Safarri Filters</a>" Tip.</div>
+			</div>
+			<div class="faq">
+				<div class="q">It seems that international items aren\'t working too well. What\'s up?</div>
+				<div class="a">We are working on it :-)</div>
+			</div>
+		</div>
+	</div>
+');
+
+?>

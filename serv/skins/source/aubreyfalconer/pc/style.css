@@ -1,0 +1,52 @@
+body { 
+	font-family:Verdana, Arial, Helvetica, sans-serif;
+	font-size:12px;
+	background: #EDEDED url(/tpl/pc/img/tc.jpg) 0px 0px repeat-x;
+	text-align:center;
+}
+
+a { color:#0033CC; }
+a:hover { 
+	color:#CC0033;
+	text-decoration: none;
+}
+img { border:0; }
+
+#links {
+	display:inline;
+}
+
+#content {
+	margin-top:30px;
+	width:850px;
+	background-image:url("/tpl/pc/img/bg.jpg");
+	margin-left:auto;
+	margin-right:auto;
+	text-align:left;
+}
+
+#content #text {
+	padding:0 80px 0 80px;
+}
+
+.NAVBar {
+	margin-left:auto;
+	margin-right:auto;
+	width:850px;
+	text-align:right;
+}
+.NAVBar ul {
+	width:340px;
+	margin-left:auto;
+	margin-right:auto;
+}
+.NAVBar ul li {
+	padding-left:30px;
+}
+.NAVBar div, .NAVBar img {
+	float:left;
+}
+.SUBNavBar {
+	width:810px;
+	float:left;
+}

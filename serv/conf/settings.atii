@@ -1,0 +1,173 @@
+<?
+
+ini_set('memory_limit', '12M');
+ini_set('magic_quotes_gpc', 'off');
+ini_set('magic_quotes_runtime', 'off');
+date_default_timezone_set('GMT');
+
+$GLOBALS['prefs'] = array(
+
+//********************* Misc **********************
+
+	'maxThreadedChildren' => 3,
+	'port' => '8000',
+
+//***************** Default Headers ***************
+
+	'defHeaders' => array(
+		'status' => 'HTTP/1.1 200 OK',
+		'server' => 'ATIServer',
+		'content-type' => 'text/html',
+		'cache-control' => 'no-store, no-cache, must-revalidate',
+	),
+
+//************* DB Based Session Fields ************
+
+	'database' => array(
+		'serverMemberFields' => 'userId,guestId,userName,userRealName,userEmail,userPower,userSignupDate,userBio,userAdminPrivleges,userPassword,userPhone,userLatitude,userLongitude,userLocation,userIp,userHits,userVisits,userTime,firstPage,registrationSite,userLastDate,autoForwardEnabled,userSkin,banMessage',
+		'serverGuestFields' => 'userId,userLatitude,userLongitude,userSignupDate,userLastDate,userIp,userHits,userVisits,userTime,userSkin',
+		'serverBufferFields' => 'userId,bufferId,bufferLast,lastPage,lastPageDead,message,messagePage',
+	),
+
+//******************** Redirects ********************
+
+	'redirect' => array(
+		'str' => array( /*'/\/$/',*/
+			'/www\./', '/\.ati$/'),
+		'rep' => array( /*'/index'*/), //If str has more values then rep, empty strings will be used
+	),
+
+//******************* Banned Users *******************
+
+	'banned' => array(
+		'76.222.53.85' => true, //SuckMyPenis of MarsXPLR fame
+		'76.222.53.85' => true, //SuckMyPenis of MarsXPLR fame
+		'75.63.53.141' => true, //Read180
+		'75.56.48.155' => true,
+		'75.56.62.87' => true, //Vagina
+		'75.80.19.18' => true, //ApacolipticKiwi-Quasar
+		'98.148.248.166' => true, //ApacolipticKiwi-Quasar
+		//'208.94.80.58' => true, //me
+	),
+
+//******************** Cloaking *********************
+
+	'cloak' => array(
+		'str' => array('/\.loc$/'),
+		'rep' => array(),
+	),
+
+//******************* Index Files *******************
+
+	'indexes' => array(
+		'index.ati' => 'index',
+		'index.php' => 'index.php',
+		'index.htm' => 'index.htm',
+		'index.html' => 'index.html',
+	),
+
+//********************* Alases **********************
+
+	'alias' => array(
+		'/user' => '/core/sites/user',
+		'/_srv' => '/core/sites/tpl',
+		'/_css' => '/core/sites/server/css',
+		'/_js' => '/core/sites/server/js',
+		'/_inc' => '/serv/includes',
+		'/_lib' => '/data/library',
+		'/_upl' => '/data/uploads',
+		'/*upl' => '/data/uploads',
+		'/_skn' => '/serv/skins',
+		'/_n' => '/serv/networks',
+	),
+
+//***************** Extension Mapping ****************
+
+	'extmask' => array(
+		'/_css' => '.atis',
+		'/_js' => '.atis',
+		'default' => '.ati',
+	),
+
+//******************** File Types ********************
+
+	'extensions' => array(
+		'.ati' => array('name' => '.ati', 'mime' => 'text/html', 'gZip' => true, 'dynamic' => true),
+		'.atis' => array('name' => '.atis', 'gZip' => true, 'dynamic' => true, 'simple' => true),
+		'.atit' => 'hidden',
+		'.atii' => 'hidden',
+		'.php' => array('name' => '.php', 'mime' => 'text/html', 'gZip' => true, 'dynamic' => true),
+		'.jpg' => array('name' => '.jpg', 'mime' => 'image/jpeg'),
+		'.gif' => array('name' => '.gif', 'mime' => 'image/gif'),
+		'.png' => array('name' => '.png', 'mime' => 'image/png'),
+		'.ico' => array('name' => '.ico', 'mime' => 'image/x-icon'),
+		'.css' => array('name' => '.css', 'mime' => 'text/css', 'gZip' => true),
+		'.htm' => array('name' => '.htm', 'mime' => 'text/html', 'gZip' => true),
+		'.html' => array('name' => '.html', 'mime' => 'text/html', 'gZip' => true),
+		'.txt' => array('name' => '.txt', 'mime' => 'text/plain'),
+		'.swf' => array('name' => '.swf', 'mime' => 'application/x-shockwave-flash'),
+		'.js' => array('name' => '.js', 'mime' => 'application/x-javascript', 'gZip' => true),
+		'.mp3' => array('name' => '.mp3', 'mime' => 'audio/x-mp3'),
+		'.mp4' => array('name' => '.mp4', 'mime' => 'video/mp4'),
+		'.m4a' => array('name' => '.m4a', 'mime' => 'audio/mp4'),
+		'.m4v' => array('name' => '.m4v', 'mime' => 'video/mp4'),
+		'.pdf' => array('name' => '.pdf', 'mime' => 'application/pdf'),
+		'.kml' => array('name' => '.kml', 'mime' => 'application/vnd.google-earth.kml+xml'),
+		'other' => array('mime' => 'application/octet-stream', 'cache-control' => 'no-store, no-cache, must-revalidate'),
+	),
+
+//***************** Default Resources ******************
+
+	'resources' => array(
+		'ati' => array('_inc/mt/milkbox/milkbox.js', '_inc/mt/milkbox/milkbox.css', /*'_inc/mt/lightbox/lightbox.js','_inc/mt/lightbox/lightbox.css',*/
+			'tpl/pc/scripts.js', '_srv/style.css', '_srv/styleie.cssie', '_inc/mt/ati.js', '_inc/mt/mootools.js'),
+		'mbox' => array('_inc/mt/moodalbox/moodalbox.js', '_inc/mt/moodalbox/moodalbox.css'),
+		'mt' => '_inc/mt/mootools.js',
+		'slideFlash' => array('_inc/mt/pics/slideshow.js', '_inc/mt/pics/slideshow.flash.js', '_inc/mt/pics/slideshow.css'),
+		'slidePush' => array('_inc/mt/pics/slideshow.js', '_inc/mt/pics/slideshow.push.js', '_inc/mt/pics/slideshow.css'),
+		'slideKenBurns' => array('_inc/mt/pics/slideshow.js', '_inc/mt/pics/slideshow.kenburns.js', '_inc/mt/pics/slideshow.css'),
+		'reflect' => '_inc/mt/reflection.js',
+		'revolve' => '_inc/mt/revolver.js',
+	),
+
+//***************** Root Template Types ****************
+
+	'templates' => array(
+
+		//Template Types
+
+		'pc' => 'advanced',
+		'ppc' => 'advanced',
+		'print' => 'advanced',
+		'html' => 'simple',
+
+		//Template Presets
+
+		'advanced' => array(
+			'vars' => array('docType' => '', 'onLoad' => '', 'onUnload' => '', 'onClick' => '', 'body' => '', 'title' => '', 'bct' => '', 'siteName' => '', 'head' => '', 'header' => '', 'content' => '', 'sideBar' => '', 'sideBar2' => '', 'footer' => '', 'navLinks' => '', 'formats' => '', 'searchBox' => '', 'logo' => '', 'logos' => '', 'logoText' => '', 'background' => '', 'showAds' => ''),
+			'defs' => array('block' => 'content', 'blockMessage' => 'content', 'blockComment' => 'content', 'blockContent' => 'content', 'blockFancy' => 'content', 'blockHeaded' => 'content', 'blockSide' => 'sideBar', 'blockHelp' => 'sideBar'),
+		),
+		'simple' => array('vars' => array('content' => '')),
+
+		//Template Defaults
+
+		'default' => 'pc',
+	),
+
+//*************** Server Specific Settings **************
+
+	'servers' => array(
+		'testing' => array(
+			'server' => 'testing',
+			'superDomain' => '.loc',
+			'database' => array('type' => 'mysqli', 'user' => 'root', 'pass' => '', 'serverdb' => 'atidb', 'host' => 'localhost', 'prefix' => '', 'socket' => ''),
+			'imagemagickpath' => '/usr/local/bin/',
+			'amazon_web_services' => array('key' => '', 'secret_key' => ''),
+		),
+
+		'production' => array( /* defined in settings_secret file included below */),
+	)
+
+);
+
+require 'settings_secret.atii';

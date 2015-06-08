@@ -1,0 +1,384 @@
+<?
+if($_REQUEST['default']) $_REQUEST['id'] = $_REQUEST['default'];
+
+$ad = $_SERVER['db']->getRow("
+SELECT *
+FROM classifieds_ads a, classifieds_types t, classifieds_prices p
+WHERE a.type = t.typeId AND a.priceType = p.priceId AND a.id = '{$_REQUEST['id']}'");
+
+if(!$ad || $ad['banText']) redirect($_SESSION['lastPage'],'The ad you tried to view did not exist.<br />We appologise for the inconvience.');
+if($ad['anonymous_user_details']) $seller = unserialize($ad['anonymous_user_details']);
+else $seller = renderUser($ad['usid']);
+
+if($_REQUEST['sign']) {
+	setPagePref('template','html');
+	setPagePref('deadEndPage',true);
+	setPage('window.print();','onLoad');
+}
+
+if($_REQUEST['sign'] == 'txt') {
+setPage('
+<style type="text/css">
+div {
+	position:absolute;
+}
+.big {
+	top:210px;
+	width:350px;
+	text-align:center;
+	font-size:30px;
+	font-weight:bold;
+}
+.text {
+	left: 70px;
+	width:780px;
+}
+
+.price { left: 60px; }
+.phone { left: 510px; }
+.pt { font-size:13px; font-style:italic; }
+
+.title {
+	top: 283px;
+	text-align:center;
+	font-size:22px;
+	font-weight: bold;
+}
+.description {
+	top: 320px;
+	height:170px;
+	overflow:auto;
+}
+.features {
+	top: 510px;
+	height:108px;
+	overflow:auto;
+	margin-top:-15px;
+}
+.features ul li {
+	float:left;
+	min-width:150px;
+	padding-right:25px;
+}
+
+.bot {
+	top:620px;
+	left:8px;
+	width:900px;
+	text-align:center;
+	font-size:17px;
+	line-height:25px;
+	font-weight:bold;
+}
+.bot .bold {
+	font-size:26px;
+	font-weight:bold;
+}
+</style>
+
+<img src="/images/signs/txt-'.$_REQUEST['ink'].'.png" alt="" />
+
+<div class="price big">'.number_format($ad['price'],2).' <span class="pt">'.$ad['priceType'].'</span></div>
+<div class="phone big">'.doPhone($seller['userPhone']).'</div>
+
+<div class="title text">'.$ad['title'].'</div>
+
+<div class="description text">'.$ad['description'].'</div>
+
+<div class="features text"><ul>'.$ad['features'].'</ul></div>
+
+<div class="bot">
+	For Pictures, more contact info, and a full description<br />
+	<span class="bold">See this item on the web at www.'.$ad['id'].'.'.$_SERVER['FAKE_HOST'].'</span>
+</div>
+');
+}
+
+else if($_REQUEST['sign'] == 'pic') {
+	if($ad['pic0']) $pics .= '<img src="'.$ad['pic0'].'" alt="" />';
+	if($ad['pic1']) $pics .= '<img src="'.$ad['pic1'].'" alt="" />';
+	$i = 2;
+	while ($i < 10) {
+		if($ad['thumb'.$i]) $pics .= '<img src="'.$ad['thumb'.$i].'" alt="" />';
+		$i++;
+	}
+setPage('
+<style type="text/css">
+body { padding:0px; margin:0px; }
+
+div, table {
+	position:absolute;
+	text-align:center;
+}
+.big {
+	top:20px;
+	font-size:25px;
+	font-weight:bold;
+}
+.small {
+	left:167px;
+	font-size:12px;
+	width:530px;
+}
+.small ul li {
+	float:left;
+	min-width:130px;
+	padding-right:25px;
+}
+
+.price { width: 257px; left: 280px; }
+.phone { width: 325px; left: 565px; }
+.pt { font-size:13px; font-style:italic; }
+
+.title {
+	top: 64px;
+	left: 26px;
+	width:848px;
+	font-size:18px;
+	font-weight: bold;
+	text-align:left;
+}
+
+.link {
+	float:right;
+}
+
+.text {
+	top: 95px;
+	left: 10px;
+	width:880px;
+	text-align:left
+}
+.desc, .feat {
+	height:200px;
+	font-size: 13px;
+}
+
+.pics {
+	left: 50px;
+	top: 310px;
+	width:801px;
+
+}
+.pics img { float:left; }
+</style>
+
+<img src="/images/signs/pics.png" alt="" />
+
+<div class="price big">'.number_format($ad['price'],2).' <span class="pt">'.$ad['priceType'].'</span></div>
+<div class="phone big">'.doPhone($seller['userPhone']).'</div>
+
+<div class="title"><span class="link">www.'.$ad['id'].'.'.$_SERVER['FAKE_HOST'].'</span>'.$ad['title'].'</div>
+
+<table class="text">
+	<tr>
+		<td class="desc" height="140" valign="top">'.$ad['description'].'</td>
+		<td class="feat" height="140" valign="top"><ul>'.$ad['features'].'</ul></td>
+	</tr>
+</table>
+
+<div class="pics">
+	'.$pics.'
+</div>
+');
+}
+
+else {
+	setPageConst('title','Marketing ad "'.$ad['title'].'" locally!');
+	setPageConst('bct','<a href="/index">Home</a> > <a href="/ad-'.$ad['id'].'">'.$ad['title'].'</a> > Marketing Ad!');
+	
+	$ad['pictureCount'] = 0;
+	while ($ad['pictureCount'] < 16) {
+		if(!$ad['pic'.$ad['pictureCount']]) break;
+		$ad['picList'] .= '<a target="_blank" href="http://safarri.com'.str_replace('.jpg','-orig.jpg',$ad['pic'.$ad['pictureCount']]).'"><img src="http://safarri.com'.$ad['pic'.$ad['pictureCount']].'" /></a>';
+		if(($ad['pictureCount'] + 1) % 2 == 0) $ad['picList'] .= '<br />';
+		$ad['pictureCount']++;
+	}
+	
+	if($ad['town'] || $ad['xtraLocation']) $ad['location'] = ($ad['town'] ? $ad['town'].', '.$ad['country'].' ' : '').$ad['xtraLocation'];
+	
+	if($ad['storeid']) {
+		$temp = $_SERVER['db']->getRow('SELECT link FROM stores where id = '.$ad['storeid']);
+		$ad['storeLink'] = (strpos($item['link'],'.') ? 'http://'.$temp['link'] : 'http://'.$temp['link'].'.'.SAFARRI);
+	}
+	else $ad['storeLink'] = 'http://'.$_SERVER['FAKE_HOST'];
+	
+	$adHtml = str_replace("\n",'','
+<table border="0" width="800">
+<tbody>
+<tr>
+<td>
+<div>
+<table border="0" width="100%">
+<tbody>
+<tr>
+<td width="300" valign="top" align="center">
+<h3>
+<table border="0" width="80%">
+<tbody>
+<tr>
+<th scope="row">Seller:</th>
+<td>'.$seller['userRealName'].'</td>
+</tr>
+'.($seller['userPhone'] ? '
+<tr>
+<th scope="row">Phone:</th>
+<td>'.doPhone($seller['userPhone']).'</td>
+</tr>
+' : '').'
+<tr>
+<th scope="row">Price:</th>
+<td>
+<div><b>$'.$ad['price'].'</b> - '.$ad['priceType'].'</div>
+</td>
+</tr>
+'.($ad['location'] ? '
+<tr>
+<th scope="row">Location:</th>
+<td>'.$ad['location'].'</td>
+</tr>
+' : '').'
+'.($ad['qty'] > 1 ? '
+<tr>
+<th scope="row">Quantity:</th>
+<td>'.$ad['qty'].' Available</td>
+</tr>
+' : '').'
+</tbody>
+</table>
+<br />
+<br />
+<a href="'.$ad['storeLink'].'/ad-'.$ad['id'].'">>> Click here to view<br />this listing on Safarri.com</a><br /><font size="1"><br />{More contact options, better photos, and more!}</font>
+</h3>
+</td>
+<td valign="top">
+<p>'.$ad['description'].'</p>
+<ul>
+'.$ad['features'].'
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<br />
+'.($ad['picList'] ? '<font size="1">{Click Images to Expand}</font><br />'.$ad['picList'] : '').'
+<br /><br /><br /><br /><i>This listing powered by <a href="http://safarri.com" target="_blank">Safarri.com</a>. Try it ~ Give your Craigslist ads a boost!</i>
+');
+	setPage('
+		<div class="lbar">
+		<script type="text/javascript"><!--
+			document.write(\'<a href="javascript:history.go(-1)" onMouseOver="self.status=document.referrer;return true"><< Last Page</a>\');
+		--></script>
+		<noscript><a href="'.$_SESSION['lastPage'].'"><< Last Page</a></noscript>
+		<a href="/ad-'.$ad['id'].'"><< Back to Ad</a>
+	</div>
+	<br />
+	<div class="header">Maximize Your Online Exposure:</div>
+	<div class="content">
+		<div class="desc caln">Copy and paste the below fields into Craigslist to create a great looking posting with all your text and pictures!</div><br />
+		<form class="outer">
+			<div>
+				<input type="text" onclick="this.select();" value="'.$ad['type'].': '.$ad['title'].'">
+				Title:
+			</div>
+			<div>
+				<input type="text" onclick="this.select();" value="'.$ad['price'].($ad['priceType'] ? ' - '.$ad['priceType'] : '').'">
+				Price:
+			</div>
+			<div>
+				<textarea style="height:50px;" onclick="this.select();">'.$adHtml.'</textarea>
+				Text / Description:
+			</div>
+		</form>
+	</div>
+	<br />
+	
+	<table width="100%">
+		<tr>
+			<th>Print "For Sale" signs for your ad:</th>
+			<th>Run your ad in local newspapers:</th>
+		</tr>
+		<tr>
+			<td width="50%" valign="top"><table width="100%"><tr><td>
+				<ol>
+					<li>Load some paper in your printer.</li>
+					<li>Set your print mode to "Landscape".</li>
+					<li>Click the style for your sign!</li>
+				</ol>
+				
+				<style type="text/css">
+				.sign {
+					display:block;
+					padding-top:10px;
+					width:400px;
+					height:200px;
+					text-decoration:none;
+				}
+				
+				.sign:hover {
+					font-style:italic;
+					text-decoration:none;
+				}
+				
+				.sign img {
+					border-width:0px;
+					float:left;
+					padding:10px;
+				}
+				
+				.sign .title {
+					font-size: 1.3em;
+					font-weight:bold;
+					padding:10px;
+				}
+				
+				.ad {
+					border:1px dashed #888888;
+					padding: 20px;
+					margin: 20px;
+				}
+				</style>
+				
+				<a href="/local-id-'.$_REQUEST['id'].'-sign-txt-ink-heavy" target="sign" class="sign">
+					<img src="/images/signs/ttxt-heavy.png" alt="" />
+					<div class="title">High Contrast:</div>
+					Perfect for grabbing atttention while attached to your item.
+				</a>
+				
+				<a href="/local-id-'.$_REQUEST['id'].'-sign-txt-ink-light" target="sign" class="sign">
+					<img src="/images/signs/ttxt-light.png" alt="" />
+					<div class="title">Ink Saving:</div>
+					A maximum blend of performance and cost.
+				</a>
+				
+				<a href="/local-id-'.$_REQUEST['id'].'-sign-pic" target="sign" class="sign">
+					<img src="/images/signs/tpics.png" alt="" />
+					<div class="title">Pictures Included:</div>
+					Want to show people your item without, well, showing it?
+				</a>
+			</td></tr></table></td>
+			<td width="50%" valign="top"><table width="100%"><tr><td>	
+				<br />'.$_SESSION['storeName'].' is the <b>perfect</b> tool to compliment your <b>local newspapers</b>!
+				<br /><em>Below are some suggestions for your newspaper ads:</em>
+				
+				
+				<div class="ad">
+				'.$ad['title'].'<br />'.str_replace(array('</li><li>','<li>','</li>'),array(', ','',''),substr($ad['features'],0,(strpos($ad['features'],'</li><li>',40) ? strpos($ad['features'],'</li><li>',40) : -1))).'<br />'.doPhone($seller['userPhone']).' See @ www.'.$ad['id'].'.'.$_SERVER['FAKE_HOST'].'
+				</div>
+				
+				<div class="ad">
+				'.$ad['title'].'<br />'.str_replace(array('</li><li>','<li>','</li>'),array(', ','',''),substr($ad['features'],0,(strpos($ad['features'],'</li><li>',150) ? strpos($ad['features'],'</li><li>',150) : -1))).'<br />'.doPhone($seller['userPhone']).' - See pictures and more at www.'.$ad['id'].'.'.$_SERVER['FAKE_HOST'].'
+				</div>
+				
+			</td></tr></table></td>
+		</td>
+	</table>
+	');
+}
+
+?>

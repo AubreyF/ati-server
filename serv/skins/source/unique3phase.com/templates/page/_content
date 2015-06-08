@@ -1,0 +1,14 @@
+	</head>
+	<body>
+		<a href="index.htm" id="logo">
+			<img src="images/logo.png" />
+		</a>
+		
+		<div id="linkbar">
+			<div class="lbl"></div>
+			<div class="lbr"></div>
+			
+			<span><a href="index.htm">Home</a></span><span><a href="movies.htm">Movies</a></span><span><a href="contact.htm">Contact</a></span>
+		</div>
+				
+		<div id="content">

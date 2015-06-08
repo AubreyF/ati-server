@@ -1,0 +1,127 @@
+<?
+
+function catTreeBrowse($storeId='') {
+	$rs = $_SERVER['db']->execute("SELECT id, parent, title, `desc` FROM classifieds_categories ORDER BY title ASC");
+	if($rs) while ($cat = $rs->FetchRow()) {
+		$cats .= "categories.add({$cat['id']},{$cat['parent']},'{$cat['select']}{$cat['title']}','javascript:doBrowse(\'/browse-cat-{$cat['id']}\');','{$cat['description']}', '', '', '', '', '".'id="cat'.$cat['id'].'" name="'.$cat['id'].'" onclick="return updateCategories(\\\''.getParentCats($cat['id']).getChildCats($cat['id']).'-1\\\',0);"'."');\n";
+		$catIds .= ','.$cat['id'];
+	}
+	return dtWrapper('categories.add(0,-1,\'All\',\'javascript:doBrowse(\\\'/browse\\\');\',\'View all Ads!\', \'\', \'\', \'\', \'\', \'id="cat-1" name="-1" onclick="return updateCategories(\\\''.substr($catIds,1).'\\\',0);"\', \''.$onClick.'\');'.chr(10).$cats);
+}
+
+function catTreeSelect($storeId='') {
+	$rs = $_SERVER['db']->execute("SELECT id, parent, title, `desc`, nonSubmittable FROM classifieds_categories ORDER BY title ASC");
+	if($rs) while ($cat = $rs->FetchRow()) $cats .= "categories.add({$cat['id']},{$cat['parent']},'{$cat['title']}', '".($cat['nonSubmittable'] ? '' : "javascript:catSubmit(\'{$cat['id']}\')")."','{$cat['description']}');\n";
+	return '
+	<style type="text/css">
+		.dtree { width:300px; margin:auto; display:block; line-height:16px; }
+		.dtree .node, .nodeSel, .nodeSel:hover { text-decoration:none; display:block; width:80%; }
+		.dtree .node:hover, .nodeSel:hover { background-color:#FFFFFF; }
+		.dtree img { float:left; }
+	</style>
+	'.dtWrapper("categories.add(0,-1,'Categories');\n".$cats,true);
+}
+
+function dtWrapper($cats,$closeSameLevel=false) {
+	return '
+		<link rel="StyleSheet" href="/_inc/dtree/dtree.css" type="text/css" />
+		<script type="text/javascript" src="/_inc/dtree/dtree.js"></script>
+		<script type="text/javascript"><!--
+			categories = new dTree(\'categories\');
+			categories.config.closeSameLevel = '.($closeSameLevel ? 'true' : 'false').';
+			categories.config.useCookies = true;
+			'.$cats.'
+			document.write(categories);
+		//--></script>
+	';
+}
+
+function catSelect($name='cat',$class='input',$parent=0,$storeId='') {
+	$rs = $_SERVER['db']->execute("SELECT id, title FROM classifieds_categories WHERE parent = '{$parent}'");
+	if(!$rs) return;
+	
+	while ($row = $rs->fetchRow()) $str .= '<option value="'.$row['id'].'">'.$row['title'].'</option>';
+	if(!$parent) $str = '<select class="'.$class.'" name="'.$name.'" title="Show Ads in This Category (FireFox and Camino users get a really cool category selecter)"><option value="">All</option>'.$str.'</select>';
+	
+	return $str;
+}
+
+function getParentCats($id, $str="") {
+	$row = $_SERVER['db']->getRow("SELECT parent FROM classifieds_categories WHERE id = '{$id}'");	
+	if($row['parent'] == 0) return $str;
+	else return getParentCats($row['parent'], $row['parent'].','.$str);
+}
+function getChildCats($id) {
+	$rs = $_SERVER['db']->execute("SELECT id FROM classifieds_categories WHERE parent = '{$id}'");	
+	if($rs) while ($row = $rs->fetchRow()) $str .= $row['id'].','.getChildCats($row['id']);
+	return $str;
+}
+
+
+//**************************** DEPRICATED *************************************
+
+
+function categoryTree($url='',$options='',$onClickFunc,$storeId) {
+	if(strpos($options,'linkOnlySubmittable') !== false) $linkOnlySubmittable = true;
+	if(strpos($options,'selectBoxes') !== false) $doForm = true; //Disabled as quick browse code isn't quite working right now
+	if(!$storeId) $showAll = true;
+	
+	$rs = $_SERVER['db']->execute("SELECT * FROM classifieds_categories ORDER BY title ASC");
+	
+	if($rs) {
+		while ($cat = $rs->FetchRow()) {
+			if(!$linkOnlySubmittable && !$showAll) {
+				$rs2 = $_SERVER['db']->execute("SELECT id FROM classifieds_ads WHERE AND cid = {$cat['id']}{$_SESSION['safarriStore']['sql']}");
+				$ads = $rs2->RecordCount();
+				$subCats = func(_mod.'dbtree','getAllChildren','classifieds_categories',$cat['id']);
+				if ($subCats) {
+					foreach($subCats as $key=>$id) {
+						$rs2 = $_SERVER['db']->execute("SELECT id FROM classifieds_ads WHERE cid = {$id}{$_SESSION['safarriStore']['sql']}");
+						$ads = $ads + $rs2->RecordCount();
+					}
+				}
+			}
+			if($ads || $linkOnlySubmittable || $showAll) {
+				$checkbox = '';
+				if($ads && $ads < 100) $ads = ' ('.$ads.')';
+				if($doForm) {
+					$temp = getParentCats($cat['id']);
+					$temp .= getChildCats($cat['id']);
+					$checkbox = ' onclick="return updateCategories(\\\''.$temp.'-1\\\',0);"';
+					$checkbox = 'id="cat'.$cat['id'].'" name="'.$cat['id'].'"'.$checkbox;
+					$cat['link'] = '/browse-cat-'.$cat['id'];
+				}
+				else if($onClickFunc) {
+					if($url) {
+						$cat['link'] = $url.$cat['id'];
+						$onClick = $onClickFunc.'(this);';
+					}
+					else {
+						$cat['link'] = '#';
+						$onClick = $onClickFunc.'('.$cat['id'].',\\\''.$cat['title'].'\\\');';
+					}
+				}
+				else if($linkOnlySubmittable && $cat['nonSubmittable'] == true || !$url)	$cat['link'] = '';
+				else $cat['link'] =  $url.$cat['id'];
+				$categories .= "categories.add({$cat['id']},{$cat['parent']},'{$cat['select']}{$cat['title']}','javascript:doBrowse(\'{$cat['link']}\');','{$cat['description']}', '', '', '', '', '".$checkbox."', '".$onClick."');\n";
+				$catIds .= ','.$cat['id'];
+			}
+		}
+		
+		return '
+		<link rel="StyleSheet" href="/_inc/dtree/dtree.css" type="text/css" />
+		<script type="text/javascript" src="/_inc/dtree/dtree.js"></script>
+		<script type="text/javascript"><!--
+			categories = new dTree(\'categories\');
+			categories.config.closeSameLevel = false;
+			categories.config.useCookies = true;
+			'.($doForm ? 'categories.add(0,-1,\'All\',\'javascript:doBrowse(\\\'/browse\\\');\',\'View all Ads!\', \'\', \'\', \'\', \'\', \'id="cat-1" name="-1" onclick="return updateCategories(\\\''.substr($catIds,1).'\\\',0);"\', \''.$onClick.'\');' : 'categories.add(0,-1,\'Categories\');' ).'
+			'.$categories.'
+			document.write(categories);
+		//--></script>
+		';
+		
+	}
+}
+
+?>

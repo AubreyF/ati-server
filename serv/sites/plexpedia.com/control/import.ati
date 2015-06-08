@@ -1,0 +1,49 @@
+<?
+loginCheck('<b>Please login to access your control panel.</b>','end');
+
+if($_REQUEST['mode'] == 'itemd' || $_REQUEST['mode'] == 'edit' && $_REQUEST['id']) {
+	
+	
+}
+else if($_REQUEST['mode'] == 'run' && $_REQUEST['id']) {
+	$workFlow = $_SERVER['db']->getAssoc("SELECT * FROM import_workflows WHERE wfid = '{$_REQUEST['id']}'");
+	$channels = $_SERVER['db']->execute("SELECT * FROM import_channels WHERE wfid = '{$_REQUEST['id']}'");
+	
+	while($channel = $channels->FetchRow()) {
+		file_get_contents ( string filename [, bool use_include_path
+	}
+}
+else {
+	$rs = $_SERVER['db']->execute(" ORDER BY `date` DESC");	
+	$title = 'Current Import Workflows:';
+	if($rs) {
+		while ($item = $rs->FetchRow()) {	
+			$counter ++;
+			(($counter % 2) == 0) ? $class = 'even' : $class = 'odd';
+	
+			$items += 1;
+			
+			if(!$item['soldDate']) $itemLinks = '<a href="/submit-id-'.$item['id'].'-step-marksold">Mark Sold</a> - <a href="/submit-id-'.$item['id'].'-step-modify">Edit</a>';
+			else $itemLinks = '<a href="/submit-id-'.$item['id'].'-step-markunsold">Mark Unsold</a>';
+	
+			$return .= '
+			<tr class="'.$class.'">
+				<td><a href="/item-'.$item['id'].'">View</a> - '.$itemLinks.'</td>
+				<td class="hover" onclick="document.location.href=\'/item-'.$item['id'].'\'" >'.strip_tags($item['title']).'</td>
+				<td>'.doDate($item['date'],'short').'</td>
+			</tr>';
+		}
+	}
+	else $return .= '<div class="ebox">You have no import workflows assigned.</div>';
+}
+
+
+setPageConst('title',$_SESSION['userName'].'\'s Control Panel > Import Items');
+setPageConst('bct','<a href="/index">Home</a> > <a href="/control/index">'.$_SESSION['userName'].'\'s Control Panel</a> > Import Items');
+
+setPageBlock('blockFancy','Control Panel',
+	'<a href="index" class="lbtn"><< Back to Control Panel</a><a href="import-mode-itemd" class="lbtn">>> Itemd Workflow</a>'
+	.'<h4>'.$title.'</h4>'.$return
+);
+
+?>

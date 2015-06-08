@@ -1,0 +1,151 @@
+<?
+
+if(!function_exists('block')) {
+function block($title,$content) {
+	return '
+	<div class="blockTitle">'.$title.'</div>
+	<div class="blockContent">'.$content.'</div>
+	';
+}
+}
+
+if(!function_exists('blockMessage')) {
+function blockMessage($message) {
+	return '<div class="message">'.$message.'</div>';
+}
+}
+
+if(!function_exists('blockComment')) {
+function blockComment($post,$user='') {
+	if(!$user) $user = renderMemberBasic($post['userId'],'','userName, userRealName, userTime, userHits');
+	foreach($post['links'] as $key=>$val) $links .= '<a href="'.$val.'">» '.$key.'</a>';
+	
+	$comment = '
+	<div class="comment">
+		<div class="header"><div class="right"></div>'.$links.'<div class="left"></div>'.$post['title'].'</div>
+		<div class="side">
+			<div class="user">'.$user['userFullName'].'</div>
+			<div class="userPower">'.dateOffset($user['userTime'],'','','s').' - '.number_format($user['userHits']).'v</div>
+			'.($post['date'] ? '<div class="date">Posted '.str_replace('(','<br />(',doDate($post['date'])).'</div>' : '').'
+		</div>
+		<div class="content">'.$post['text'].'</div>
+	</div>
+	';
+	
+	if($post['state'] == 'removed') $comment = '<div class="nbox">{Comment from '.$user['userFullName'].' removed, now invisible to normal viewers. Hover to see}<div class="hidden">'.$comment.'</div></div>';
+	
+	return $comment;
+}
+}
+
+if(!function_exists('linkBar')) {
+function linkBar($funcs) {
+	$sep = '';
+	
+	foreach ($funcs as $key=>$val) {
+		if(!$val) $return .= $sep.'<span class="highlighted">'.$key.'</span>';
+		else $return .= $sep.'<a href="'.$val.'">'.$key.'</a>';
+		$sep = ' - ';
+	}
+	return '<div class="lbar">'.$return.'</div>';
+}
+}
+
+if(!function_exists('blockNews')) {
+function blockNews($items) {
+	foreach($items as $text=>$link) $news .= ', "<a href=\"'.$link.'\">'.$text.'</a>"';
+	return '
+	<div class="newsBox">
+		<div class="left"><span class="text">News:</span></div>
+		<div class="right"></div>
+		<div class="text"><div id="newsText"></div></div>
+	</div>
+	
+	<script type="text/javascript">
+		var newsTxtPos = new Fx.Style($(\'newsText\'), \'opacity\',{duration: 750, transition: Fx.Transitions.Quart.easeInOut});
+		var news=new Array('.substr($news,2).');
+		var nextLine = -1;
+		window.addEvent(\'domready\', function() {
+			doNews();
+			doNews.periodical(7000);
+		});
+		function doNews() {
+			$(\'newsText\').effect(\'opacity\', { duration : 750, onComplete : function(){ $(\'newsText\').setHTML(news[nextLine = (nextLine >= news.length - 1) ? 0 : nextLine + 1]).effect(\'opacity\', { duration : 750 }).start(1); } }).start(0);
+		}
+	</script>
+	';
+}
+}
+
+if(!function_exists('blockNav')) {
+function blockNav($text,$lnks) {
+	foreach($lnks as $name=>$loc) $links .= '<a href="'.$loc.'">>> '.$name.'</a>';
+	return '
+	<div class="blockNav">
+		<div class="text">'.$text.'</div>
+		<div class="links llst">'.$links.'</div>
+	</div>
+	';
+}
+}
+
+function columns() {
+	$funcs = func_get_args();
+	$xtra = array_shift($funcs);
+		
+	foreach ($funcs as $val) if($val) $return .= '<td class="column">'.$val.'</td>';
+	
+	return '<table class="columns '.$xtra.'">'.$return.'</table>';
+}
+
+//blockAdvert(array('w'=>468, 'h'=>60, 'c'=>array('bg','brd','lnk','txt','url')))
+function blockAdvert($opt) {
+	
+	//Color Pallets
+	if($opt['mc']) $opt['c'] = $opt['mc'][mt_rand(0,count($opt['mc'])-1)];
+	if(!$opt['c']['bg']) $opt['c'] = array_combine(array('brd','lnk','bg','txt','url'),$opt['c']);
+	
+	/*
+	return('
+		<script type="text/javascript"><!--
+	google_ad_width = 120;
+	google_ad_height = 240;
+	google_ad_format = "120x240_as";
+	google_ad_type = "text";
+	google_ad_channel = "";
+	google_ad_client = "'.($_SESSION['safarriStore']['adsenseCode'] ? $_SESSION['safarriStore']['adsenseCode'] : 'ca-pub-1445769979204231').'";
+	google_alternate_color = "FFFFFF";
+	google_color_border = "FFFFFF";
+	google_color_bg = "FFFFFF";
+	google_color_link = "003366";
+	google_color_text = "FFFFFF";
+	google_color_url = "FF6600";
+	//--></script>
+	<script type="text/javascript"
+	  src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+	</script>
+	');
+	*/
+	
+	return('
+		<script type="text/javascript"><!--
+		google_ad_client = "ca-pub-1445769979204231";
+		google_ad_width = '.$opt['w'].';
+		google_ad_height = '.$opt['h'].';
+		google_ad_format = "'.$opt['w'].'x'.$opt['h'].'_as";
+		google_ad_type = "text_image";
+		google_alternate_color = "'.$opt['c']['bg'].'";
+		google_color_border = "'.$opt['c']['brd'].'";
+		google_color_bg = "'.$opt['c']['bg'].'";
+		google_color_link = "'.$opt['c']['lnk'].'";
+		google_color_text = "'.$opt['c']['txt'].'";
+		google_color_url = "'.$opt['c']['url'].'";
+		google_ui_features = "rc:6";
+		//--></script>
+		<script type="text/javascript"
+		src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+		</script>
+	');
+}
+
+?>

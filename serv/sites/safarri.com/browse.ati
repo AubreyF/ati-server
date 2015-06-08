@@ -1,0 +1,153 @@
+<?
+
+//******************************************************************************
+//******************************** Prefilters **********************************
+//******************************************************************************
+
+
+//Initialize high priority global variables
+global $adBox, $page;
+
+//We are in a category
+if($_REQUEST['cat']) {
+	if(strpos($_REQUEST['cat'],',')) $page['categories'] = explode(',',$_REQUEST['cat']); //composite browse
+	else $page['category'] = $_SERVER['db']->getRow("SELECT * FROM classifieds_categories WHERE id = ".$_REQUEST['cat']);
+}
+
+//Sanitize input
+if($_REQUEST['search']) $_REQUEST['q'] = $_REQUEST['search']; //"Search" (quick search) overwrites "Q" (keywords feild) when specified
+if($_REQUEST['q']) {
+	$_REQUEST['q'] = str_replace('  ',' ',str_replace(array(' | ','|'),' | ',$_REQUEST['q']));
+	if(strpos($_REQUEST['q'],'|') && !strpos($_REQUEST['q'],')')) $_REQUEST['q'] = '('.$_REQUEST['q'].')';
+	
+	$idLookup = intval(preg_replace("[^0-9]", "", $_REQUEST['q']));
+	if(is_int($idLookup)) {
+		$ad = $_SERVER['db']->getRow("SELECT * FROM classifieds_ads WHERE id = ".$idLookup);
+		if($ad) $mbox = setPageBlock('blockMessage', '<h3>Were you looking for ad # '.$idLookup.': <a href="/ad-'.$idLookup.'">'.$ad['title'].'</a>?</h3>');
+	}
+}
+
+//"Cool Filter" and Search page check
+if($_REQUEST['q'] || $_REQUEST['minprice'] || $_REQUEST['maxprice'] || $_REQUEST['distance'] || $_REQUEST['type']) $page['searchApplied'] = true;
+if(!$_SESSION['safarriStore']['id'] && !($_REQUEST['q'] || $_REQUEST['user'] || $_REQUEST['minprice'] || $_REQUEST['maxprice'] || $_REQUEST['type'] || $_REQUEST['cat']) && $_REQUEST['filter'] != 'none') $_REQUEST['featured'] = true;
+if($_REQUEST['search'])				$_REQUEST['q'] = $_REQUEST['search'];
+$adBox['maxAds'] = 4000;			//Just because the provider HAS billions of ads doesn't mean we can access them...
+
+
+//******************************************************************************
+//*************************** Initialize Page **********************************
+//******************************************************************************
+
+
+//Settings
+setPageConst('showAds','full');	
+//setPageConst('searchBox','','skin');
+
+//Handle filters
+if($page['category']['parent'])		$upCat = '-cat-'.$page['category']['parent'];
+if($_REQUEST['cat'] || $page['searchApplied'])	$upLink = '<a href="/browse'.$upCat.'" style="float:right; width:50px; position:relative; left:50px;" onClick="return doBrowse(this);"><img src="/images/icons/arrowup.png" style="padding-top:3px; padding-right:5px; float:right;" />Up</a>';
+
+//Handle location updates
+if(!$_SESSION['userZip'] && !$_REQUEST['location'] && $_REQUEST['distance']) $page['locationMessage'] = '<span><div class="etxt">Enter your location:</div></span>';									//Distance, but no location
+else if(isset($_REQUEST['location']) && $_REQUEST['location'] == '' && $_SESSION['userZip']) func(_mod.'location','updateLocation');		//Clear location
+else if(isset($_REQUEST['location']) && $_REQUEST['location'] != '' && ($_REQUEST['location'] != $_SESSION['userZip'])) {				//Update location
+	if(func(_mod.'location','updateLocation',$_REQUEST['location'])) $_REQUEST['location'] = $_SESSION['userZip'];
+	else {
+		$GLOBALS['adBox']['message'] .= '<div><b>Location Not Found:</b> Please enter your location as <b>City, State</b> or <b>Zip Code</b></div>';
+		$GLOBALS['adBox']['locationMessage'] = '<div class="desc" style="margin-bottom:5px; text-align:right;">{Location not found}</div>';
+	}
+}
+else if(!$_REQUEST['location']) $_REQUEST['location'] = $_SESSION['userZip'];					//Update REQUEST location
+if($_SESSION['userLatitude']) $_REQUEST['latitude'] = $_SESSION['userLatitude'];				//Update REQUEST latitude
+if($_SESSION['userLongitude']) $_REQUEST['longitude'] = $_SESSION['userLongitude'];			//Update REQUEST longitude
+
+//Variable Defaults
+if(!$_REQUEST['adsppage']) $_REQUEST['adsppage'] = 20;
+$adBox['ads'] = array();
+
+//Messages
+if($page['categories']) {	//QuickBrowse
+	
+	$adBox['title'] 		= 'Viewing Multiple Categories';
+	$page['title'] 			= 'Viewing Multiple Categories';
+	if($page['searchApplied']) $page['bct'] = '<a href="/index">Home</a> > <a href="/browse">Browse</a> > <a href="">Multiple Categories</a>';
+	else $page['bct'] 		= '<a href="/index">Home</a> > <a href="/browse">Browse</a> > Multiple Categories';
+	
+	$adBox['noAdsError'] 	= 'None of the categories you are viewing contain ads';
+	$adBox['noAdsAction'] 	= '<li>Browsing more categories</li>';
+	
+} else if($page['category']) { //Inside Category
+	
+	$path = func(_mod.'dbtree','getLinkedPathFromId','classifieds_categories',$page['category']['id'], '/browse','cat',false,'return doBrowse(this);');
+	
+	$page['title'] 			= func(_mod.'dbtree','getPathFromId','classifieds_categories',$_REQUEST['cat']);
+	$page['bct'] 			= '<a href="/index">Home</a> > <a href="/browse" onClick="return doBrowse(this);">Browse</a> > '.$path;
+	
+	$adBox['title'] 		= $page['category']['title'].' For Sale';
+	if($page['searchApplied']) $catBox['title'] = 'Search in Sub Category';
+	else $catBox['title'] = $page['category']['title'].' Sub Categories';
+	
+	$adBox['noAdsError'] 	= 'The category you are viewing contains no ads';
+	$adBox['noAdsAction'] .= '<li><a href="/browse'.$upCat.'" onClick="return doBrowse(this);">Viewing a higher category</a></li>';
+	
+} else if(!$page['searchApplied']) {	//Root Browse Page
+	
+	if($_REQUEST['featured']) 		$adBox['title'] = 'Showcased Items';
+	else							$adBox['title'] = 'Items for Sale';
+	
+	$page['title'] 			= 'Browse The Classifieds!';
+	$page['bct'] 			= '<a href="/index">Home</a> > Browse';
+	$catBox['title'] 		= 'Categories';
+	$adBox['noAdsError'] 	= 'There are no ads';
+	
+	$mbox['title'] 	= 'Browse The Classifieds!';
+	$mbox['content'] 	= '
+	<img style="float:left;" src="images/mrsafarri40x50.png" alt="Browse the free online classifieds!">
+	<b>Browse The Classifieds by:</b><br />
+	<ul style="text-align:left; padding-left: 70px;">
+	<b>Category</b> - Keep "narrowing in" by clicking categories till you find what you are looking for.
+	<b>Search</b> - Enter your keywords in the "Search" box on the right and press submit.
+	<b>Quick Browse</b> - Using the "Quick Browse", you can select as many categories as you like and browse them all at once!
+	</ul>
+	';
+	
+} else { 								//Root Search Page
+	
+	$page['bct'] 			= '<a href="/index">Home</a> > <a href="/browse">Browse</a>';
+	$catBox['title'] 		= 'Search in Category';
+	$adBox['title'] 		= 'Search The Classifieds!';
+	$adBox['noAdsError'] 	= 'There are no ads';
+	
+} if($page['searchApplied']) {			//Any Search Page
+	
+	if($page['title']) $page['title'] = $page['title'].': ';
+	$page['title'] 			= $page['title'].'Filtered Results';
+	$page['bct'] 			= $page['bct'].': Filtered Results';
+	$adBox['noAdsError'] 	= $adBox['noAdsError'].' which match your search criteria';
+	$adBox['noAdsAction']	.= '<li>"Broadening" your search keywords</li>';
+	$adBox['noAdsAction']	.= '<li><a href="">Removing your search criteria</a></li>';
+}
+
+
+//******************************************************************************
+//****************************** Build Ad List *********************************
+//******************************************************************************
+
+
+lfunc(_fnc.'adhandling');
+
+
+//******************************************************************************
+//***************************** Init Templates *********************************
+//******************************************************************************
+
+//test($adBox);
+
+//Do pagination
+$adBox['pagination'] = func(_mod.'pagination','pagination',$adBox['details']['totalAds'],$_REQUEST['adsppage'],'adpage','paramBrowse(\'adpage\',',$adBox['maxAds']);
+
+//Set Vars
+setPageTpl('browse');
+setPageConsts(array('page'=>$page,'adBox'=>$adBox,'catBox'=>$catBox,'mbox'=>$mbox),'browse');
+
+?>

@@ -1,0 +1,43 @@
+<?
+
+$tplDefs['block'] = 'content';
+$tplDefs['blockMessage'] = 'content';
+$tplDefs['blockHelp'] = 'sideBar2';
+
+
+function block($title,$content) {
+	return '
+    <table width="100%" border="0" cellpadding="0" cellspacing="0">
+	  <tr>
+		<td width="1"><img src="/tpl/pc/img/cboxtopleft.png" alt="" /></td>
+		<td class="cBoxTitle">'.$title.'</td>
+		<td width="1"><img src="/tpl/pc/img/cboxtopright.png" alt="" /></td>
+	  </tr>
+	  <tr>
+		<td style="background-image:url(/tpl/pc/img/cboxleft.png);">&nbsp;</td>
+		<td class="content">'.$content.'</td>
+		<td style="background-image:url(/tpl/pc/img/cboxright.png);">&nbsp;</td>
+	  </tr>
+	  <tr>
+		<td><img src="/tpl/pc/img/cboxbottomleft.png" alt="" /></td>
+		<td style="background-image:url(/tpl/pc/img/cboxbottom.png);"></td>
+		<td><img src="/tpl/pc/img/cboxbottomright.png" alt="" /></td>
+	  </tr>
+	</table>
+    <br />
+	';
+}
+
+function blockMessage($message) {
+	return '
+	<table width="100%" border="0" cellspacing="0" cellpadding="0">
+	  <tr>
+		<td><img src="/tpl/pc/img/messageleft.png" alt="" /></td>
+		<td width="100%" style="background-image:url(\'/tpl/pc/img/messagecenter.png\'); font-size:1.2em; text-align:center; vertical-align:middle;">'.$message.'</td>
+		<td><img src="/tpl/pc/img/messageright.png" border="0" /></td>
+	  </tr>
+	</table>
+	';
+}
+
+?>

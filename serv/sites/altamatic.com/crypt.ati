@@ -1,0 +1,815 @@
+<?
+
+/*
+$codeLen = 20;
+
+$tmp = array();	//Temporary buffer for counting
+$arr = array();	//Permenant storage for strings that are correct length
+$i = 0;			//
+$sp = 0;		//Skip Char for increment to force spikes in trailing numbers
+while(true) {
+	$sp ++;
+	while(true) {
+		$p=0;	//Position
+		$c=1;	//Character
+		$s='';	//String
+		while($p < $codeLen) {
+			while($tmp[$s.$c] && $c < 4 && $p > $sP) {
+				$c++;
+				if($p + $c >= $codeLen) break;
+			}
+			$s .= $c;
+			$p += $c;
+			$c = 1;
+			$tmp[$s] = $p;
+		}
+		$arr[$s] = true;
+		if($i++ > 1000) break;
+	}
+	if($sp > $codeLen) break;
+}
+
+foreach($arr as $key=>$val) echo $key.'<br>';
+exit;
+*/
+
+/*
+$codeLen	= 15;
+$maxScans	= min(10000,$codeLen * 500);
+for($str=''; strlen($str)<$codeLen; $str.='1');
+$arr[$str] = 1;
+for($i=0; $i<=$maxScans; $i++) {
+	$pos = array_rand($arr);
+	for($a=0; $a<strlen($pos); $a++) {
+		if($i > $maxScans / 2) {
+			if(substr($pos,$a,4) == '1111')			$arr[substr_replace($pos,'4',$a,'4')] = 1;
+			else if(substr($pos,$a,3) == '111')	$arr[substr_replace($pos,'3',$a,'3')] = 1;
+			else if(substr($pos,$a,2) == '11')		$arr[substr_replace($pos,'2',$a,'2')] = 1;
+		}
+		else {
+			if(substr($pos,$a,2) == '11')			$arr[substr_replace($pos,'2',$a,'2')] = 1;
+			else if(substr($pos,$a,3) == '111')	$arr[substr_replace($pos,'3',$a,'3')] = 1;
+			else if(substr($pos,$a,4) == '1111')	$arr[substr_replace($pos,'4',$a,'4')] = 1;
+		}
+	}
+}
+
+foreach($arr as $key=>$val) echo $key.'<br>';
+exit;
+*/
+
+
+//*************************************************************************************************
+//************************************ Aubrey's Spy Tools *****************************************
+//*************************************************************************************************
+
+
+if($_REQUEST['code']) {
+	
+	//************************************ Init *****************************************
+	
+	$code = str_replace(array("\r\n","\n"),' ',$_REQUEST['code']);
+	$codeLen = strlen($code);
+	$codeTxt = str_replace(array('  ',' ',',' ,'-'),'',$code);
+	$codeTxtLen = strlen($codeTxt);
+	$codeLow = strtolower($code);
+	$xtraCode = str_replace(array("\r\n","\n"),' ',$_REQUEST['xtracode']);
+	$xtraCodeLen = strlen($xtraCode);
+	$xtraCodeTxt = str_replace(array(' ',',' ,'-'),'',$xtraCode);
+	$realWords = array('code'=>true, 'it'=>true, 'and'=>true, 'the'=>true, 'to'=>true, 'for'=>true, 'of'=>true, 'in'=>true, 'you'=>true, 'me'=>true, 'get'=>true, 'that'=>true, 'is'=>true, 'as'=>true, 'with'=>true, 'meet'=>true, 'spy'=>true, 'watch'=>true, 'there'=>true, 'wait'=>true, 'find'=>true, 'defend'=>true, 'nation'=>true, 'treasure'=>true, 'test'=>true);
+	$let2num = array('a'=>1, 'b'=>2, 'c'=>3, 'd'=>4, 'e'=>5, 'f'=>6, 'g'=>7, 'h'=>8, 'i'=>9, 'j'=>10, 'k'=>11, 'l'=>12, 'm'=>13, 'n'=>14, 'o'=>15, 'p'=>16, 'q'=>17, 'r'=>18, 's'=>19, 't'=>20, 'u'=>21, 'v'=>22, 'w'=>23, 'x'=>24, 'y'=>25, 'z'=>26);
+	$num2let = array_flip($let2num);	
+	$letters = array('A'=>true, 'B'=>true, 'C'=>true, 'D'=>true, 'E'=>true, 'F'=>true, 'G'=>true, 'H'=>true, 'I'=>true, 'J'=>true, 'K'=>true, 'L'=>true, 'M'=>true, 'N'=>true, 'O'=>true, 'P'=>true, 'Q'=>true, 'R'=>true, 'S'=>true, 'T'=>true, 'U'=>true, 'V'=>true, 'W'=>true, 'X'=>true, 'Y'=>true, 'Z'=>true);
+	$engWeight = array('e', 't', 'a', 'o', 'i', 'n', 's', 'h', 'r', 'd', 'l', 'c', 'u', 'm', 'w', 'f', 'g', 'y', 'p', 'b', 'v', 'k', 'j', 'x', 'q', 'z');
+	$punctuation = array(' ',',','.','-','—','!','?');
+	$unl337 = array('i','e','a','s','t','o');
+	$l337 = array('1','3','4','5','7','0');
+	
+	//****************************** Determine Method and Mode ***********************************
+	
+	$mode = $_REQUEST['mode'];
+	
+	if($_REQUEST['method']) $method = $_REQUEST['method'];
+	
+	if($mode == 'scramble') {
+		if(!$_REQUEST['method']) $message = 'Please select a <b>Method</b> to use to scramble your <b>Text</b>.';	
+	}
+	else {
+		
+		//Frequency Analyzer
+		for($i=0; $i < $codeTxtLen; $i++) {
+			if(is_numeric($code{$i})) $codeStats['numbers']++;
+			else $codeStats['letters']++;
+			$codeArr[strtolower($codeTxt{$i})]++;
+		}
+		
+		$i = count($codeArr) - 1;
+		asort($codeArr);
+		$temp = array();
+		foreach($codeArr as $key=>$val) {
+			$freqAnalyz['weights'][$key] = $i--;
+			$freqAnalyz['counts'] = ($key == ' ' ? '" "' : $key).'='.$val.($freqAnalyz['counts'] ? ', ' : '').$freqAnalyz['counts'];
+			$freqAnalyz['percents'] = ($key == ' ' ? '" "' : $key).'='.round($val / $codeTxtLen * 100,3).($freqAnalyz['percents'] ? ', ' : '').$freqAnalyz['percents'];
+		}
+		
+		if(!$method) { //Check for numeric code
+			$temp = 0;
+			for($i=0; $i<$codeTxtLen; $i++) if(is_numeric($codeTxt{$i})) $temp++;
+			if($codeTxtLen / $temp >= 1 && $codeTxtLen / $temp < 1.5) {
+				$method = 'numeric';
+				$message = '<div class="boldText">Your message appeared to be encoded numerically.</div>';
+			}
+		}
+		
+		if(!$method) { //Check for morse code				
+			$temp = 0;
+			for($i=0; $i<$codeTxtLen; $i++) if($code{$i} == '.' || $code{$i} == '-') $temp++;
+			if($codeTxtLen / $temp >= 1 && $codeTxtLen / $temp < 1.5) {
+				$method = 'morse';
+				$message = '<div class="boldText">Your message appeared to be morse code:</div>';
+			}
+		}
+		
+		if(!$method) { //Check for binary
+			$temp = 0;
+			for($i=0; $i<$codeTxtLen; $i++) if($codeTxt{$i} == 0 || $codeTxt{$i} == 1) $temp++;
+			if($codeTxtLen / $temp < 1.3) {
+				$method = 'digital';
+				$message = '<div class="boldText">Your message appeared to be encoded in binary.</div>';
+			}
+		}
+		
+		
+		if(!$method) {
+			$method = 'unknown';
+			$message .= '<div class="boldText">The system could not determine the method used to cipher your text:</div><div class="italicText">Please manually select a method from the list above!</div>';
+		}
+		//else $message .= '<div class="italicText">If the message does not solve using this method, you can try selecting a different method manually.</div>';
+		
+		//Frequency Analyzer
+		
+		$return['Stats']['Character Counts'] = $freqAnalyz['counts'];
+		$return['Stats']['Character Percentages'] = $freqAnalyz['percents'];
+	}
+	
+	//************************************ Statistics *****************************************
+	/*
+	if($method == 'stats') {
+		
+		for($i=0; $i < $codeTxtLen; $i++) {
+			if(is_numeric($code{$i})) $codeStats['numbers']++;
+			else $codeStats['letters']++;
+			$codeArr[$codeTxt{$i}]++;
+		}
+		
+		asort($codeArr);
+		
+		$return['Code V English'] = '<b>C:</b> ';
+		foreach(array_reverse($codeArr) as $key=>$val) 	if($let2num[$key]) $return['Code V English'] .= ' '.$key;
+		$return['Code V English'] .= '<br /><b>E:</b> ';
+		foreach($engWeight as $num=>$key)					if($codeArr[$key]) $return['Code V English'] .= ' '.$key;
+		
+		foreach($codeArr as $key=>$val) 	$return['Letter Counts'] = ($key == ' ' ? '" "' : $key).'='.$val.($return['Letter Counts'] ? ', ' : '').$return['Letter Counts'];
+		foreach($codeArr as $key=>$val) 	$return['Letter Percentages'] = ($key == ' ' ? '" "' : $key).'='.round($val / $codeTxtLen * 100,3).($return['Letter Percentages'] ? ', ' : '').$return['Letter Percentages'];
+		if($codeStats['chars']) 			$return['String Statistics'] = 'Characters: '.$codeStats['chars'].($codeStats['letters'] ? ', Letters: '.$codeStats['letters'] : '').($codeStats['numbers'] ? ', Numbers: '.$codeStats['numbers'] : '');
+		
+		$text = '';
+		foreach($return as $name=>$val) $text .= '<tr><td class="lcol">'.$name.':</td><td class="rcol"><div class="wrap">'.$val.'</div></td></tr>';
+		$pageText = '<table class="outer"><tr><th colspan="2">Text Properties</th></tr>'.$text.'</table>';
+		unset($return);
+	*/
+	//************************************ Substitution *****************************************
+	
+	if($method == 'substitution') {
+		
+		if($mode != 'scramble') {
+			setPage('
+				<style type="text/css">
+					.letters { padding:10px; padding-left:0px; background-color:#F1F1F1; border:1px solid #DDDDDD; }
+					.letbox { width:30px; float:left; text-align:center; background-color:#FFFFFF; }
+					.letbox .input, .letter { padding-top:5px; padding-bottom:5px; }
+					.word { margin-left:10px; float:left; margin-bottom:5px; }
+				</style>
+				<script type="text/javascript">
+				function updateLetters(let,val) {
+					for(i=0; i < document.forms[\'letters\'].elements.length; i++) if(document.forms[\'letters\'].elements[i].name == let) document.forms[\'letters\'].elements[i].value = val;
+				}
+				function copyText() {
+					document.getElementById("code").value = "";
+					for(i=0; i < document.forms[\'letters\'].elements.length; i++) {
+						if(document.forms[\'letters\'].elements[i].value) txt = document.forms[\'letters\'].elements[i].value;
+						else txt = "?";
+						document.getElementById("code").value = document.getElementById("code").value + txt;
+					}
+				}
+				function clearText() {
+					for(i=0; i < document.forms[\'letters\'].elements.length; i++) if(document.forms[\'letters\'].elements[i].name != "space") document.forms[\'letters\'].elements[i].value = "";
+				}
+				function revertText() {
+					document.getElementById("code").value = "'.$_REQUEST['code'].'";
+				}
+				</script>
+			','head');
+			
+			$text = strtoupper($code);
+			
+			//Substitution Visualizer
+			
+			for($i=0; $i < $codeLen; $i++) {
+				if($text{$i} == ' ') $fields .= '</div><input type="hidden" name="space" value=" " /><div class="word">';
+				else if($letters[$text{$i}]) $fields .= '<div class="letbox"><input type="text" name="'.$text{$i}.'" value="'.$engWeight[$freqAnalyz['weights'][strtolower($text{$i})]].'" class="input letfield" size="1" maxlength="1"  onChange="updateLetters(\''.$text{$i}.'\',this.value)"><div class="letter">'.$text{$i}.'</div></div>';
+			}
+			
+			$return['Manual Tools']['Substitution Visualizer'] = '
+				<div class="dull">
+					Enter your guess for each letter, and all other instances of it will be automatically updated:
+					<div class="boldText">The fields have been prepopulated using frequency analysis.</div>
+				</div>
+				<form class="letters" name="letters"><div class="word">'.$fields.'</div><br clear="all" /></form>
+				<div class="lbar"><a href="javascript:clearText()">>> Clear</a> <a href="javascript:copyText()">>> Copy to Textarea</a> <a href="javascript:revertText()">>> Revert Textarea</a></div>
+			';
+		}
+		
+		//Rotational
+		
+		for($i=0; $i < $codeLen; $i++) $codeNum[$i] = ($let2num[$codeLow{$i}] ? $let2num[$codeLow{$i}] : $codeLow{$i}); //Convert Code to numbers
+		for($ic=0; $ic < 26; $ic++) {
+			for($i=0; $i < $codeLen; $i++) {
+				$n = $codeNum[$i];
+				$texts[$ic] .= (is_numeric($n) ? $num2let[($n + $ic > 26 ? ($n + $ic - 26) : $n + $ic)] : $n);
+			}
+		}
+		for($i=1; $i < 26; $i++) $return['Rotational (Caesar) Cipher']['Rotated '.$i.' position'.($i > 1 ? 's' : '')] = $texts[$i];
+		
+		$links['Fast and Automtated Cryptogram Solver by Edwin Olson'] = 'http://www.blisstonia.com/software/WebDecrypto/index.php';
+		
+	//************************************ Transposition *****************************************
+	
+	} else if($method == 'transposition') {
+		
+		if($mode == 'scramble') {
+			
+			//Equidistant Letter Spacing
+			
+			for($il=2; $il <= 10; $il++) {
+				for($i=0; $i < $codeTxtLen; $i++) {
+					$return['Equidistant Letter Spacing']['Every '.$il.' letters'] .= $codeTxt{$i};
+					for($i2=2; $i2 <= $il; $i2++) $return['Equidistant Letter Spacing']['Every '.$il.' letters'] .= $num2let[mt_rand(0,25)];
+				}
+			}
+			
+			//Equidistant word letter spacing
+			
+			/*
+			if(strpos($code,',')) {
+				$temp = str_replace(array(', ',' '),array(', ',','),$code);
+				$temp = explode(',',$temp);
+				$length=10;
+				
+				//Determine smallest string in list
+				foreach($temp as $key=>$val) if($val) $length = min($length,strlen($val));
+				
+				for($i=1; $i < $length + 1; $i++) foreach($temp as $key=>$val) $return['Equidistant Word Spacing']['Offset '.$i.' From Starts'] .= $val{$i};
+				for($i=1; $i < $length + 1; $i++) foreach($temp as $key=>$val) $return['Equidistant Word Spacing']['Offset '.$i.' From Ends'] .= strrev($val{$i});
+			}
+			
+			//Word Starts
+			
+			if(strpos($code,',')) {
+				$temp = explode(',',str_replace('.',',',$code));			
+				for($i=1; $i < $length + 1; $i++) foreach($temp as $key=>$val) {
+					$val=trim($val);
+					$return['Equidistant Word Spacing']['First Letter Last Word'] .= $val{(($t2 = strpos($val,' ')) ? $t2+1 : 0)};
+				}
+			}
+			*/
+			
+			//Pig Lattin
+			
+			$codeArr = explode(' ',preg_replace('/\s\s+/', ' ',$code));
+			for ($n = 0; $n < count($codeArr); $n++) $return['Fun']['Pig Lattin'] .= substr($codeArr[$n], 1) . substr($codeArr[$n], 0, 1) . "ay ";
+			
+		}
+		else {
+			
+			//Letters
+			
+			setPage('
+				<style type="text/css">
+					#transviztxt { height:28px; line-height:28px; padding-left:5px; margin-bottom:3px; }
+					.letters, #transviztxt { border:1px solid #F2F2F2; background-color:#FFFFFF; }
+					.letters { padding:3px; line-height:30px; background-color:#FFFFFF; }
+					.letters .let { cursor:pointer; padding:5px; border:1px solid #F2F2F2; background-color:#FCFCFC; font-weight:bold; text-decoration:none; }
+					.letters .used { cursor:arrow; color: #F2F2F2; }
+					.letters .let:hover { text-decoration:none; }
+					.letters .used:hover { color: #F2F2F2; }
+				</style>
+			','head');
+			
+			$temp = array();
+			$text = strtoupper($code);	
+			for($i=0; $i < $codeLen; $i++) if($letters[$text{$i}]) $temp[$text{$i}] .= ' <a class="let" onClick="if(this.className==\'let\') {this.className=\'let used\'; $(\'transviztxt\').innerHTML = $(\'transviztxt\').innerHTML + this.innerHTML; }">'.$text{$i}.'</a>';
+			sort($temp);
+			$text = '';
+			foreach($temp as $key=>$val) $text .= $val;
+			$return['Manual Tools']['Transposition Visualizer'] = '<a class="lbtn" style="float:right;" onClick="$(\'transviztxt\').innerHTML = \'\'; $$(\'.letters a\').each(function(el){ el.className = \'let\'; });"><< Reset</a><div id="transviztxt"></div><div class="letters">'.$text.' <a class="let" onClick="$(\'transviztxt\').innerHTML = $(\'transviztxt\').innerHTML + \' \';">Space</a></div>';
+			
+			//Equidistant Letter Spacing
+			
+			for($il=2; $il <= 10; $il++) {
+				$text = '';
+				for($i=0; $i < $codeTxtLen; $i++) if($i % $il == 0) $text .= $codeTxt{$i};
+				$return['Equidistant Letter Spacing']['Every '.$il.' letters'] = $text;
+			}
+			
+			//Equidistant word letter spacing
+			
+			if(strpos($code,',')) $temp = explode(',',str_replace(array(', ',' '),array(', ',','),$code));
+			else if(strpos($code,' ')) $temp = explode(' ',str_replace('  ',' ',$code));
+			else $temp = '';
+			
+			if($temp) {
+				$length=10;			//Max Length
+				foreach($temp as $key=>$val) if($val) $length = min($length,strlen($val));	//Determine smallest string in list
+				
+				for($i=1; $i < $length + 1; $i++) foreach($temp as $key=>$val) $return['Equidistant Word Spacing']['Offset '.$i.' From Starts'] .= $val{$i};
+				for($i=1; $i < $length + 1; $i++) foreach($temp as $key=>$val) $return['Equidistant Word Spacing']['Offset '.$i.' From Ends'] .= strrev($val{$i});
+			}
+			
+			//Word Starts
+			
+			if(strpos($code,',')) {
+				$temp = explode(',',str_replace('.',',',$codeLow));
+				for($i=1; $i < $length + 1; $i++) foreach($temp as $key=>$val) {
+					$val=trim($val);
+					$return['Equidistant Word Spacing']['First Letter Last Word'] .= $val{(($t2 = strpos($val,' ')) ? $t2+1 : 0)};
+				}
+			}
+			
+			//Pig Lattin
+			
+			$codeArr = explode(' ',preg_replace('/\s\s+/', ' ',$code));
+			for ($n = 0; $n < count($codeArr); $n++) $return['Fun']['Pig Lattin'] .= substr($codeArr[$n], -3, 1) . substr($codeArr[$n], 0, strlen($codeArr[$n]) - 3) . " ";
+		}
+		
+		//Reversed
+		
+		for($i=0; $i < $codeLen; $i++) $return['Fun']['Reversed'] = $code{$i}.$return['Fun']['Reversed'];
+				
+	//************************************ Numeric *****************************************
+	
+	} else if($method == 'numeric') {
+		
+		$xtraField = 'Base';
+		
+		if($mode == 'scramble') {
+			if($xtraCode) {
+				
+				//Generate array of words and numbers for advanced numerical scrambling
+				
+				$word = '';
+				$wordCount = 0;
+				$letCount = 0;
+				for($charCount=0; $charCount < $xtraCodeLen + 1; $charCount++) {
+					//Handle Words, and First and Last Letters
+					if(!$punctuation[$xtraCode{$charCount}] && $xtraCode{$charCount} != ' ') $word .= $xtraCode{$charCount};
+					if($word && (($punctuation[$xtraCode{$charCount}] || $xtraCode{$charCount} == ' ') || $charCount == $xtraCodeLen)) {
+						$wordCount++;
+						$codeWords[$word][] = $wordCount;
+						$codeFirstLets[$word{0}][] = $wordCount;
+						$codeLastLets[substr($word,-1,1)][] = $wordCount;
+						$word = '';
+					}
+					
+					//Handle Letters
+					if(!$punctuation[$xtraCode{$charCount}] && $xtraCode{$charCount} != ' ') {
+						$codeLets[$xtraCode{$charCount}][] = $letCount+1;
+						$letCount++;
+					}
+					
+					//Handle Characters
+					$codeChars[$xtraCode{$charCount}][] = $charCount+1;
+				}
+				
+				for($i=0; $i < $codeLen + 1; $i++) {
+					
+					//Letter Matching
+					$return['Numerical Substitution']['Letter Matching'] .= ($codeLets[$code{$i}] ? $codeLets[$code{$i}][mt_rand(0,count($codeLets[$code{$i}])-1)] : $code{$i}).' ';
+					
+					//Character Matching
+					$return['Numerical Substitution']['Character Matching'] .= ($codeChars[$code{$i}] ? $codeChars[$code{$i}][mt_rand(0,count($codeChars[$code{$i}])-1)] : $code{$i}).' ';
+					
+					//First Letter Matching
+					$return['Numerical Substitution']['First Letter Matching'] .= ($codeFirstLets[$code{$i}] ? $codeFirstLets[$code{$i}][mt_rand(0,count($codeFirstLets[$code{$i}])-1)] : $code{$i}).' ';
+					
+					//Last Letter Matching
+					$return['Numerical Substitution']['Last Letter Matching'] .= ($codeLastLets[$code{$i}] ? $codeLastLets[$code{$i}][mt_rand(0,count($codeLastLets[$code{$i}])-1)] : $code{$i}).' ';
+				}
+				
+				//Word Matching
+				$codeArr = explode(' ',preg_replace('/\s\s+/', ' ',$code));
+				foreach($codeArr as $key=>$val) $return['Numerical Substitution']['Word Matching'] .= ($codeWords[$val] ? $codeWords[$val][mt_rand(0,count($codeWords[$val])-1)] : $val).' ';
+			}
+			else {
+				$message .= '<div class="boldText">Many more scrambles which will be available once you enter a "Base"</div>';
+				
+				//Letter Matching
+				for($i=0; $i < $codeLen + 1; $i++) {
+					$return['Numerical Substitution']['Letter Matching'] .= ($let2num[$codeLow{$i}] ? $let2num[$codeLow{$i}] : $codeLow{$i}).' ';
+					$return['Numerical Substitution']['ASCII'] .= ord($code{$i}).' ';
+				}
+				
+				//Ordinal Values
+				function convertAlphabetToInt($alpha_string) {
+					$int_wert=0;
+					$potenzcounter=0;
+					for ($i=strlen($alpha_string);$i>0;$i--) {
+						$ordinalwert=(ord(substr($alpha_string,$i-1,1))-64);
+						$int_wert+=$ordinalwert*pow(26,$potenzcounter);
+						$potenzcounter++;
+					}
+					return $int_wert;
+				}
+				$return['Numerical Substitution']['Ordinal Values'] = convertAlphabetToInt($code);
+			
+			}
+		}
+		else {
+			
+			$message .= 'The numbers have been converted to text using the alphabet as a base - If the conversion doesn\'t make sense, try entering your own conversion base in the field above.';
+			
+			//Letter Matching
+			
+			$temp = '';
+			for($i=0; $i < $codeLen + 1; $i++) {
+				if(is_numeric($code{$i})) $temp .= $code{$i};
+				else if($temp) {
+					if($xtraCode) {
+						if($xtraCodeTxt{$temp-1}) $return['Numerical Substitution']['Alphabet Matching'] .= $xtraCodeTxt{$temp-1};
+					}
+					else if($num2let[$temp]) $return['Numerical Substitution']['Alphabet Matching'] .= $num2let[$temp];
+					//$return['Numerical Substitution']['Letter Matching'] .= $code{$i};
+					$temp = '';
+				}
+			}
+			
+			function convertIntToAlphabet($int_wert) {
+				if($int_wert%26>=1) {
+					$alpha_string=chr(($int_wert%26)+64).$alpha_string;
+					$alpha_string=convertIntToAlphabet($int_wert/26).$alpha_string;
+				}
+				return $alpha_string;
+			}
+			$return['Numerical Substitution']['Ordinal Values'] = convertIntToAlphabet($code);
+			
+			if($xtraCode) {
+				
+				$xtraCodeArr = explode(' ',preg_replace('/\s\s+/', ' ',str_replace($punctuation,' ',strtolower($xtraCode))));
+				
+				//Character Matching
+				
+				$temp = '';
+				for($i=0; $i < $codeLen + 1; $i++) {
+					if(is_numeric($code{$i})) $temp .= $code{$i};
+					else if($temp) {
+						if($xtraCode{$temp-1}) {
+							$return['Numerical Substitution']['Character Matching'] .= $xtraCode{$temp-1};
+						}
+						$temp = '';
+					}
+				}
+				
+				//First Letter Matching
+				
+				$temp = '';
+				for($i=0; $i < $codeLen + 1; $i++) {
+					if(is_numeric($code{$i})) $temp .= $code{$i};
+					else if($temp) {
+						if($xtraCodeArr[$temp-1]) $return['Numerical Substitution']['First Letter Matching'] .= substr($xtraCodeArr[$temp-1],0,1);
+						$temp = '';
+					}
+				}
+				
+				//Last Letter Matching
+				
+				$temp = '';
+				for($i=0; $i < $codeLen + 1; $i++) {
+					if(is_numeric($code{$i})) $temp .= $code{$i};
+					else if($temp) {
+						if($xtraCodeArr[$temp-1]) $return['Numerical Substitution']['Last Letter Matching'] .= substr($xtraCodeArr[$temp-1],-1,1);
+						$temp = '';
+					}
+				}
+				
+				//Word Matching
+				
+				$temp = '';
+				for($i=0; $i < $codeLen + 1; $i++) {
+					if(is_numeric($code{$i})) $temp .= $code{$i};
+					else {
+						if($temp) {
+							if($xtraCodeArr[$temp-1]) $return['Numerical Substitution']['Word Matching'] .= $xtraCodeArr[$temp-1];
+							$temp = '';
+						}
+						$return['Numerical Substitution']['Word Matching'] .= $code{$i};
+					}
+					$scores['Numerical Substitution']['Word Matching'] = -1;
+				}
+				
+				//Word Count
+				
+				$temp = '';
+				foreach($xtraCodeArr as $key=>$val) {
+					$return['Stats']['Word '.($key + 1)] = $val;
+				}
+			}
+			else {
+				$codeArr = explode(' ',$code);
+				foreach($codeArr as $key=>$val) {
+					$return['Numerical Substitution']['ASCII'] .= chr($val);
+				}
+			}
+		}
+		
+		$temp = '';
+		$sep = '';
+		for($i=0; $i < $codeLen + 1; $i++) {
+			if(is_numeric($code{$i})) $temp += $code{$i};
+			else if(is_numeric($temp)) {
+				$return['Stats']['Number Sums'] .= $sep.$temp;
+				if(!$sep) $sep = ', ';
+				$temp = '';
+			}
+		}
+		
+	//************************************ Morse *****************************************
+	
+	} else if($method == 'morse') {
+		if($mode == 'scramble') {
+			$let2morse = Array ('a'=>'.-','b'=>'-...','c'=>'-.-.','d'=>'-..','e'=>'.','f'=>'..-.','g'=>'--.','h'=>'....','i'=>'..','j'=>'.---','k'=>'-.-','l'=>'.-..','m'=>'--','n'=>'-.','o'=>'---','p'=>'.--.','q'=>'--.-','r'=>'.-.','s'=>'...','t'=>'-','u'=>'..-','v'=>'...-','w'=>'.--','x'=>'-..-','y'=>'-.--','z'=>'--..','0'=>'-----','1'=>'.----','2'=>'..---','3'=>'...--','4'=>'....-','5'=>'.....','6'=>'-....','7'=>'--...','8'=>'---..','9'=>'----.','.'=>'.-.-.-','?'=>'..--..','!'=>'-.-.--',','=>'--..--','-'=>'-....-',';'=>'-.-.-.',':'=>'---...','\''=>'.----.','"'=>'.-..-.','('=>'-·--·',')'=>'-·--·-','/'=>'-..-.','+'=>'·-·-·','$'=>'-···-','@'=>'·--·-·','kn'=>'···-··-','ar'=>'.-.-.','error'=>'........');
+			for($i=0; $i < $codeLen + 1; $i++) $return['Morse Code']['Standard'] .= $let2morse[$codeLow{$i}].' ';
+			for($i=$codeLen; $i >= 0; $i--) $return['Morse Code']['Letters Reversed'] .= $let2morse[$codeLow{$i}].' ';
+			for($i=0; $i < $codeLen + 1; $i++) $return['Morse Code']['Code Reversed'] .= strrev($let2morse[$codeLow{$i}]).' ';
+		}
+		else {
+			if(preg_match('/[^\s]{9}/',$code,$match)) {
+				
+				$message .= '<div class="desc">Your morse mesage contained more than seven characters with no space, so I created several permutations with spaces at different intervals.</div>';
+				if($codeLen > 12) $message .= '<div>Note: only the first 12 characters of your code have been analyzed, as any more than this cause a staggering number of possible combinations.</div>';
+				
+				$i = 0;
+				$codeLen	= min(12, $codeLen); //Increase this number if you want to crash things :-)
+				$maxScans	= $codeLen * 500;
+				for($str=''; strlen($str)<$codeLen; $str.='1');
+				$arr[$str] = 1;
+				for($i=0; $i<=$maxScans; $i++) {
+					$pos = array_rand($arr);
+					for($a=0; $a<strlen($pos); $a++) {
+						if($i > $maxScans / 2) {
+							if(substr($pos,$a,4) == '1111')			$arr[substr_replace($pos,'4',$a,'4')] = 1;
+							else if(substr($pos,$a,3) == '111')	$arr[substr_replace($pos,'3',$a,'3')] = 1;
+							else if(substr($pos,$a,2) == '11')		$arr[substr_replace($pos,'2',$a,'2')] = 1;
+						}
+						else {
+							if(substr($pos,$a,2) == '11')			$arr[substr_replace($pos,'2',$a,'2')] = 1;
+							else if(substr($pos,$a,3) == '111')	$arr[substr_replace($pos,'3',$a,'3')] = 1;
+							else if(substr($pos,$a,4) == '1111')	$arr[substr_replace($pos,'4',$a,'4')] = 1;
+						}
+					}
+				}
+				
+				$morse2let = array('.-'=>'a','-...'=>'b','-.-.'=>'c','-..'=>'d','.'=>'e','..-.'=>'f','--.'=>'g','....'=>'h','..'=>'i','.---'=>'j','-.-'=>'k','.-..'=>'l','--'=>'m','-.'=>'n','---'=>'o','.--.'=>'p','--.-'=>'q','.-.'=>'r','...'=>'s','-'=>'t','..-'=>'u','...-'=>'v','.--'=>'w','-..-'=>'x','-.--'=>'y','--..'=>'z');
+				
+				$arr = array_reverse($arr,true);
+				foreach($arr as $key=>$val) {
+					$p = 0;
+					for($i=0; $i<strlen($key); $i++) {
+						$v =(int)substr($key,$i,1);
+						$return['Morse Code'][$key] .= $morse2let[substr($code,$p,$v)];
+						$p += $v;
+					}
+				}
+			}
+			else {
+				function morse2str($morse) {
+					$morse2let = array('.-'=>'a','-...'=>'b','-.-.'=>'c','-..'=>'d','.'=>'e','..-.'=>'f','--.'=>'g','....'=>'h','..'=>'i','.---'=>'j','-.-'=>'k','.-..'=>'l','--'=>'m','-.'=>'n','---'=>'o','.--.'=>'p','--.-'=>'q','.-.'=>'r','...'=>'s','-'=>'t','..-'=>'u','...-'=>'v','.--'=>'w','-..-'=>'x','-.--'=>'y','--..'=>'z','-----'=>'0','.----'=>'1','..---'=>'2','...--'=>'3','....-'=>'4','.....'=>'5','-....'=>'6','--...'=>'7','---..'=>'8','----.'=>'9','.-.-.-'=>'.','..--..'=>'?','-.-.--'=>'!','--..--'=>',','-....-'=>'-','-.-.-.'=>';','---...'=>':','.----.'=>'\'','.-..-.'=>'"','-·--·'=>'(','-·--·-'=>')','-..-.'=>'/','·-·-·'=>'+','-···-'=>'=','-···-'=>'$','·--·-·'=>'@','···-··-'=>'kn','.-.-.'=>'ar','........'=>'error');
+					$morseLen = strlen($morse);
+					for($i=0; $i < $morseLen + 1; $i++) {
+						if($morse{$i} == '.' || $morse{$i} == '-') $temp .= $morse{$i};
+						else {
+							if($morse2let[$temp]) $str .= $morse2let[$temp];
+							$temp = '';
+							if($morse{$i} != ' ') $str .= $morse{$i};
+						}
+					}
+					return $str;
+				}
+				
+				$return['Morse Code']['Standard'] = morse2str($code);
+				$return['Morse Code']['Letters Reversed'] = strrev($return['Morse Code']['Standard']);
+				$return['Morse Code']['Code Reversed'] = morse2str(strrev($code));
+			}
+		}
+		
+	
+	//************************************ Digital *****************************************
+	
+	} else if($method == 'digital') {
+		
+		//Hexidecimal
+		
+		if($mode == 'scramble') $return['Digital']['Hexidecimal'] = bin2hex($code);
+		else for ($n=0; $n<$codeTxtLen; $n+=2) $return['Digital']['Hexidecimal'] .=  pack("C", hexdec(substr($codeTxt, $n, 2)));
+				
+		//Binary
+		
+		$byteLength = 8;
+		if($mode == 'scramble') for($x=0; $x<$codeLen; $x++) {
+			$charBin = decbin(ord($code{$x}));
+			$charBin = str_pad($charBin, $byteLength, '0', STR_PAD_LEFT);
+			$return['Digital']['Binary'] .= $charBin;
+		}
+		else for($x=0; $x<$codeTxtLen; $x += $byteLength) {
+			$charBinary = substr($codeTxt, $x, $byteLength);
+			$return['Digital']['Binary'] .= chr(bindec($charBinary));
+		}
+		
+		//Base 64
+		
+		if($mode == 'scramble') $return['Digital']['Base 64'] = base64_encode($code);
+		else $return['Digital']['Base 64'] = base64_decode($codeTxt);
+		
+		//URL
+		
+		if($mode == 'scramble') $return['Digital']['URL'] = urlencode($code);
+		else $return['Digital']['URL'] = urldecode($code);
+		
+		//HTML
+		
+		if($mode == 'scramble') $return['Digital']['HTML'] = htmlentities($code);
+		else $return['Digital']['HTML'] = html_entity_decode($code);
+		
+		//L33t
+		
+		if($mode == 'scramble') $return['Digital']['L337'] = str_replace($unl337, $l337, $codeLow);
+		else $return['Digital']['L337'] = str_replace($l337, $unl337, $code);
+		
+		//Hashes
+		
+		if($mode == 'scramble') {
+			$return['Hashes (One Way)']['SHA 1']		= hash('sha1',$code);
+			$return['Hashes (One Way)']['SHA 256']		= hash('sha256',$code);
+			$return['Hashes (One Way)']['SHA 512']		= hash('sha512',$code);
+			$return['Hashes (One Way)']['MD5']			= hash('md5',$code);
+			$return['Hashes (One Way)']['MD4']			= hash('md4',$code);
+			$return['Hashes (One Way)']['Snefru']		= hash('snefru',$code);
+			$return['Hashes (One Way)']['Ripemd 160']	= hash('ripemd160',$code);
+			$return['Hashes (One Way)']['WhirlPool']	= hash('whirlpool',$code);
+			$return['Hashes (One Way)']['Haval 128,3']	= hash('haval128,3',$code);
+			$return['Hashes (One Way)']['CRC 32']		= hash('crc32',$code);
+		}
+	}
+	
+	//Parse Results
+	
+	$text = '';
+	$modes = '';
+	foreach($return as $block=>$vals) {
+		$temp = '';
+		if(!$modes) $modes = count($vals);
+		$text .= '<tr><th colspan="2">'.$block.'</th></tr>';
+		
+		if($block == 'Links') {
+			$text .= '<tr><td class="lcol">Helpful Links:</td><td class="rcol llst">';
+			foreach($vals as $name=>$val) $text .= '<a href="'.$val.'">'.$name.'</a>';
+			$text .= '</div></td></tr>';
+		}
+		else foreach($vals as $name=>$val) {
+			$score = ($scores[$block][$name] ? $scores[$block][$name] : 0);
+			if(!$mode && $score != -1 && $modes > 1 && $block != 'Manual Tools' && $block != 'Stats') {
+				if(strpos($val,' ')) { //Check for score based on each "space" as a word seperator
+					$temp = explode(' ',$val);
+					foreach($temp as $pos=>$word) if($realWords[str_replace($punctuation,'',$word)]) $score++;
+				}
+				else { //Check for words present in equidistant-spaced string
+					foreach($realWords as $word=>$temp) if(strpos($val,$word)) $score++; //dragonhere
+				}
+				if($score > $topScore) {
+					$topScore = $score;
+					$guesstxt = $name.': '.$val.' ('.$score.')';
+					$guess = '<td class="lcol">'.$name.':</td><td class="rcol"><div class="wrap"><b>'.$val.'</b> <i>(Scored '.$score.' Point'.($score > 1 ? 's' : '').')</i></div></td>';
+				}
+			}
+			$text .= '<tr><td class="lcol">'.$name.':</td><td class="rcol"><div class="wrap">'.$val.'</div></td></tr>';
+		}
+	}
+	
+	$pageText = '
+		<table class="outer">
+		'.($guess && !$mode && $modes > 1 ? '<tr><th colspan="2">Best Guess</th></tr><tr>'.($guess ? $guess : '<td class="lcol">None Found:</td><td class="rcol"><div class="boldText">The text does not appear to be ciphered using this method:</div><div class="smallText">You can try selecting a different method, or scanning the list of possible solutions below to make sure this dictionary based guessing tool didn\'t miss the correct answer.</div></td>').'</tr>' : '').'
+			'.$text.'
+		</table>
+	';
+}
+else {
+	$pageText = '
+		<br />
+		<h3>Welcome to the AltaMatic cryptography system!</h3>
+		
+		<br />
+		
+		<i>Here is how it works:</i>
+		<ol>
+			<li>Set the Mode: <span class="desc">If you have plaintext you would like to encipher, set the mode to "Encipher". Otherwise, leave it on "Decipher" to solve things.</span></li>
+			<li>Set the Method: <span class="desc">If are enciphering your text, or you already know what mode the text was ciphered with, select a method manually. Otherwise, leave the mode on "Automatic".</span></li>
+			<li>Enter your Text: <span class="desc">Enter your plain or cipher text in the "Text" box.</span></li>
+			<li>>> Process: <span class="desc">The cryptography engine will perform your requested operations and return the results to you!</span></li>
+		</ol>
+		
+		<br />
+		<i>Reading the Results:</i>
+		<ol>
+			<li><b>Enciphering:</b> <span class="desc">If your mode was set to "Encipher", you will have a list of your text ciphered using different algorithms related to your "Method". Select one, copy it, and go puzzle your friends!</span></li>
+			<li><b>Deciphering:</b> <span class="desc">If your method was on "Automatic", the system will have used basic frequency analysis to set the method automatically. Based on your method, you will have a list of your ciphertext deciphered many different ways. If any of them make sense in english, you are set! Otherwise, read on...</span></li>
+		</ol>
+		
+		<br />
+		<i>Understanding the Results: (organized by method)</i>
+		<div class="desc">It is recommended that you familiarize yourself with <a href="http://en.wikipedia.org/wiki/Transposition_cipher" target="_blank">Transposition Ciphers</a> and <a href="http://en.wikipedia.org/wiki/Substitution_cipher" target="_blank">Substitution ciphers</a>.</div>
+		
+		<ul>
+			<li><div class="title">Digital:</div> <div class="desc">The digital methods should all be easily recognizable, and they either work or they don\'t. If they don\'t, you will need to try another method :-)</div></li>
+			<li><div class="title">Morse:</div> <div class="desc">If there are a lots of "di"s and "dah"s in your cihertext, it is probably morse. Morse solving is completley automated, and the system should be able to present you with the plaintext! If the character break sequences become lost however, solving morse becomes much more difficult... If there are a series of more than 7 dots or dashes in a row with no seperating spaces, AltaMatic switches to "Morse Permutator" mode and generates a significant number of random space sequences. Because of the huge number of possible combinations, morse permutations are limited to 12 characters at a time. It is suggested you start with the first 12 characters, find a letters that makes sense, and then start at the end of that letter and keep looking for letters till you have reached the end of your message.</div></li>
+			<li><div class="title">Numeric:</div> <div class="desc">"Numeric" ciphers are a form of substitution ciphers, but have been designated with their own mode as they have many unique properties of their own. If your message is not solved using the basic numeric algorithyms, it may be a form of <a href="http://en.wikipedia.org/wiki/Book_cipher" target="_blank">Book Cipher</a>. You can solve or create book ciphers by entering a conversion base in the "Base" field. For example, if you wanted to perform the 2nd <a href="http://en.wikipedia.org/wiki/Beale_ciphers" target="_blank">Beal cipher</a>, you would enter the Declaration of Independence in the "Base" field!</div></li>
+			<li><div class="title">Transposition:</div> <div class="desc">A transposition cipher involves rearranging letters without actually changing them. Because of this, you can generally use frequency analysis to determine if a transposition cipher or substitution cipher has been used on a message! AltaMatic will automaticaly run your ciphertext through several transposition algorithyms, but if none of them produce a legible message you can try the "Transposition Visualizer". Using the visualizer, you can try arranging the letters in your message in different orders by clicking on the letter tiles. This is a great way to solve "Anagrams", which are merely randomized versions of a transposition cipher.</div></li>
+			<li><div class="title">Substitution:</div> <div class="desc">If the frequency of letters in your ciphertext does not appear to correspond to the frequency of letters in English, there is a good chance you are dealing with a substitution cipher. AltaMatic will automatically run the ciphertext through all 26 rotations of a "Caesar Cipher", but if this does not solve the cipher you can try using the "Substitution Visualizer". The substitution visualizer works on the principle that each letter in the ciphertext corresponds to a specific letter in the plaintext. You can edit letters in the plaintext until you have a legible message.</div></li>
+		</ul>
+		
+		<br />
+		
+		<i>Keep in mind that there are a huge number of methods that can be used to obfuscate text, and this system does not handle all of them. Messages can also be ciphered multiple times using methods supported by this system, which can greatly hinder solving.</i>
+		
+		<br /><br />
+		
+		<i>Perservere, and Have Fun!</i>
+		
+		<br />
+	';
+}
+
+
+
+
+
+
+//*************************************************************************************************
+//******************************************* Show Page *******************************************
+//*************************************************************************************************
+
+
+
+
+
+
+setPageConst('title','Cryptography - Substitution and Transposition Ciphers, Morse and Numeric Codes, Digital Hashes, and More!');
+setPage('
+<style type="text/css">
+	.wrap { width:480px; overflow:auto; }
+</style>
+','head');
+
+setPage('
+	<form method="post" class="center" action="/crypt">
+		<table class="outer">
+			<tr>
+				<td class="lcol">Mode:</td>
+				<td class="rcol btxt"><input type="radio" name="mode" value="scramble" '.($_REQUEST['mode'] == 'scramble' ? 'checked' : '').'/> Encode <input type="radio" name="mode" value="" '.($_REQUEST['mode'] ? '' : 'checked').'/> Decode</td>
+			</tr>
+			<tr>
+				<td class="lcol">Method:</td>
+				<td class="rcol">
+				<div class="boldText"><input type="radio" name="method" value="" '.($_REQUEST['method'] ? '' : 'checked').'/> Automatic'.($_REQUEST['method'] ? '' : ($mode == 'scramble' ? ' - (Select one below to scramble your text)' : ': '.$method)).'</div>
+					<div class="italicText smallText"><input type="radio" name="method" value="substitution" '.($_REQUEST['method'] == 'substitution' ? 'checked' : '').'/> Substitution <input type="radio" name="method" value="transposition" '.($_REQUEST['method'] == 'transposition' ? 'checked' : '').'/> Transposition <input type="radio" name="method" value="numeric" '.($_REQUEST['method'] == 'numeric' ? 'checked' : '').'/> Numeric <input type="radio" name="method" value="morse" '.($_REQUEST['method'] == 'morse' ? 'checked' : '').'/> Morse <input type="radio" name="method" value="digital" '.($_REQUEST['method'] == 'digital' ? 'checked' : '').'/> Digital</div>
+				</td>
+			</tr>
+			<tr>
+				<td class="lcol">Text:</td>
+				<td class="rcol"><textarea class="input" style="height:70px;" name="code" id="code">'.($_REQUEST['code'] ? $_REQUEST['code'] : '').'</textarea></td>
+			</tr>
+			'.($xtraField ? '<tr>
+				<td class="lcol">'.$xtraField.'</td>
+				<td class="rcol"><textarea class="input" style="height:70px;" name="xtracode" id="xtracode">'.$xtraCode.'</textarea></td>
+			</tr>' : '').'
+		</table>
+		<input type="submit" value=">> Perform Operations" class="bold" />
+		'.($message ? '<div class="content dull">'.$message.'</div>' : '').'
+	</form>
+	
+	'.$pageText.'
+');
+
+
+if($code) $_SERVER['db']->execute('INSERT INTO queries (id, usid, date, string, result, context) VALUES (\'\',\''.$_SESSION['userId'].'\','.time().','.dbstr($code).', '.dbstr($guesstxt).',\'mode: '.$mode.'; method:'.$method.'\')');
+
+
+?>

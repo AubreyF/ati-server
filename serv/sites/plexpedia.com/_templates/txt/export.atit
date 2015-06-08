@@ -1,0 +1,16 @@
+<?
+
+setPagePref('template',false);
+setPageHeader('cache-control','public, max-age=86400');
+
+if($items) foreach($items as $key=>$thread) $content .= '
+	<li>
+		<a href="'.$thread['link'].'" target="_blank">
+		'.($thread['picture'] && $_REQUEST['img'] ? '<img src="'.$thread['picture'].'" />' : '').'
+		'.$thread['title'].($thread['description'] ? ' - '.$thread['description'] : '').'
+		</a>
+	</li>';
+
+$content = $page['title'].":\n\n<ul>".$content.'</ul>';
+
+?>

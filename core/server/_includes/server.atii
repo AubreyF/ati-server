@@ -1,0 +1,170 @@
+<?
+
+function processRequest() {
+	
+	$_SERVER['request'] = trim(socket_read($_SERVER['socket'],1024));
+	
+	if(!$_SERVER['request']) {
+		$_SERVER['headers']['status'] = 'HTTP/1.1 501 Method Not Implemented';
+		sendData('The message your browser sent us didn\'t make sense!');
+		logMessage('The socket contained no data!');
+	}
+	
+	//************************ Seperate Headers From Content ****************
+	
+	if(strpos($_SERVER['request'], "\r\n") !== FALSE){
+		$_SERVER['lf'] = "\r\n";
+		$_SERVER['lfl'] = 4;
+	}
+	else {
+		$_SERVER['lf'] = "\n";
+		$_SERVER['lfl'] = 2;
+	}
+	
+	//***************** Create $_HEADERS and $_SERVER array ****************
+	
+	$i = 0;
+	$ra = $_SERVER['request'];
+	while(true){
+		$i++;
+		$p = strpos($ra, $_SERVER['lf']);			//P is position of next \n
+		$a = strtolower(substr($ra, 0, $p));		//A is current header line
+		$ra = substr($ra, $p + 2);					//RA is rest of request
+		if($p < 1) { //End of Headers
+			if($ra) $_SERVER['requestContent'] = $ra;
+			break;
+		}
+					
+		if($i == 1) { //Summary Line
+			$j=explode(' ',$a);
+			$_HEADERS[$j[0]] = $j[1];
+			$_SERVER['REQUEST_METHOD'] = $j[0];
+			$_SERVER['REQUEST_PROTOCOL'] = $j[2];
+			$_SERVER['REQUEST_URI'] = $j[1];
+		}
+		else if($j = strpos($a, ':')){
+			$key = substr($a, 0, $j);
+			$_HEADERS[$key] = substr($a, $j+2);
+			if(($key != 'CONTENT_LENGTH') && ($key != 'CONTENT_TYPE')) $_SERVER['HTTP_'.strtoupper($key)] = substr($a, $j+2);
+		}
+		else {
+			$_HEADERS[$a] = $a;
+		}
+	}
+	
+	//******** Handle $_POST, $_COOKIE and $_REQUEST! ($_GET handled by url translator) ******
+	
+	if($_HEADERS['cookie']) {
+		$temp = explode('=',urldecode($_HEADERS['cookie']));
+		$_COOKIE[$temp[0]] = $temp[1];
+		$_REQUEST[$temp[0]] = $temp[1];
+	}
+	
+	if($_HEADERS['content-type'] === 'application/x-www-form-urlencoded') {
+		$temp = explode('&',urldecode($_SERVER['requestContent']));
+		foreach($temp as $key=>$val) {
+			$temp2 = explode('=',$val);
+			$_POST[$temp2[0]] = $temp2[1];
+			$_REQUEST[$temp2[0]] = $temp2[1];
+		}
+	}
+	else if(strpos($_HEADERS['content-type'], 'multipart/form-data') !== false) {
+		$temp = explode('=',$_HEADERS['content-type']);
+		$boundary = $temp[1];
+		$temp = explode($boundary,$_SERVER['requestContent']);
+		foreach($temp as $k=>$ra) {
+			$i = 0;
+			$ra = substr($ra,$_SERVER['lfl']);//trim newline
+			while(true){
+				$i++;
+				$p = strpos($ra, $_SERVER['lf']);			//P is position of next \n
+				$a = strtolower(substr($ra, 0, $p));		//A is current header line
+				$ra = substr($ra, $p);						//RA is rest of request
+				//echo $a;
+				if($p < 1) { //End of Headers
+					if($ra) $temp2['content'] = $ra;
+					break;
+				}
+				$j = strpos($a, ':');
+				$temp2['headers'][substr($a, 0, $j)] = substr($a, $j+2);
+			}
+			
+			foreach(explode(';',$temp2['headers']['content-disposition']) as $key=>$val) {
+				$temp3 = explode('=',$val);
+				$temp2['headers']['dispositionExploded'][$temp3[0]] = str_replace('"',' ',$temp3[1]);
+			}
+			
+			if($temp2['headers']['content-type'] != '') {	//File Upload
+				echo 'Uploading file!';
+				$_FILES[$temp2['headers']['dispositionExploded']['name']]['name'] = $temp2['headers']['dispositionExploded']['filename'];
+				$_FILES[$temp2['headers']['dispositionExploded']['name']]['type'] = $temp2['headers']['content-type'];
+				$_FILES[$temp2['headers']['dispositionExploded']['name']]['size'] = strlen($temp2['content']);
+				//$_FILES[$temp2['headers']['dispositionExploded']['name']]['tmp_name'] = _root.'/uploads/_temporary'.$temp2['headers']['dispositionExploded']['filename'];
+				
+				while(file_exists($_FILES['userfile']['tmp_name'].'.jpg')) { //make sure we are not overwriting other files...
+					$_FILES['userfile']['tmp_name'] .= chr(mt_rand( 97, 122 )); //add random lowercase letter to filename
+				}
+				$_FILES[$temp2['headers']['dispositionExploded']['name']]['tmp_name'] .= '.jpg';
+				
+				$file = fopen($_FILES['userfile']['tmp_name'],'x');
+				fwrite($file,$temp2['content']);			//Move uploaded file to temp directory (which should be pruned periodically)
+				fclose($file);
+			}
+			else {											//Standard Form Element
+				$_POST[$temp2['headers']['dispositionExploded']['name']] = $temp2['content'];
+				$_REQUEST[$temp2['headers']['dispositionExploded']['name']] = $temp2['content'];
+			}
+			//print_r($temp2);
+		}
+	}
+	
+	//print_r($_REQUEST);
+	//print_r($_FILES);
+	
+	//********************** Generate the Page! *********************
+	
+	generatePage();
+}
+
+function sendPage($content='',$headers='') {
+	if($headers) $_SERVER['headers'] += $headers;
+	$temp = sendHeaders().$content;
+	socket_write($_SERVER['socket'],$temp);
+	if(socket_last_error($_SERVER['socket'])) logMessage('A socket had a problem: '.socket_strerror(socket_last_error($_SERVER['socket'])));
+	socket_shutdown($_SERVER['socket']);
+	socket_close($_SERVER['socket']);
+	
+	finishPage();
+}
+
+function sendData($content='') {
+	socket_write($_SERVER['socket'],sendHeaders().$content);
+	if(socket_last_error($_SERVER['socket'])) logMessage('A socket had a problem: '.socket_strerror(socket_last_error($_SERVER['socket'])));
+}
+
+function sendFile($location) {
+	$_SERVER['headers']['content-length'] = filesize($location);
+	if(!$_SERVER['headers']['content-transfer-encoding']) $_SERVER['headers']['content-transfer-encoding'] = 'binary';
+	
+	if($handle = fopen($location, "r")) while(!feof($handle)) socket_write($_SERVER['socket'],sendHeaders().fgets($handle, 1024));
+	
+	socket_shutdown($_SERVER['socket']);
+	socket_close($_SERVER['socket']);
+	
+	finishPage();
+}
+
+function sendHeaders() {
+	if(!$_SERVER['headers']) return;
+	
+	foreach ($_SERVER['headers'] as $key=>$val) {
+		if($key == 'status') $head = $val.$_SERVER['lf'];
+		else if(is_array($val)) foreach ($val as $key2=>$val2) $head .= $key.($val2 ? ': '.$val2 : '').$_SERVER['lf'];
+		else $head .= $key.($val ? ': '.$val : '').$_SERVER['lf'];
+	}
+	
+	unset($_SERVER['headers']);
+	return $head.$_SERVER['lf'];
+}
+
+?>

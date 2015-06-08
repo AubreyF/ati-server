@@ -1,0 +1,27 @@
+<?
+
+function mtInit($opts) {
+	
+	setPage('
+		<script type="text/javascript" src="/_inc/mt/mootools.js"></script>
+		<script type="text/javascript" src="/_inc/mt/moodalbox.js"></script>
+		<script type="">
+			window.addEvent(\'domready\', function() {
+				/* ToolTips */
+				var Tips2 = new Tips($$(\'.\'), {
+					initialize:function(){
+						this.fx = new Fx.Style(this.toolTip, \'opacity\', {duration: 500, wait: false}).set(0);
+					},
+					onShow: function(toolTip) {
+						this.fx.start(1);
+					},
+					onHide: function(toolTip) {
+						this.fx.start(0);
+					}
+				});
+			});
+		</script>
+	','head');
+}
+
+?>

@@ -1,0 +1,423 @@
+<?
+setPageConst('title','Hieroglyphics');
+
+setPage('
+<style type="text/css">
+.box { margin-bottom:570px; }
+.english .title, .hieroglyphics .title { font-weight:bold; font-size:15px; margin-bottom:30px; margin-top:30px; text-align:center; }
+.hiero { float:left; margin-right:0px; height:60px; }
+.english .hiero { width:110px; margin-right: 20px; }
+.english img { position:absolute; margin-left:80px; }
+.english .let { margin-right:20px; color:#555555; text-align:center; font-size:2em; margin-right:20px; text-align:center; font-size:2em; background-color:}
+.english .exp { margin-right:20px; color:#555555; text-align:center; margin-right:20px; text-align:center; font-style:italic; }
+.hieroglyphics .hiero { width:226px; }
+.hieroglyphics img { position:absolute; }
+.hieroglyphics .let { margin-left:60px; font-weight:bold; padding-top:5px; color:#555555; }
+.hieroglyphics .exp { margin-left:60px; font-style:italic; color:#999999; }
+</style>
+','head');
+
+setPage('
+	<h3>Spy Tools Hieroglyphics - Accurate and Bidirectional:</h3>
+	
+	Hieroglyphics are a phonetical alphabet which was invented by the ancient Egyptians.<br />
+	Hieroglyphics are read top to bottom, starting from the direction the characters are facing.
+	
+	<div class="english box">
+		<div class="title">English to Hieroglyphics:</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/a.gif" />
+			<div class="let">A</div>
+			<div class="exp">cat</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/ah.gif" />
+			<div class="let">A</div>
+			<div class="exp">bake</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/b.gif" />
+			<div class="let">B</div>
+			<div class="exp">bat</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/c.gif" />
+			<div class="let">C</div>
+			<div class="exp">cat</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/ce.gif" />
+			<div class="let">Ce</div>
+			<div class="exp">mice</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/ch.png" />
+			<div class="let">Ch</div>
+			<div class="exp">church</div>
+		</div>
+		
+		<!--<div class="hiero">
+			<img src="/img/hiero/ch2.gif" />
+			<div class="let">Ch</div>
+			<div class="exp">loch</div>
+		</div>-->
+		
+		<div class="hiero">
+			<img src="/img/hiero/d.gif" />
+			<div class="let">D</div>
+			<div class="exp">dog</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/e.gif" />
+			<div class="let">E</div>
+			<div class="exp">egg</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/ee.gif" />
+			<div class="let">Ee</div>
+			<div class="exp">bee</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/f.gif" />
+			<div class="let">F</div>
+			<div class="exp">friend</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/g.gif" />
+			<div class="let">G</div>
+			<div class="exp">gone</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/ge.gif" />
+			<div class="let">Ge</div>
+			<div class="exp">judge</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/h.gif" />
+			<div class="let">H</div>
+			<div class="exp">hat</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/i.gif" />
+			<div class="let">I</div>
+			<div class="exp">bin</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/j.gif" />
+			<div class="let">J</div>
+			<div class="exp">adjust</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/k.gif" />
+			<div class="let">K</div>
+			<div class="exp">kite</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/l.gif" />
+			<div class="let">L</div>
+			<div class="exp">lion</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/m.gif" />
+			<div class="let">M</div>
+			<div class="exp">mummy</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/n.gif" />
+			<div class="let">N</div>
+			<div class="exp">not</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/o.gif" />
+			<div class="let">O</div>
+			<div class="exp">dog</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/oa.gif" />
+			<div class="let">Oa</div>
+			<div class="exp">coat, cook</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/ou.png" />
+			<div class="let">Ou</div>
+			<div class="exp">food, rude</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/p.gif" />
+			<div class="let">P</div>
+			<div class="exp">pet</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/qu.png" />
+			<div class="let">Qu</div>
+			<div class="exp">queen</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/r.png" />
+			<div class="let">R</div>
+			<div class="exp">right</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/s.gif" />
+			<div class="let">S</div>
+			<div class="exp">saw</div>
+		</div>
+		
+		<!--<div class="hiero">
+			<img src="/img/hiero/ss.gif" />
+			<div class="let">SS</div>
+			<div class="exp">glass</div>
+		</div>-->
+		
+		<div class="hiero">
+			<img src="/img/hiero/sh.png" />
+			<div class="let">SH</div>
+			<div class="exp">show, ship, machine</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/t.gif" />
+			<div class="let">T</div>
+			<div class="exp">tall, the</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/th.gif" />
+			<div class="let">Th</div>
+			<div class="exp">this, that</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/u.gif" />
+			<div class="let">U</div>
+			<div class="exp">cut</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/ou.png" />
+			<div class="let">U</div>
+			<div class="exp">cute</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/v.gif" />
+			<div class="let">V</div>
+			<div class="exp">(f)</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/u.gif" />
+			<div class="let">W</div>
+			<div class="exp">win</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/x.png" />
+			<div class="let">X</div>
+			<div class="exp">fox</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/y.gif" />
+			<div class="let">Y</div>
+			<div class="exp">yellow, fly</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/ye.png" />
+			<div class="let">Ye</div>
+			<div class="exp">ready</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/z.gif" />
+			<div class="let">Z</div>
+			<div class="exp">(s)</div>
+		</div>
+	</div>
+	
+	<div class="hieroglyphics box">
+		<div class="title">Hieroglyphics to English:</div>
+
+		<div class="hiero">
+			<img src="/img/hiero/a.gif" />
+			<div class="let">Short A, E, and O</div>
+			<div class="exp">c<b>a</b>t, b<b>a</b>r, <b>e</b>arn, p<b>e</b>t, d<b>o</b>g</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/m.gif" />
+			<div class="let">M</div>
+			<div class="exp"><b>m</b>other, <b>m</b>u<b>mm</b>y</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/oa.gif" />
+			<div class="let">Long O, OO, U, W</div>
+			<div class="exp">c<b>o</b>at, f<b>oo</b>d, r<b>u</b>de, c<b>u</b>t, <b>W</b>in</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/f.gif" />
+			<div class="let">F, V</div>
+			<div class="exp"><b>f</b>ish, <b>f</b>riend, <b>ph</b>one, <b>v</b>ine</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/ge.gif" />
+			<div class="let">Soft G, J</div>
+			<div class="exp">jud<b>g</b>e, <b>j</b>ump, ad<b>j</b>ust</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/l.gif" />
+			<div class="let">L</div>
+			<div class="exp"><b>l</b>ion, <b>l</b>ake</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/d.gif" />
+			<div class="let">D, Soft Th</div>
+			<div class="exp"><b>d</b>og, <b>th</b>umb, <b>th</b>is</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/ah.gif" />
+			<div class="let">Long A</div>
+			<div class="exp">b<b>a</b>ke, p<b>a</b>il</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/b.gif" />
+			<div class="let">B</div>
+			<div class="exp"><b>b</b>at</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/r.png" />
+			<div class="let">R</div>
+			<div class="exp"><b>r</b>un</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/t.gif" />
+			<div class="let">T, Hard TH</div>
+			<div class="exp"><b>t</b>all, <b>t</b>he</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/p.gif" />
+			<div class="let">P</div>
+			<div class="exp"><b>p</b>in</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/sh.png" />
+			<div class="let">Sh</div>
+			<div class="exp"><b>sh</b>ark</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/ce.gif" />
+			<div class="let">Soft S, Soft C</div>
+			<div class="exp"><b>s</b>it, mi<b>c</b>e, <b>c</b>ir<b>c</b>u<b>s</b></div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/h.gif" />
+			<div class="let">H</div>
+			<div class="exp"><b>h</b>er, <b>h</b>at</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/g.gif" />
+			<div class="let">Hard G</div>
+			<div class="exp"><b>g</b>rape, <b>g</b>one</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/ch.png" />
+			<div class="let">CH</div>
+			<div class="exp"><b>c</b>hild, <b>c</b>hurch</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/z.gif" />
+			<div class="let">Hard S, Z</div>
+			<div class="exp">day<b>s</b>, <b>z</b>ebra</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/n.gif" />
+			<div class="let">N</div>
+			<div class="exp"><b>n</b>ile</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/i.gif" />
+			<div class="let">Short I, Long I, Hard Y</div>
+			<div class="exp">h<b>i</b>m, h<b>i</b>de, <b>y</b>ellow, fl<b>y</b></div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/ye.png" />
+			<div class="let">Long E, E like Y</div>
+			<div class="exp">b<b>ee</b>, read<b>y</b></div>
+		</div>
+				
+		<div class="hiero">
+			<img src="/img/hiero/ou.png" />
+			<div class="let">OO, long U</div>
+			<div class="exp">f<b>oo</b>d, r<b>u</b>de, c<b>u</b>te</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/c.gif" />
+			<div class="let">Hard C, K</div>
+			<div class="exp"><b>c</b>at, <b>k</b>ite</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/qu.png" />
+			<div class="let">Qu</div>
+			<div class="exp"><b>q</b>ueen, <b>q</b>uick</div>
+		</div>
+		
+		<div class="hiero">
+			<img src="/img/hiero/x.png" />
+			<div class="let">X</div>
+			<div class="exp">fo<b>x</b></div>
+		</div>
+	</div>
+	
+	<h4>Note:</h4>
+		Since Hieroglyphics are phonetical, certain symbols can be translated to different english letters based on their context. When translating it is a good idea to right down each possible letter each symbol could be translated to, and then decide which one is correct.
+
+');
+
+?>

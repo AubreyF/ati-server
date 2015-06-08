@@ -1,0 +1,39 @@
+<?
+function categoryList($category,$baseParams,$searchApplied,$inStore) {
+	if(!$cats = func(_mod.'dbtree','getChildTreeArray','classifieds_categories',$category['id'],"ORDER BY title")) return;
+	if (!$searchApplied && !$inStore) foreach ($cats as $key=>$cat) {
+		$catBox['content'] .= ' <a title="'.$cat['title'].' - '.$cat['description'].'" href="/browse-cat-'.$cat['id'].'" class="adCat" onClick="return doBrowse(this);"><img src="/images/folders/folder.png"/><span>'.$cat['title'].'</span></a>';
+	}
+	else foreach ($cats as $key=>$cat) {
+		//Init
+		$latest = 0;
+		$ads = 0;
+		
+		//Do Safarri Item Counts
+		$subCats = func(_mod.'dbtree','getAllChildren','classifieds_categories',$cat['id']);
+		$subCats[] = $cat['id']; //Add parent category :-)
+		foreach($subCats as $key=>$id) {
+			$rs = $_SERVER['db']->execute("SELECT a.date FROM classifieds_ads a WHERE cid = {$id}{$inStore['sql']} {$extraSql} ORDER BY date DESC");
+			if($rs) $ads += $rs->RecordCount();
+		}
+		
+		//Do base Item counts
+		if(!$inStore) {
+			$row = $_SERVER['db']->getRow("SELECT baseStr, baseStrCat, title FROM classifieds_categories WHERE id = '{$id}'");	
+			if($row['baseStr']) $catStr = rawurlencode($row['baseStr']);
+			else if($row['baseStrCat']) rawurlencode($catStr = $row['baseStrCat']);
+			else $catStr = rawurlencode($row['title']);
+			$ch = curl_init();
+			curl_setopt($ch, CURLOPT_URL,  'http://www.google.com/base/feeds/snippets/?bq='.$catStr.$baseParams.'&alt=rss&max-results=1');
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+			$ads += (int) preg_match("|<openSearch:totalResults>(.*)<\/openSearch:totalResults>|U", curl_exec($ch), $match) ? $match[1] : 0;
+			curl_close($ch);
+		}
+		if($ads || $adBox['showcased']) $catBox['content'] .= ' <a title="'.$cat['title'].' - '.$cat['description'].'" href="/browse-cat-'.$cat['id'].'" class="adCat" onClick="return doBrowse(this);"><img src="/images/folders/folder.png"/><span>'.$cat['title'].(($ads && !$adBox['showcased']) ? (($ads < 10000) ? (' ('.number_format($ads).')') : (' (!)')) : '').'</span></a>';
+	}
+	
+	if($catBox['content']) return '<div class="adCats">'.$catBox['content'].'</div>';
+	else return;
+}
+?>

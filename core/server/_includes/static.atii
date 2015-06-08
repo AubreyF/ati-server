@@ -1,0 +1,38 @@
+<?
+
+$_SERVER['headers']['expires'] = $GLOBALS['prefs']['sessionExpiryDate'];
+$_SERVER['REQUEST_URI'] = urldecode($_SERVER['REQUEST_URI']);
+$_SERVER['FAKE_URI'] = urldecode($_SERVER['FAKE_URI']);
+
+if(!file_exists(_root.$_SERVER['REQUEST_URI'])) {
+	if(strpos($_SERVER['FAKE_URI'],'.htm')) sendPage('',array('status'=>'HTTP/1.1 301 Moved Permanently', 'location'=>str_replace('.htm','',$_SERVER['FAKE_URI'])));
+	else sendPage('<h4>The File you requested ('.$_SERVER['FAKE_URI'].' ~ '.$_SERVER['REQUEST_URI'].') could not be found!</h4>',array('status'=>'HTTP/1.1 404 Not Found'));
+}
+
+$temp = filemtime(_root.$_SERVER['REQUEST_URI']);
+$_SERVER['headers']['etag'] = $temp;
+if($_SERVER['HTTP_IF_NONE_MATCH'] == $_SERVER['headers']['etag'] || preg_replace('/;.*$/', '', $_HEADERS['if-modified-since']) == gmdate('D, d M Y H:i:s',$temp).' GMT') sendPage('',array('status'=>'HTTP/1.1 304 Not Modified'));
+
+if($_SERVER['REQUEST_TYPE']['cache-control']) $_SERVER['headers']['cache-control'] = $_SERVER['REQUEST_TYPE']['cache-control'];
+else $_SERVER['headers']['cache-control'] = 'public, max-age=43200';
+
+$_SERVER['headers']['content-type'] = $_SERVER['REQUEST_TYPE']['mime'];
+
+if ($GLOBALS['prefs']['gzipPage'] == true) {
+	$_SERVER['headers']['content-encoding'] = "gzip";
+	$cachedFile = '/data/cache/gz/'.str_replace('/','>',$_SERVER['REQUEST_URI']).'.gz';
+	if(file_exists(_root.$cachedFile) && filemtime(_root.$_SERVER['REQUEST_URI']) <= filemtime(_root.$cachedFile)) $_SERVER['REQUEST_URI'] = $cachedFile;
+	else { //rebuild gzip file!!!
+		$dat = file_get_contents(_root.$_SERVER['REQUEST_URI']);
+		$gzdat = gzencode($dat, 8);
+		$f = fopen(_root.$cachedFile, 'w');
+		fwrite($f, $gzdat);
+		fclose($f);
+		sendPage($gzdat,array('content-length'=>strlen($gzdat)));
+	}
+}
+
+//We are sending a file!
+sendFile(_root.$_SERVER['REQUEST_URI']);
+
+?>

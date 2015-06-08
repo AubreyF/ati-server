@@ -1,0 +1,49 @@
+<?
+$tplDefs['blockMessage'] = 'preContent';
+$tplDefs['blockFancy'] = 'content';
+$tplDefs['blockHelp'] = 'sideBar2';
+
+
+function block($title,$content) {
+	return '
+	<table class="centerBlockTop">
+      <tr>
+        <td class="centerBlockTopLeft">&nbsp;</td>
+        <td class="centerBlockTopCenter">'.$title.'</td>
+        <td class="centerBlockTopRight">&nbsp;</td>
+      </tr>
+    </table>
+	<div class="centerBlockContent">
+     '.$content.'
+    </div><br />
+	';
+}
+
+function blockFancy($title,$content) {
+	return '
+	<table class="centerBlockTop">
+      <tr>
+        <td class="centerBlockTopLeft">&nbsp;</td>
+        <td class="centerBlockTopCenter">'.$title.'</td>
+        <td class="centerBlockTopRight">&nbsp;</td>
+      </tr>
+    </table>
+	<div class="centerBlockContent">
+     '.$content.'
+    </div><br />
+	';
+}
+
+function blockMessage($message) {
+	return '
+	<table width="100%" border="0" cellspacing="0" cellpadding="0">
+	  <tr>
+		<td><img src="/*st/images/messageleft.png" alt="" /></td>
+		<td width="100%" style="background-image:url(\'/*st/images/messagecenter.png\'); font-size:1.2em; text-align:center; vertical-align:top;"><div style="margin-top:16px; text-align:left; font-weight:bold; font-size:12px; padding-bottom:0.5em;">Safarri Message Viewer:</div>'.$message.'</td>
+		<td><a href="'.$_SERVER['FAKE_URI'].'" title="Close Message"><img src="/*st/images/messageright.png" border="0" /></a></td>
+	  </tr>
+	</table>
+	';
+}
+
+?>

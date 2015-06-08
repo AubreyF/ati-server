@@ -1,0 +1,445 @@
+<?
+
+//Do Admin tools
+if(isAdmin() ) {
+	if($ad['banText'] && $_REQUEST['submit'] == '>> Enable Ad') {
+		$ad['banText'] = '';
+		$ad['soldDate'] = ($ad['anonymous_user_details'] ? ($ad['date'] + ($ad['duration'] * 60 * 60 * 24)) : 0 );
+		$_SERVER['db']->execute('UPDATE classifieds_ads SET soldDate = '.$ad['soldDate'].', status = 0, banText = \'\' WHERE id=\''.$ad['id'].'\'');
+	}
+	else if($_REQUEST['submit'] == '>> Disable Ad') {
+		$ad['banText'] = $_REQUEST['banreason'];
+		$ad['soldDate'] = time();
+		$_SERVER['db']->execute('UPDATE classifieds_ads SET soldDate = '.$ad['soldDate'].', status = 3, banText = \''.$_REQUEST['banreason'].'\' WHERE id=\''.$ad['id'].'\'');
+	}
+	
+	if(!$ad['banText'] && $_REQUEST['submit'] != '>> Disable Ad') $banForm = '
+		<select name="banreason" id="banad" class="input">
+			<option>Ban Ad:</option>
+			<option>Spam</option>
+			<option>Scam</option>
+			<option>Duplicate</option>
+			<option>Innapropriate</option>
+		</select>
+	';
+	else $banForm = '<a href="/submit-id-'.$ad['id'].'-step-ban">>> Enable Ad</a>';
+	
+	$message = 'Welcome, Admin!';
+	$messageLinks .= '
+		<form method="post" id="banform" class="banForm" style="width:60px;" action="/submit-id-'.$ad['id'].'-step-ban">'.$banForm.'</form>
+		<script type="text/javascript">
+			$(\'banad\').addEvent(\'change\',function(){
+				$(\'banform\').send();
+				window.location.reload(true);
+			});
+		</script>';
+	
+	$messageLinks .= '
+		<a class="lbtn" href="/submit-id-'.$ad['id'].'-step-modify'.($ad['anonymous_user_details'] ? '-anonymous-true' : '').'">>> Edit Ad</a>
+	';
+}
+
+if($ad['soldDate'] < (time() + 10) && $ad['soldDate'] != 0) $ad['isSold'] = true;
+
+//Do Ban Text Handling
+if($ad['banText']) {
+	$message = '
+		<div class="title">Explanation:</div>
+		The ad you are viewing has been disabled by the site administrator.<br />
+		<em>The reason given for disabling this ad was:</em>
+		<h4>'.$ad['banText'].'</h4>
+		If you feel that this ad has been disabled in error, please <b><a href="/contact">contact us</a></b>.
+	';
+		
+	$ad['type'] = 'Disabled Ad';
+}
+
+//Do Ad!
+else {
+	
+	//Do adFooter
+	
+	$adFooter .= '
+	<div class="header">Ad Stats:</div>
+	<div class="content italicText">
+		<b>Viewed:</b> '.$ad['view'].' times - <b>Submitted on:</b> '.doDate($ad['submitDate'],'long').'
+		'.($ad['duration'] ? '- '.dateOffset($ad['soldDate'] - time(),'<b>Expires in:</b>','<b>expired (or was sold):</b>').' (<b>'.$ad['duration'].'</b> day expiry)' : '').'
+		'.($ad['editDate'] ? ' - <b>Last edited on:</b> '.doDate($ad['editDate'],'long') : '').'
+	</div>
+	'.(false && isAdmin() && $_SESSION['userId'] != $seller['userId'] ? '
+		'.pFunc('columns','','
+			<div class="header">Admin only User Details:</div><div class="content scroll" style="height:5em; width:300px;">'.print_r($seller,true).'</div>
+		','
+			<div class="header">Admin only Ad Details:</div><div class="content scroll" style="height:5em;">'.print_r($ad,true).'</div>
+		').'
+	' : '').'
+	<div class="content desc">
+		<span class="boldText">Note:</span> This classified, though posted to Safarri, is the property of the seller and is not officially endorsed by Safarri
+		<div class="boldText">If someone requests payment via a wire transfer or claims Safarri offers buyer protection, beware - this could be a fraud.</div>
+	</div>
+	<br />
+	';
+	
+	$_SESSION['safarriLastCategory'] = $ad['cid'];
+	
+	if($temp = $_SERVER['db']->getRow('SELECT safarriPurchaseMethods FROM users WHERE userId = '.$ad['userId'])) $ad += $temp;
+	
+//*********************** Anonymous Ad ****************************	
+	
+	if($ad['anonymous_user_details']) {
+
+		$edid = sha1('1t2o3p4s5e6c7r8e9t0esrtryq4y48423t85948ghtvbdf3245skjsdbv7dsfk7509jdsafgd'.$_REQUEST['default']);
+		if($edid == $_REQUEST['edid']) { //We Can Edit
+			if($ad['isSold']) { //Their ad is expired
+				if($ad['status'] != 'sold') {
+					$message .= '<div class="title">Your classified has expired:</div>If your ad has not sold yet and you would like to run it again, Press "Renew Ad" directly below.';
+					$messageLinks .= '<a class="lbtn" href="/submit-id-'.$ad['id'].'-step-renew-edid-'.$edid.'-anonymous-true">Renew Ad</a>';
+				}
+				else { //They marked it as sold
+					$message .= '<div class="title">Your classified is marked as sold:</div>If your item isn\'t sold, press "Mark as Unsold" directly below.';
+					$messageLinks .= '<a class="lbtn" href="/submit-id-'.$ad['id'].'-step-markunsold-edid-'.$edid.'-anonymous-true">Mark as Unsold</a>';
+				}
+			}
+			else if(time() - $ad['date'] < 5) { //They ad has just been edited
+				if($ad['date'] == $ad['editDate']) $message .= '<div class="title">Your classified was modified successfully!</div>';
+				else $message .= '<div class="title">Your classified was submitted successfully!</div>';				
+				if(!$seller['userEmail']) $message .= '
+					<SCRIPT LANGUAGE="JavaScript"><!--
+					if ((navigator.appName == "Microsoft Internet Explorer") && (parseInt(navigator.appVersion) >= 4)) {
+						document.write(\'<a class="b" href="javascript:window.external.AddFavorite(\\\'http://'.SAFARRI.'/ad-default-'.$ad['id'].'-edid-'.$edid.'\\\',\\\'Manage Ad: '.$ad['title'].'\\\');">Bookmark this page to manage your ad in the future!</a>\');
+					}
+					else {
+						var msg = "Bookmark this page to manage your ad in the future!";
+						if(navigator.appName == "Netscape") msg += " (Press CTRL-D)";
+						document.write(\'<div class="b">\' + msg + \'</div>\');
+					}
+					--></script>
+					<noscript><div class="b">Bookmark this page to manage your ad in the future!</div></noscript>
+				';
+			}
+			else $message = '<div class="title">Seller Tools:</div>'; //Default manage message
+			
+			if(!$ad['isSold']) { //Ad is running
+				$message .= 'Use the links directly below to administrate your classified:';
+				$messageLinks .= '<a class="lbtn" href="/submit-id-'.$ad['id'].'-step-modify-edid-'.$edid.'-anonymous-true">Edit Classified</a> <a class="lbtn" href="/local-'.$ad['id'].'">Marketing</a><br /><br />'.($ad['status'] ? '<a class="lbtn" href="/submit-id-'.$ad['id'].'-step-markpending-edid-'.$edid.'-anonymous-true">Mark As Sale Pending</a>' : '<a class="lbtn back" href="/submit-id-'.$ad['id'].'-step-markunsold-anonymous-true-edid-'.$edid.'-anonymous-true">Mark As Unsold</a>').'<a class="lbtn" href="/submit-id-'.$ad['id'].'-step-markpending-edid-'.$edid.'-anonymous-true">Mark As Sale Pending</a>';
+			}
+		}
+		
+		if(!$ad['soldDate'] || $ad['soldDate'] > time()) {
+			$left .= '
+			<tr><th colspan="2">Seller Details:</th></tr>';
+			
+			  if($seller['userName']) $left .= '
+			  <tr>
+				  <td class="lcol slim">Seller:</td>
+				  <td class="rcol center">'.$seller['userName'].'</td>
+			  </tr>';
+			  else $seller['userName'] = 'Anonymous';
+			  
+			 $left .= '
+			  <tr>
+				<td class="lcol slim">Phone:</td>
+				<td class="rcol center"><b>'.doPhone($seller['userPhone']).'</b></td>
+			  </tr>';
+			  
+			  
+			  if($seller['extraInfo']) $left .= '
+			  <tr>
+				  <td class="lcol slim">Info:</td>
+				  <td class="rcol center">'.$seller['extraInfo'].'</td>
+			  </tr>';
+		}
+	}
+	
+//****************** Registered Ad *****************************
+	
+	else {
+		
+		//if(!$ad['soldDate'] || $ad['soldDate'] > time()) {
+			
+			$left .= '
+			<tr>
+				<th colspan="2">Seller Details:</th>
+			</tr>
+			<tr>
+				<td class="lcol slim">Seller:</td>
+				<td class="rcol center">'.$seller['userFullName'].'</td>
+			</tr>
+			<tr>
+				<td class="lcol slim">Contact:</td>
+				<td class="rcol center llst btxt"><a title="Send a Message to '.$seller['userName'].'" rel="nofollow" href="/user/pm-mode-send-username-'.encrypt($seller['userName'],'url').'-subject-'.encrypt('Regarding Your '.$ad['title'].' on Safarri','url').'-regarding-'.encrypt('Your Safarri <a href="http://'.SAFARRI.'/ad-'.$ad['id'].'">Classified # '.$ad['id'].'</a>','url').'">» Message '.$seller['userName'].'</a></td>
+			</tr>
+			';
+			
+			if($seller['userPhone']) $left .= '
+			<tr>
+			<td class="lcol slim">Phone:</td>
+			<td class="rcol center">'.doPhone($seller['userPhone']).'</td>
+			</tr>';
+			
+			if($ad['safarriPurchaseMethods']) {
+				$temp = '';
+				foreach(unserialize($ad['safarriPurchaseMethods']) as $key=>$val) {
+					if($val) $temp .= '<li><a href="'.$val.'">'.$key.'</a></li>';
+					else $temp .= '<li>'.$key.'</li>';
+				}
+				if($temp) $left .= '
+				<tr>
+				<td class="lcol slim">Purchase:</td>
+				<td class="rcol center">
+					<em>This seller accepts:</em>
+					<ul style="text-align:left; clear:none;">'.$temp.'</ul>
+				</td>
+				</tr>';
+			}
+			if($ad['storeName'])	$sellersOtherAds = func(_fnc.'classifiedslist','simplifiedClassifiedsList',' AND storeid = \''.$ad['storeid'].'\' AND id != \''.$ad['id'].'\' ORDER BY rand() LIMIT 4');
+			else					$sellersOtherAds = func(_fnc.'classifiedslist','simplifiedClassifiedsList',' AND usid = \''.$seller['userId'].'\' AND id != \''.$ad['id'].'\' ORDER BY rand() LIMIT 4');
+		//}
+		
+		if($_SESSION['userId'] == $seller['userId']) {
+			if($ad['isSold']) { 
+				if($ad['status'] != 'sold') { //Their ad is expired
+					$message .= '<div class="title">Your classified has expired:</div>If your ad has not sold yet and you would like to run it again, Press "Renew Ad" directly below.';
+					$messageLinks .= '<a class="lbtn" href="/submit-id-'.$ad['id'].'-step-renew">Renew Ad</a>';
+				}
+				else { //They marked it as sold
+					$message .= '<div class="title">Your classified is marked as sold:</div>If your item isn\'t sold, press "Mark as Unsold" directly below';
+					$messageLinks .= '<a class="lbtn back" href="/control/ads">Manage All Ads</a> <a class="lbtn" href="/submit-id-'.$ad['id'].'-step-markunsold">Mark as Unsold</a>';
+				}
+			}
+			else if($ad['status'] == 'deleted') { //Their ad is deleted
+				$message .= '<div class="title">Your classified is deleted:</div>It will not be shown in the browse system or your control panel. To undelete it, pless the below button.';
+				$messageLinks .= '<a class="lbtn back" href="/control/ads">Manage All Ads</a> <a class="lbtn back" href="/submit-id-'.$ad['id'].'-step-markunsold">Undelete Ad</a>';
+				$ad['isSold'] = true;
+			}
+			else if(time() - $ad['date'] < 10) { //They just edited their ad
+				if($ad['date'] == $ad['editDate']) $message .= '<div class="title">Your classified was modified successfully!</div>';
+				else $message .= '<div class="title">Your classified was submitted successfully!</div>';
+			}
+			else $message .= '<div class="title">Seller Tools:</div>'; //Default manage message
+			
+			if(!$ad['isSold']) { //Ad is running
+				$message .= 'Use the links directly below to administrate your classified:';
+				$messageLinks .= '<a class="lbtn back" href="/control/ads">Manage All Ads</a><a class="lbtn" href="/submit-id-'.$ad['id'].'-step-modify">Edit Classified</a><a class="lbtn" href="/local-'.$ad['id'].'">Marketing Tools</a><br /><a class="lbtn" href="/submit-id-'.$ad['id'].'-step-marksold">Mark As Sold</a>'.($ad['status'] ? '<a class="lbtn back" href="/submit-id-'.$ad['id'].'-step-markunsold">Mark As Unsold</a>' : '<a class="lbtn" href="/submit-id-'.$ad['id'].'-step-markpending">Mark As Sale Pending</a>').'<a class="lbtn" href="/submit-id-'.$ad['id'].'-step-markdelete">Delete Ad</a>';
+			}
+		}
+	}
+	
+	
+	$left .= '
+		  <tr><td></td></tr>
+		  <tr>
+			<th colspan="2">Classified Details:</th>
+		  </tr>
+		  '.($ad['storeName'] ? '
+		  	<tr>
+			  <td class="lcol slim">Store:</td>
+			  <td class="rcol center llst btxt"><a href="'.$ad['storeLink'].'/index" target="_blank">» '.$ad['storeName'].'</a></td>
+		    </tr>
+		  ' : '').'
+		  '.($ad['status'] ? '
+			<tr>
+				<td class="lcol slim">Status:</td>
+				<td class="rcol center"><b>'.($ad['status'] == 'sold' ? 'Sold' : 'Sale Pending').'</b></td>
+			</tr>
+		  ' : '').'
+		  <tr>
+			<td class="lcol slim">Type:</td>
+			<td class="rcol center"><b>'.$ad['type'].'</b></td>
+		  </tr>
+		  <tr>
+			<td class="lcol slim">Price:</td>
+			<td class="rcol center"><b>'.$ad['price'].'</b> <em>'.$ad['priceType'].'</em></td>
+		  </tr>';
+	if($ad['location']) {
+		$left .= '
+		  <tr>
+			<td class="lcol slim">Location:</td>
+			<td class="rcol center">'.$ad['location'].'</td>
+		  </tr>';
+	}
+	if($ad['distance'] > 0) {
+		$left .= '
+		  <tr>
+			<td class="lcol slim">Directions:</td>
+			<td class="rcol center"><a target="_blank" href="http://maps.google.com/maps?saddr='.urlencode($_SESSION['userCity'].' '.$_SESSION['userState']).'&daddr='.urlencode($ad['town'].' '.$ad['country'].' '.$ad['xtraLocation']).'">Get Directions to Ad!</a></td>
+		  </tr>
+		 ';
+	}
+	if($ad['qty'] > 1) {
+		$left .= '
+		  <tr>
+			<td class="lcol slim">Quantity:</td>
+			<td class="rcol center">'.$ad['qty'].' Available</td>
+		  </tr>
+		 ';
+	}
+	if($ad['features']) {
+		$left .= '
+		  <tr><td></td></tr>
+		  <tr>
+			<th colspan="2">Item Features:</th>
+		  </tr>
+		  <tr>
+		  <td colspan="2" class="shiny boldText">
+			  <ul class="laln" style="padding-left:10px;">'.$ad['features'].'</ul>
+			</td>
+		  </tr>
+		 ';
+	}
+	if($ad['details']) {
+		$left .= '
+		  <tr>
+			<td class="lcol slim">Milage:</td>
+			<td class="rcol center">500,000</td>
+		  </tr>
+		 ';
+	}
+	if($ad['isSold']) {
+		setPage('<meta name="robots" content="noindex,follow">','head'); //Tell all the bots to drop this page from their index
+		if(!$message) $message = '
+			<div class="title">Please Note:</div>
+			This classified has been sold. You can find more ads using the links below:
+		';
+	}
+	if($ad['pictureCount'] > 1) {
+		
+		setPage('
+			<link rel="stylesheet" type="text/css" media="all" href="/_inc/mt/pics/slideshow.css" />
+			<script type="text/javascript" src="/_inc/mt/pics/slideshow.js"></script>
+			<script type="text/javascript" src="/_inc/mt/pics/slideshow.flash.js"></script>
+			<script type="text/javascript">
+				window.addEvent(\'predomready\', function() {
+					$("slideshow-images").getElements(\'a\').each(function(el) {
+						var link = new Element("a", {href:el.href, id: el.href, rel: "lightbox:adimg"});
+						link.injectInside($("slideshow-lightbox"));
+					});
+					show = new Slideshow.Flash("adimages", null, { resize: false, fast: true, quick: true, duration: 2500, overlap:false, linked: true, controller: 1, height: 300, hu: \'/_upl/\', replace: [/\\./, \'-thumb.\'], width: 400, overlap: false, thumbnails: {transition: "elastic:out"}});
+				});
+				window.addEvent(\'domready\', function() {
+					Lightbox.addEvents({
+						\'open\': function() { show.pause(true); },
+						\'close\': function() { show.pause(false); }
+					});
+				});
+			</script>
+			<style type="text/css">
+				.slideshow { margin: -3px; }
+				.slideshow { margin-bottom:80px; }
+				.slideshow-thumbnails a { padding:1px; }
+				.slideshow-thumbnails li { margin:0; }
+				.slideshow { width:400px; }
+				.slideshow-images { height:300px; }
+				.slideshow-thumbnails { width:400px; overflow:auto; height:93px; }
+			</style>
+		','head');
+		
+		$right .= '
+			<tr>
+			  <td colspan="2" class="shiny">
+				<div id="adimages" class="slideshow">
+					<div id="slideshow-lightbox" style="display:none"></div>
+					<div class="slideshow-images" id="slideshow-images">
+						'.$ad['picList'].'
+					</div>
+					<div class="slideshow-thumbnails"><ul>
+						'.$ad['thumbList'].'
+					</ul></div>
+				</div>
+			  </td>
+			</tr>
+		 ';
+		}
+	else if ($ad['pictureCount']) {
+		$right .= '
+			<tr>
+			  <td colspan="2" class="shiny">
+				<a href="'.str_replace('.jpg','-orig.jpg',$ad['pic0']).'" rel="lightbox"><img src="'.$ad['pic0'].'" alt="" /></a></td>
+			</tr>
+		';
+	}
+	if($ad['description']) {
+		$right .= '
+		  <tr>
+			<td class="shiny" colspan="2" style="padding:10px;">
+				'.$ad['description'].'
+			<br /></td>
+		  </tr>
+		 ';
+	}
+}
+
+/*
+if(!$messageLinks) {
+	$messageLinks .= '<a href="/browse-cat-'.$ad['cid'].'">More Ads in Category</a>';
+	if($seller['userId'] && !$ad['soldDate']) $messageLinks .= '<a href="/browse-user-'.$seller['userName'].'" class="btxt">>> More Ads by '.ucwords($seller['userName']).'</a>';
+	//$messageLinks .= '<a href="http://forum.safarri.com/view-128" target="_blank" class="boldText">>> Safe Buying Tips</a>';
+	if($ad['anonymous_user_details']) $messageLinks .= '<a href="/tips-id-1">>> Learn about anonymous ads</a>';
+}
+*/
+
+$adContent = '
+<div style="height:7px;"></div>
+<div class="lflt">
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-1445769979204231";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text";
+google_alternate_color = "FFFFFF";
+google_color_border = "FFFFFF";
+google_color_bg = "FFFFFF";
+google_color_link = "CC0000";
+google_color_text = "000000";
+google_color_url = "999999";
+//--></script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+</div>
+<div class="mbox desc rflt" style="width:125px; padding:10px; margin:0;">
+	Never purchase ads using a wire transfer!<br />
+	<a href="http://forum.safarri.com/view-128" target="_blank">> Safe Buying Tips</a>
+</div>
+<div style="height:65px;"></div>
+
+'.($message ? '<div class="nbox">'.$message.'<br /><br />'.$messageLinks.'</div>' : '' ).'
+
+'.$top.'
+
+<table class="columns">
+  <tr>
+  	<td class="column">
+  		<table class="outer">
+		'.$left.'
+		</table>
+		<div style="width:268px;"><br /></div>
+	</td>
+	<td class="column">
+		<table class="outer">
+		'.$right.'
+		</table>
+	</td>
+  </tr>
+</table>
+'.$adFooter.'
+';
+
+setPageConst('bct','<a href="/index">Home</a> > <a href="/browse">Browse</a> > '.func(_mod.'dbtree','getLinkedPathFromId','classifieds_categories',$ad['cid'],'/browse','cat').' > Viewing Classified'); //<a href="/index">Home</a> > <a href="/browse">Browse</a> > 
+setPageConst('title',$ad['type'].': '.$ad['title']);
+setPageBlock('blockFancy', $ad['type'].': '.$ad['title'], $adContent);
+if(!$ad['premier']) {
+	setPageConst('showAds',true);
+	if($sellersOtherAds) {
+		setPage('
+			<div class="header">
+				'.($ad['storeName'] ? 
+					'<a href="'.$ad['storeLink'].'/browse" target="_blank">Click for more ads in '.ucwords($ad['storeName']).'</a>' : 
+					'<a href="/browse-user-'.$seller['userName'].'">Click for More Ads by '.ucwords($seller['userName']).'</a>'
+				).'
+			</div><div class="content">'.$sellersOtherAds.'</div>');
+	}
+}
+
+?>

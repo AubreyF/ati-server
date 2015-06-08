@@ -1,0 +1,44 @@
+<?
+
+setPagePref('template',false);
+setPageHeader('cache-control','public, max-age=86400');
+setPageHeader('Content-Type','application/rss+xml');
+
+if(!$rs = $_SERVER['db']->execute($page['sql'])) error('The database is experiencing errors.','fatal');
+if($items = $rs->RecordCount()) {
+	if($items > 25) {
+		$pagination = func(_mod.'pagination','pagination',$items,25);
+		$page['sql'] .= " LIMIT {$pagination['offset']},{$pagination['limit']}";
+		$rs = $_SERVER['db']->execute($page['sql']);
+	}
+	
+	while ($item = $rs->FetchRow()) {
+		$content .= '
+			<item>
+				<title><![CDATA['.$item['title'].' - in thread '.$item['threadTitle'].']]></title>
+				<guid><![CDATA[http://'.$_SERVER['HTTP_HOST'].'/view-'.$item['tid'].'#c'.$item['id'].']]></guid>
+				<link><![CDATA[http://'.$_SERVER['HTTP_HOST'].'/view-'.$item['tid'].'#c'.$item['id'].']]></link>
+				<description><![CDATA['.$item['text'].']]></description>
+				<media:title type="plain"><![CDATA['.$item['title'].' - in "'.$item['threadTitle'].'"]]></media:title>
+				'.($item['date'] ? '<pubDate>'.date('r',$item['date']).'</pubDate>' : '').'
+			</item>
+		';
+	}
+}
+
+$content = '<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:media="http://search.yahoo.com/mrss/">
+	<channel>
+		<title>'.ucwords($_SERVER['HTTP_HOST']).' - '.$page['title'].'</title>
+		<link>http://'.$_SERVER['HTTP_HOST'].'/browse'.build_url(array('tpl')).'</link>
+		<language>en-us</language>
+		<generator>ATIServer</generator>
+		<opensearch:Query role="request" searchTerms="'.$_REQUEST['q'].'" startPage="'.$_REQUEST['page'].'" />
+		<opensearch:totalResults>'.$items.'</opensearch:totalResults>
+		<opensearch:startIndex>'.(25 * abs($_REQUEST['page'] - 1)).'</opensearch:startIndex>
+		<opensearch:itemsPerPage>25</opensearch:itemsPerPage>
+		'.$content.'
+	</channel>
+</rss>';
+
+?>

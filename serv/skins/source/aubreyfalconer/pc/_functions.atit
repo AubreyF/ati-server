@@ -1,0 +1,10 @@
+<?
+
+function blockFancy($title,$content) {
+	return '
+		<h3>'.$title.':</h3>
+		'.$content.'
+	';
+}
+
+?>

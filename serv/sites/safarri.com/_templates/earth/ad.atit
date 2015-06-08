@@ -1,0 +1,32 @@
+<?
+
+setPagePref('template',false);
+setPageHeader('content-type','application/vnd.google-earth.kml+xml'); //Tell browser to download
+setPageHeader('Content-Disposition: attachment; filename="Safarri Item.kml"');
+
+setPage('<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://earth.google.com/kml/2.1">
+<Placemark>
+	<name><![CDATA['.$ad['type'].($ad['type'] && $ad['price'] > 1 ? ' - ' : '').$ad['price'].($ad['type'] || $ad['price'] > 1 ? ': ' : '').$ad['title'].']]></name>
+	<Snippet></Snippet>
+	<description><![CDATA[
+	<a href="http://safarri.com/ad-'.$ad['id'].'">'.($ad['hasThumb'] ? '<img border="0" src="'.$ad['thumb'].'" /><br />' : '').'
+	<b><font color="#CC0000" size="+2">'.$ad['title'].':</font></b></a><br /><br />
+	
+	<font size="+1" weight="bold">'.$ad['price'].($ad['date'] ? ' - ' : '').$ad['date'].'</font><br />
+	<center><font size="-1">'.strip_tags($ad['specifics']).($ad['location'] ? '<br />'.$ad['location'] : '').'</font></center><br /><br />
+	
+	<table border="0" width="400"><tr>
+		<td>'.$ad['description'].'</td>
+		<td><ul>'.$ad['features'].'</ul></td>
+	</tr></table>
+	
+	<font size="-1"><img src="http://safarri.com/images/providers/adsafarri.png" vertical-align="top" /> This Item Downloaded From Safarri<br />You can set up a streaming Safarri link for Earth by clicking on the below image:</font>
+	]]></description>
+	<styleUrl>http://safarri.com/images/earth/styles.kml#ad</styleUrl>
+	'.($ad['location'] ? '<address><![CDATA['.$ad['location'].']]></address>' : '').'
+	'.($ad['lat'] != 0.000000 ? '<Point><altitudeMode>clampToGround</altitudeMode><coordinates>'.$ad['lon'].','.$ad['lat'].',0</coordinates></Point>' :'').'
+</Placemark>
+</kml>');
+
+?>

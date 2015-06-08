@@ -1,0 +1,4 @@
+'constants'=>array('AUBREY'=>'aubreyfalconer.com'.$_SERVER['superDomain'], 'ATIHOME'=>'theati.net'.$_SERVER['superDomain'], 'SAFARRI'=>'safarri.com'.$_SERVER['superDomain'], 'MARSEXPLORER'=>'marsxplr.com'.$_SERVER['superDomain'], 'PLEXPEDIA'=>'plexpedia.com'.$_SERVER['superDomain'], 'FUN'=>'fun.theati.net'.$_SERVER['superDomain'], 'SPY'=>'altamatic.com'.$_SERVER['superDomain'], 'DESIGN'=>'design.theati.net'.$_SERVER['superDomain'], 'FREEHOVIND'=>'freehovind.com'.$_SERVER['superDomain']),
+'session' => array('theati.net','safarri.com','plexpedia.com', 'aubreyfalconer.com', 'freehovind.com', 'marsxplr.com'),
+'doFooters' => true,
+'skin'=>'auto',

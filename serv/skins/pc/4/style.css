@@ -1,0 +1,225 @@
+/********************************************************************/
+/**************************** BevelBlue Skin ************************/
+/********************************************************************/
+
+body {
+	background-color: #FFFFFF;
+}
+
+#content, #footer {
+	padding-left: 217px;
+	padding-right: 13px;
+	padding-top: 90px;
+	font-size:14px;
+	text-align:left;
+}
+#mainLogo {
+	display:block;
+	width:205px;
+	height:80px;
+	background-image:url('/_skn/pc/4/img/mainlogo.png');
+	position:absolute;
+	top:35px;
+	left:0px;
+	z-index:10;
+}
+#typeBar {
+	position:absolute;
+	top:35px;
+	left:0px;
+	right:0px;
+	height:55px;
+	width:100%;
+	background-image:url('/_skn/pc/4/img/toolbarbg.png');
+	line-height: 55px;
+	text-decoration: underline;
+	z-index:1;
+}
+#typeBarRight { 
+	position:absolute;
+	right:0px;
+	top:35px;
+	z-index:2;
+}
+#typeBar img {
+	margin-left: 30px;
+}
+#BCTBar {
+	position:absolute;
+	top:90px;
+	left:0px;
+	right:0px;
+	height:25px;
+	line-height:22px;
+	width:100%;
+	background-image:url('/_skn/pc/4/img/bctbarbg.png');
+	text-align:left;
+	font-size:12px;
+	font-weight:500;
+	z-index:1;
+}
+#BCTBarRight { 
+	position:absolute;
+	right:0px;
+	top:90px;
+	z-index:2;
+}
+#BCTBarLeft { 
+	float:left;
+	padding-left:205px;
+	padding-right:5px;
+}
+#sideBar {
+	position:absolute;
+	top:115px;
+	left:0px;
+	width:205px;
+	padding-bottom:0px;
+	background-image:url('/_skn/pc/4/img/sidebarbg.png');
+	text-align:center;
+	color:#FFFFFF;
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+}
+#sideBar a {
+	color:#FFFFFF;
+}
+#sideBar #bottom {
+	position:relative;
+	top:13px;
+}
+#sideBar .top {
+	background-image: url('/_skn/pc/4/img/sidebarboxtop.png');
+	vertical-align: middle;
+	height:15px;
+	padding-left: 10px;
+	font-size: 11px;
+	color: #FFFFFF;
+	padding-left: 10px;
+	font-style: italic;
+	text-align:center;
+}
+#sideBar .arrow {
+	float: right;
+}
+#sideBar .arrow img {
+	border: 0px;
+}
+#sideBar .boxcontent {
+	background-image: url('/_skn/pc/4/img/sidebarboxmiddle.png');
+	color: #FFFFFF;
+	padding: 3px;
+	text-align: center;
+	font-size: 11px;
+}
+#sideBar .content tr, #sideBar .content td {
+	color: #FFFFFF;
+	font-size: 11px;
+}
+
+#sideBar #mainMenu {
+	margin: 0;
+	padding: 0;
+	list-style-type: none;
+}
+
+#sideBar #mainMenu a {
+	display: block;
+	padding:2px;
+	width: 180px;
+	border-bottom: 1px solid #999999;
+}
+
+#sideBar #mainMenu a:link, #sideBar #mainMenu a:visited {
+	color: #EEE;
+	text-decoration: none;
+}
+
+#sideBar #mainMenu a:hover {
+	background-color: #369;
+	color: #fff;
+	font-style:italic;
+}
+
+#sideBar .bottom {
+	height:5px;
+	width:190px;
+	background-image: url('/_skn/pc/4/img/sidebarboxbottom.png');
+	vertical-align: middle;
+}
+#sideBar .minimizedBox {
+	background-image: url('/_skn/pc/4/img/sidebarboxminimized.png');
+	vertical-align: middle;
+	height:15px;
+	padding-left:10px;
+	margin-left: 7px;
+	font-size: 11px;
+	color: #FFFFFF;
+	font-style: italic;
+	width: 180px;
+	margin-bottom: 1em;
+	display: none;
+}	
+#sideBar .minimizedSearch {
+	height:25px;
+	line-height:25px;
+	vertical-align:middle;
+	background-image: url('/_skn/pc/4/img/sidebarboxminimizedsearch.png');
+}
+#sideBar form  {
+	display: inline;
+	width:1px;
+	border-width:thin;
+}
+#sideBar form input, #sideBar form select {
+	background-color:#D8D5FF;
+	font-size:12px;
+	border-width:2px;
+}
+#sideBar form .minimizedBox input {
+	margin-top:4px;
+	font-size:11px;
+	border-width:1px;
+}
+#sideBar .fullBox {
+	width:190px;
+	margin-bottom: 1em;
+}
+#typeBar a:hover img {
+	background-image:url('/_skn/pc/4/img/toolbarbghover.png');
+}
+#typeBar #showMode {
+	background-image:url('/_skn/pc/4/img/toolbarbgsel.png');
+}
+
+.messageViewer {
+	font-size:0.9em;
+	background-image:url('/_skn/pc/4/img/messagecenter.png');
+	color:#333333;
+	text-align: center;
+	vertical-align:top;
+}
+.messageViewer .title {
+	font-size:0.8em;
+	color:#FFFFFF;
+	text-align: left;
+	height:25px;
+	padding-top:13px;
+	margin-bottom:0px;
+}
+
+.cBox { width:100%; border-spacing:0px; }
+.cBox .tl { width:10px; height:30px; background-image:url('/_skn/pc/4/img/centerboxtopleft.png'); }
+.cBox .tc { background-image:url('/_skn/pc/4/img/centerboxtop.png'); color:#FFFFFF; }
+.cBox .tr { width:10px; background-image:url('/_skn/pc/4/img/centerboxtopright.png'); }
+.cBox .cl { background-image:url('/_skn/pc/4/img/centerboxleft.png'); }
+.cBox .cc { background-color:#FFFFFF; }
+.cBox .cr { background-image:url('/_skn/pc/4/img/centerboxright.png'); }
+.cBox .bl { height:10px; background-image:url('/_skn/pc/4/img/centerboxbottomleft.png'); }
+.cBox .bc { background-image:url('/_skn/pc/4/img/centerboxbottomcenter.png'); }
+.cBox .br { background-image:url('/_skn/pc/4/img/centerboxbottomright.png'); }
+
+.fboxtop { background-image:url('/_skn/pc/4/img/fbcenter.png'); height:50px; line-height:45px; color:#FFFFFF; text-align:center; font-weight:bold; }
+.fboxtop .left { background-image:url('/_skn/pc/4/img/fbleft.png'); width:70px; height:50px; float:left; }
+.fboxtop .right { background-image:url('/_skn/pc/4/img/fbright.png'); width:75px; height:50px; float:right; }
+
+.fbboxcontent { text-align:center; clear:both; }

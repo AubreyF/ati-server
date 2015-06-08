@@ -1,0 +1,61 @@
+<?
+adminCheck();
+setPageConst('title','System Info');
+setPageConst('bct','<a href="/index">Home</a> > <a href="/user/index">ATI Tools</a> > System Info');
+
+
+// include classes
+require _inc.'patSysinfo/patSysinfo.php'; 
+require _inc.'patError/patErrorManager.php'; 
+
+ob_start();                                                                                                       
+
+patErrorManager::setErrorHandling( E_ERROR, 'verbose' );
+patErrorManager::setErrorHandling( E_WARNING, 'verbose' );
+
+$rs					=	&patSysinfo::create();
+$data['Cpu']		=	$rs->getCpu();
+$data['Memory']		=	$rs->getMem();
+$data['Uptime']		=	$rs->getUptime();
+$data['Users']		=	$rs->getNumberUsers();
+$data['LoadAvg']	=	$rs->getLoadAvg();
+$data['Mounts']		=	$rs->getMount();
+$data['IdeDevs']	=	$rs->getIdeDevs();
+$data['NetDevs']	=	$rs->getNetDevs();
+$data['Processes']	=	$rs->getTopProcesses();
+
+$errors = ob_get_contents();                                                                                       
+ob_end_clean();
+
+foreach($data as $key=>$val) {
+	if(is_array($val)) {
+		$cols = count($val);
+		$info .= '<table class="info"><tr><th colspan="'.$cols.'">'.$key.'</th></tr>';
+		foreach($val as $row) {
+			$info .= '<tr>';
+			foreach($row as $key2=>$val2) $info .= '<td>'.$key2.$val2.'</td>';
+			$info .= '</tr>';
+		}
+		$info .= '</table><br /><br />';
+	}
+	else {
+		$info .= '<table class="info"><tr><th width="20%">'.$key.'</th><td>'.$val.'</td></tr></table><br /><br />';
+	}
+}
+//'.str_replace('  ','&nbsp;&nbsp;',nl2br(print_r($data,true))).'
+
+setPageBlock('block','System Information','
+	<style type="text/css">
+		#sysinfo { margin:auto; width:600px; overflow:auto; text-align:left; }
+		#sysinfo .info { background-color:#999999; border-spacing:1px; width:100%; }
+		#sysinfo .info td { background-color:#EEEEEE; text-align:center; }
+		#sysinfo .footer { text-decoration:italic; }
+	//--></style>
+	
+	<div id="sysinfo">
+		'.$errors.$info.'
+		<div id="footer">Generated with PatSysInfo V 2</div>
+	</div>
+');
+
+?>

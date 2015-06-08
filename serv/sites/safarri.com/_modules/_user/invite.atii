@@ -1,0 +1,18 @@
+<?
+
+if($_SESSION['safarriStore']['id']) { 
+	$vars['text'] = 'Tell your friends about '.$_SESSION['safarriStore']['name'].'!';
+	$vars['message'] = 
+	"Your friend, {$vars['username']}, thought you would be interested in {$_SESSION['safarriStore']['name']} - {$_SESSION['safarriStore']['description']}\n".
+	"{$_SESSION['safarriStore']['name']} is an online classifieds site powered by Safarri.\n".
+	"You can visit {$_SESSION['safarriStore']['name']} at:\nhttp://{$_SESSION['safarriStore']['link']}.safarri.com\n\n".
+	"Below is a message from {$vars['username']}, already a happy {$_SESSION['safarriStore']['name']} user:\n\n";
+}
+else {
+	$vars['text'] = 'Spread the Word! Save the World! Tell all your Friends about Safarri!';
+	
+	$vars['message'] = 
+	"Hi {$vars['friendsname']}!\n\nI thought you might be interested in an easy, free commerce system called Safarri: http://Safarri.com";
+}
+
+?>

@@ -1,0 +1,47 @@
+<?
+
+setPageConst('title','Moderation Log');
+setPageConst('bct','<a href="/index">Home</a> > Moderation Log');
+
+$sql = "SELECT * FROM mod_log WHERE groupId = ".$_SESSION['plexpediaGroup']['id']." ORDER BY date desc";
+
+$rs = $_SERVER['db']->execute($sql);
+if(!$rs) $users = '<div class="ebox">Error: could not connect to database.</div>';
+else {
+	$pagination = func(_mod.'pagination', 'pagination', $rs->RecordCount(), 100);
+	$sql .= $pagination['sql'];
+	$rs = $_SERVER['db']->execute($sql);
+	
+	if(!$rs->recordCount()) $users = '<div class="ebox">There are no logged moderation actions in this group	.</div>';
+	else {
+		while ($row = $rs->FetchRow()) {	
+			(($usersShown++ % 2) == 0) ? $class = ' odd' : $class = ' even';
+
+			$users .= '
+			  <tr class="'.$class.'">
+				<td>'.doDate($row['date']).'</td>
+				<td>'.$row['summary'].'</td>
+			  </tr>';
+		}
+		
+		$users = '
+		<form name="users">
+		<table class="outer">
+			<tr>
+				<th>Date</th>
+				<th>Summary</th>
+			</tr>
+			'.$users.'
+		</table>
+		</form>
+		';
+	}
+}
+
+setPageBlock('block','Moderation Log','
+<div class="lbar">
+	<a href="'.$_SESSION['lastPage'].'"><< Back to last page</a> '.$pagination['string'].'
+</div>
+'.$users);
+
+?>

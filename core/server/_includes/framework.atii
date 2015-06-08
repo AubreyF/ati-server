@@ -1,0 +1,1013 @@
+<?
+
+
+
+
+
+
+//***************************************************************************************
+//********************************** Server Functions! **********************************
+//***************************************************************************************
+
+
+
+
+
+
+function buildPage() {
+	
+	if(!$GLOBALS['prefs']['simple']) {
+		
+		//************************** Handle Redirects! *************************
+		
+		if($GLOBALS['redirect']) {
+			$GLOBALS['prefs']['redirectPage'] = true;
+			$_SERVER['template'] = 'none'; //DRAGONHERE:	This line sends remote server into fits... Works fine on local server... No idea why
+			$_SERVER['headers']['status'] = "HTTP/1.1 301 Moved Permanently";
+			$_SERVER['headers']['location'] = $GLOBALS['redirect']['location'];
+			if($GLOBALS['redirect']['text']) {
+				$_SESSION['message'] = $GLOBALS['redirect']['text'];
+				$_SESSION['messagePage'] = $GLOBALS['redirect']['textPage'];
+			}
+			if($GLOBALS['redirect']['deadEndAhead']) { //Headed for Dead End
+				$_SESSION['lastPageDead'] = -1;
+				$_SESSION['lastPage'] = $_SERVER['FAKE_URI'];
+			}
+		}
+		else if($GLOBALS['prefs']['deadEndPage']) {
+			if($_SESSION['lastPageDead'] < 0) $_SESSION['lastPageDead'] = 1;
+			else $_SESSION['lastPageDead']++;
+		}
+		else $_SESSION['lastPageDead'] = 0;
+		
+		//*********************** Update user! *********************************
+		
+		if(!$GLOBALS['prefs']['redirectPage'] && !$GLOBALS['pageVars']['hideHtml']) {
+			if(!$_SESSION['messagePage']) $_SESSION['message'] = ''; 				//they decremented on the previous page
+			else if($_SESSION['messagePage'] > 0) $_SESSION['messagePage'] -= 1;	//countdown!!!
+			else if(!($_SESSION['messagePage'] == 'end' && $GLOBALS['prefs']['deadEndPage'] == true) && $_SESSION['messagePage'] != -1) { //other exceptions (see redirect function)
+				$_SESSION['message'] = '';
+				$_SESSION['messagePage'] = '';
+			}
+			if($_SESSION['pageMessage']) setPageBlock('prepend','blockMessage',$_SESSION['pageMessage']);
+			if($_SESSION['message']) setPageBlock('prepend','blockMessage',$_SESSION['message']);
+		}
+		
+		updateUser($_SESSION,true); //Changing $_SESSION will be ineffective after here :-)
+		
+		//***************** Non template Session Tracking *******************
+		
+		//if($_SESSION['sessionCookie']) {
+			if($_SESSION['isPermanent']) $_SERVER['headers']['set-cookie'][] = "atid=perm{$_SESSION['sessionCookie']}; path=/; domain=.{$_SERVER['FAKE_HOST_TOP']}; expires=".gmdate('D, d-M-Y H:i:s \G\M\T', time() + 60 * 60 * 24 * 365);
+			else if($_SESSION['userPower'] > 0) $_SERVER['headers']['set-cookie'][] = "atid={$_SESSION['sessionCookie']}; path=/; domain=.{$_SERVER['FAKE_HOST_TOP']}";
+			else $_SERVER['headers']['set-cookie'][] = "atid={$_SESSION['sessionCookie']}; path=/; domain=.{$_SERVER['FAKE_HOST_TOP']}; expires=".gmdate('D, d-M-Y H:i:s \G\M\T', time() + 60 * 60 * 24 * 365 * 5);
+
+		//}
+		
+		//*************************************** Cron Jobs *****************************************
+			
+		/*
+		$cron = $_SERVER['serverdb']->getArray("SELECT `name` FROM `cron` WHERE (`lastRun` + `frequency`) <= '".time()."'");
+		if ($cron) {
+			foreach ($cron as $job) {
+				$pid=pcntl_fork();  //dispatch child to handle cron jobs
+				if(!$pid) { // we're the child
+					if(file_exists(_root.'/sites'.$_SERVER['network'].'/_cron/'.$_REQUEST['cron'])) {
+						$cronPath = _root.'/sites'.$_SERVER['network'].'/_cron/'.$_REQUEST['cron'];
+					}
+					else if(file_exists(_root.'/sites/_cron/'.$_REQUEST['cron'])) {
+						$cronPath = _root.'/sites/_cron/'.$_REQUEST['cron'];
+					}
+					require $cronPath;
+					$_SERVER['serverdb']->execute("UPDATE `cron` SET `lastRun` = '".time()."' WHERE `name` = '{$_REQUEST['cron']}'");
+					exit();	
+				}
+		}
+		*/
+	}
+	
+	if($GLOBALS['prefs']['templates'][$_SERVER['template']]) {
+		
+		//*********************** Handle buffer tracking ***********************
+		
+		if($_SESSION['bufferId']) {
+			$_SERVER['headers']['set-cookie'][] = "atibuf={$_SESSION['bufferId']}; path=/; domain=.{$_SERVER['FAKE_HOST_TOP']}";
+		}
+		
+		$GLOBALS['pageVars']['page']['onBeforeUnload'] = "ati_setBuffer();";
+		$GLOBALS['pageVars']['page']['head'] .= '
+		<script type="text/javascript"><!--
+			var ati_buffer = "'.$_SESSION['bufferId'].'"; '.(!$_SESSION['bufferIsNew'] ? 'if(history.length == 1) { ati_buffer = ""; pool = new String("abcdefghijklmnopqrstuvwxyz123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"); for (i=0;i<15;i++) { ati_buffer += pool.charAt(parseFloat(Math.random()) * parseInt(pool.length)); } }' : '').'
+			function ati_setBuffer() { document.cookie="atibuf=" + ati_buffer + "; path=/; domain=.'.$_SERVER["FAKE_HOST_TOP"].'"; }
+		--></script>';
+		
+		//********************** Handle session tracking ***********************
+		
+		if(!$_SESSION['isPermanent'] && $_SESSION['userPower'] > 0) $GLOBALS['pageVars']['page']['head'] .= '
+			<script type="text/javascript"><!--
+				function ati_doCookie() { document.cookie = "atid='.$_SESSION['sessionCookie'].'; max-age=10; path=/; domain=.'.$_SERVER['FAKE_HOST_TOP'].'"; } setInterval("ati_doCookie()",2000);
+				--></script>
+		';
+		//if($_SERVER['session']) foreach ($_SERVER['session'] as $val) if($val != $_SERVER['HTTP_HOST_TOP']) $GLOBALS['pageVars']['page']['content'] .= '<iframe src="http://'.$val.$_SERVER['superDomain'].'/loadcookie-'.$_SESSION['sessionCookie'].'" width="0" height="0" frameborder="0"></iframe>';
+		
+		//****************** Do page footers (just for fun)! *******************
+		
+		if($_SERVER['doFooters'] && !$GLOBALS['prefs']['hideFooters']) {
+			$pageBuildTime = round(microtime_float() - $GLOBALS['constants']['pageBuildStart'],4);
+			
+			/*$usersOnPage = $_SERVER['serverdb']->execute('SELECT userId FROM buffers WHERE bufferLast > '.(time() - 600).' AND lastPage = \''.$_SERVER['FAKE_URI'].'\' AND userId != \''.$_SESSION['userId'].'\' GROUP BY userId');
+			$usersOnline = $_SERVER['serverdb']->execute('SELECT userId FROM buffers WHERE bufferLast > '.(time() - 600).' AND userId != \''.$_SESSION['userId'].'\' GROUP BY userId');
+			$usersBuffers = $_SERVER['serverdb']->execute("SELECT userId FROM buffers WHERE userId = '{$_SESSION['userId']}'");
+			$usersBuffers = ($usersBuffers) ? $usersBuffers->recordCount() : 1;
+			$funQuote = $_SERVER['serverdb']->getRow("SELECT * FROM `quotes` ORDER BY RAND() LIMIT 1");
+			
+			$GLOBALS['pageVars']['page']['pageFooter'] = '
+				<p>
+					GenDate: '.doDate(time(),'short').' - GenTime: '.$pageBuildTime.' seconds'.($usersOnline ? ' - <b>'.($temp = number_format($usersOnline->recordCount() + 1)).'</b> user'.($temp > 1 ? 's' : '').' online, <b>'.number_format($usersOnPage->recordCount() + 1).'</b> on page' : '').'<br />
+					Your userId: '.$_SESSION['userId'].' - Your bufferId: '.$_SESSION['bufferId'].' - <b>'.$usersBuffers.'</b> user buffers
+				</p>
+				
+				<b>'.$funQuote['title'].'</b> "'.$funQuote['text'].'" <em>'.$funQuote['author'].'</em><br />
+			';*/
+			
+			$GLOBALS['pageVars']['page']['pageFooter'] = 'GenTime: '.$pageBuildTime.' seconds';
+			
+			//if(isAdmin()) $GLOBALS['pageVars']['page']['pageFooter'] .= print_r($_SESSION,true);
+		}
+	}
+	
+	//**************************** Templating! ********************************
+	
+	if($_SERVER['template'] && $_SERVER['template'] != 'none') {
+		
+		if($GLOBALS['prefs']['templates'][$_SERVER['template']] == 'advanced') {
+									$GLOBALS['templates']['site']		= _site.'/tpl';
+			if(defined('_alias'))	$GLOBALS['templates']['alias']		= _alias.'/tpl';
+			if($_SERVER['skin'])	$GLOBALS['templates']['skin']		= _root.'/serv/skins';
+			if(defined('_network'))	$GLOBALS['templates']['network']	= _network;
+									$GLOBALS['templates']['server']		= _root.'/core/sites/tpl';
+		}
+		else if($GLOBALS['prefs']['templates'][$_SERVER['template']] == 'simple') $GLOBALS['templates']['server'] = _root.'/core/sites/tpl';
+		
+		foreach ($GLOBALS['templates'] as $key=>$val) {
+			if($_SERVER['template'] == 'none') break; //A template turned off templating for parents...
+			if($key == 'skin' || $key == 'alias' || $key == 'site' || $key == 'network' || $key == 'server') {
+				if($key == 'skin') $fname = $_SERVER['skin'].'/_template.atit';
+				else $fname = '_template.atit';
+				if($GLOBALS['prefs']['cache']) cachePage(); //Standard template, so do the cache before this step
+				$file = $val.'/'.$_SERVER['template'].'/'.$fname;
+				if(!file_exists($file)) $file = $val.'/pc/'.$fname;
+				if($key == 'site' && !file_exists($file)) $file = _site.'/_template.atit';
+				else if($key == 'alias' && !file_exists($file)) $file = _alias.'/_template.atit';
+			}
+			else {
+				$file = $val.'/'.$_SERVER['template'].'/'.$key.'.atit';
+				if(!file_exists($file)) $file = $val.'/pc/'.$key.'.atit';
+			}
+			buildTemplate($file,$key); //Encapsulated in function to ensure the extract inside it doesn't override ATIServer vars
+			if($GLOBALS['prefs']['cache']) cachePage(); //Custom template, wait to cache till it's done
+		}
+	}
+	
+	//****************************** Finish up *********************************
+	
+	$pageContent = $GLOBALS['pageVars']['page']['content']; //Grab Contents
+	if(!$pageContent) $pageContent = ' '; //REALLY DUMB workaround for a bizarre big in certain versions of apache that causes it to hijack pages that don't have data when a location: header is sent
+	//$pageContent = str_replace(array("\r\n","\n","\r",'  '),' ',$pageContent); //Obfuscate page
+	
+	//if(!$_REQUEST['source'] && $_SERVER['template']['minify'] == true) $pageContent = preg_replace(array('/\r/','/\n/','/\s\s+/'), ' ', $pageContent);
+	
+	if($GLOBALS['prefs']['gzipPage'] == true) {
+		$pageContent = gzencode($pageContent, 7);
+		$_SERVER['headers']['content-encoding'] = "gzip";
+	}
+	
+	$contentLength = strlen($pageContent);
+	
+	if($_SERVER['ATI_CODE'] == '404') $_SERVER['headers']['status'] = "HTTP/1.0 404 Not Found";
+	
+	if($_SERVER['ATI_CODE']) 							$_SERVER['STATUS_CODE'] = $_SERVER['ATI_CODE'];
+	else if($GLOBALS['redirect'])						$_SERVER['STATUS_CODE'] = '301';
+	else if($GLOBALS['prefs']['simplified'])			$_SERVER['STATUS_CODE'] = 'sim';
+	else												$_SERVER['STATUS_CODE'] = '200';
+	
+	//$_SERVER['serverdb']->execute('REPLACE INTO hits SET date = \''.time().'\', user = \''.$_SESSION['userId'].'\', url = \''.$_SERVER['FAKE_URI'].'\', agent = \''.$_SERVER['HTTP_USER_AGENT'].'\', ip = \''.$_SERVER['REMOTE_ADDR'].'\', ident = \''.$_SERVER['REMOTE_IDENT'].'\', prev = \''.$_SERVER['HTTP_REFERER'].'\', mode = \''.$_SERVER['REQUEST_METHOD'].'\', code = \''.$_SERVER['STATUS_CODE'].'\'');
+	
+	/*
+	if(file_exists(_root.'/data/logs/'.date("Ymd").$_SERVER['HTTP_HOST'].'.txt')) $sep = "\n";
+	else $sep = '';
+	$temp = fopen(_root.'/data/logs/'.date("Ymd").$_SERVER['HTTP_HOST'].'.txt', 'a');
+	flock($temp, LOCK_EX);
+	fwrite($temp, $sep.$_SERVER['REMOTE_ADDR'].' '.$ident.' '.$_COOKIE['atid'].' ['.time().'] "'.$_SERVER['REQUEST_METHOD'].' '.$_SERVER['FAKE_URI'].'" '.$_SERVER['STATUS_CODE'].' '.$contentLength.' "'.$_SERVER['HTTP_REFERER'].'" "'.$_SERVER['HTTP_USER_AGENT'].'"');
+	flock($temp, LOCK_UN);
+	fclose($temp);*/
+	
+	sendPage($pageContent,array('content-length'=>$contentLength));
+}
+
+
+function buildTemplate($file,$key) {
+	if($GLOBALS['pageVars']['page']) extract($GLOBALS['pageVars']['page'], EXTR_REFS);
+	if($GLOBALS['pageVars'][$key]) extract($GLOBALS['pageVars'][$key], EXTR_REFS);
+	if($key == 'skin') {	//Smart Template Variables
+		if($logos && !$logo) $logo = $logos[$_SESSION['userSkin']];
+		if($siteName) $title = $siteName.' - '.$title;
+	}
+	ob_start();
+	include($file);
+	$temp = ob_get_clean();
+	if($temp) $GLOBALS['pageVars']['page']['content'] = $temp;
+}
+
+
+function cachePage() { //Loading cached pages is handled in setPageCache() - We are saving the template data to the cache here
+	$f = fopen($GLOBALS['prefs']['cache'], 'w');
+	fwrite($f, serialize($GLOBALS['pageVars']['page']));
+	fclose($f);
+	$GLOBALS['prefs']['cache'] = false;
+}
+
+
+
+
+
+
+//***************************************************************************************
+//********************************** User Functions! ************************************
+//***************************************************************************************
+
+
+
+
+
+
+
+function loginCheck($message='Please Login in order to access this area.',$messagePage=1){
+	if($_SESSION['userPower'] == 0.00) redirect('/user/login',$message,$messagePage,true);
+}
+function isLoggedIn(){
+	if($_SESSION['userPower'] > 0) return true;
+}
+function adminCheck(){
+	if($_SESSION['userPower'] < 999) redirect('/user/login','Please Login in order to access this area.',1,true);
+}
+function isAdmin(){
+	if($_SESSION['userPower'] > 999) return true;
+}
+
+//***** This function returns an array with all the details for the given user id *****
+
+function renderUser($key,$keyType='member',$update='') {
+	
+	//************************* determine flags ********************************
+	
+	if(strpos($keyType,'member') !== false) {
+		$sqlFields = $_SERVER['database']['serverMemberFields'];
+		$sqlFrom = "`members`";
+		if(strpos($keyType,'preFormatted') !== false) $sqlWhere = $key;
+		else if(strpos($keyType,'userName') !== false) $sqlWhere = "`userName` = '$key'";
+		else if(strpos($keyType,'userEmail') !== false) $sqlWhere = "`userEmail` = '$key'";
+		else $sqlWhere = "`userId` = '$key'";
+	}
+	else {
+		$sqlFields = $_SERVER['database']['serverGuestFields'];
+		$sqlFrom = "`guests`";
+		if(strpos($keyType,'ip') !== false) $sqlWhere = "`userIp` = '$key'";
+		else $sqlWhere = "`userId` = '$key'";
+	}
+	
+	//**************************** load user ***********************************
+	
+	$user = $_SERVER['serverdb']->getRow("SELECT * FROM $sqlFrom WHERE $sqlWhere");
+	if (!$user) return false;
+	if(strpos($keyType,'mode=checkIfExists') !== false) return true;
+	if($_SERVER['database']['networkUserFields'] && $_SERVER['networkdb']) $user += $_SERVER['networkdb']->getRow("SELECT * FROM users WHERE userId = '{$user['userId']}'");
+    if($_SERVER['database']['userFields']) $user += $_SERVER['db']->getRow("SELECT * FROM `users` WHERE `userId` = '{$user['userId']}'");
+	
+	//********************** set user altering data ****************************
+	
+	if($update == true) { //stuff that alters user database
+		
+		//*************************** Buffers **********************************
+		
+		if($_COOKIE['atibuf'] != '') $buffer = $_SERVER['serverdb']->getRow("SELECT * FROM `buffers` WHERE `bufferId` = '".$_COOKIE['atibuf']."'");
+		if(!$buffer) { //Start new buffer based on last used previous buffer
+			$buffer = $_SERVER['serverdb']->getRow("SELECT * FROM `buffers` WHERE `userId` = '{$user['userId']}' ORDER BY `bufferLast` DESC");
+			if(!$buffer) $buffer['bufferIsNew'] = true;
+			$buffer['bufferId'] = random('unique');
+		}
+		$user += $buffer; //Buffer loaded successfully!
+		
+		//THIS DATA IS NOT LOADED FROM DB (THOUGH IT IS DEPENDANT ON DB), SO MUST BE SET REGARDLESS OF NEW PAGE :-)
+		$user['lastPageOld'] = $user['lastPage'];
+		
+		//THIS DATA IS ONLY UPDATED IF THEY VISITED A NEW PAGE :-)
+		if($user['lastPage'] && ($user['lastPage'] != $_SERVER['FAKE_URI']) && $user['lastPageDead'] == 0 && $_SERVER['HTTP_REFERER'] && $_SERVER['HTTP_REFERER'] != $user['lastPage']) { 
+			$user['lastPage'] = $_SERVER['HTTP_REFERER'];
+			$user['userHits'] += 1;
+			if(($user['userLastDate'] + 900) < time()) $user['userVisits'] += 1; //They have been inactive for at least 15 minutes
+			else $user['userTime'] = $user['userTime'] + (time() - $user['userLastDate']); //They have viewed a page within 15 minutes
+		}
+		//test($user['lastPage'].'---'.$_SERVER['FAKE_URI'].'----'.$_SERVER['HTTP_REFERER']);
+		
+		if(!$user['lastPage'] || $user['lastPage'] == $_SERVER['FAKE_URI']) $user['lastPage'] = 'http://'.$_SERVER['FAKE_HOST'].'/index';
+		
+		//***************************** Misc ***********************************
+		
+		$user['userLastDate'] = time();
+		$user['bufferLast'] = $user['userLastDate'];
+		$user['network'] = $_SERVER['networkPath'];
+	}
+	
+	//********************* set complimentary user data ************************
+	
+	if(!$user['template']) $user['template'] = 'pc';
+	if(!$user['userPower']) $user['userPower'] = 0.00;
+	//if(!$user['shortDate']) $user['shortDate'] = 'y/m/d';
+	//if(!$user['longDate']) $user['longDate'] = 'Y/m/d - g:i A T';
+	if(!$user['firstPage']) $user['firstPage'] = $_SERVER['FAKE_URI'];
+	
+	if($user['userRealName']) $user['userFullName'] = '<a href="/user/about-name-'.encrypt($user['userName'],'url').'" title="View '.$user['userName'].'\'s profile">'.$user['userRealName'].' <em>('.$user['userName'].')</em></a>';
+	else {
+		$user['userFullName'] = '<a href="/user/about-name-'.encrypt($user['userName'],'url').'" title="View '.$user['userName'].'\'s profile">'.$user['userName'].'</a>';
+		$user['userRealName'] = $user['userName'];
+	}
+	
+	if($user['userPower'] == 0.00) $user['sessionCookie'] = $user['userId'];
+	else $user['sessionCookie'] = md5($user['userPassword'].$user['userSignupDate']).$user['userId'];
+	
+	return $user;
+}
+
+//***** This function returns an array with all the details for the given user id *****
+
+function renderMemberBasic($key,$keyType='',$fields="*") {
+	if(!$keyType) $sqlWhere = "`userId` = '$key'";
+	else if(strpos($keyType,'preFormatted') !== false) $sqlWhere = $key;
+	else if(strpos($keyType,'userName') !== false) $sqlWhere = "`userName` = '$key'";
+	else if(strpos($keyType,'userEmail') !== false) $sqlWhere = "`userEmail` = '$key'";
+	if($fields == 'exists') {
+		$fields = 'userId';
+		$returnBoolean = true;
+	}
+	
+	$user = $_SERVER['serverdb']->getrow("SELECT $fields FROM members WHERE {$sqlWhere}");
+	if (!$user) return false;
+	if($returnBoolean) return true;
+	
+	//if(!$user['shortDate']) $user['shortDate'] = 'y/m/d';
+	//if(!$user['longDate']) $user['longDate'] = 'F jS, Y - g:i A T';
+	if($user['userRealName'] && strtoupper($user['userName']) == strtoupper($user['userRealName'])) {
+		$user['userName'] = $user['userRealName'];
+		unset($user['userRealName']);
+	}
+	if($user['userRealName']) $user['userFullName'] = '<a href="/user/about-name-'.encrypt($user['userName'],'url').'" title="View '.$user['userName'].'\'s profile">'.$user['userRealName'].' <em>('.$user['userName'].')</em></a>';
+	else {
+		$user['userFullName'] = '<a href="/user/about-name-'.encrypt($user['userName'],'url').'" title="View '.$user['userName'].'\'s profile">'.$user['userName'].'</a>';
+		$user['userRealName'] = $user['userName'];
+	}
+	
+	return $user;
+}
+
+//***** This function adds the user's city, state, and zip code to their array *****
+
+function renderUserLocation($user='') {
+	if(!$user) $user = $_SESSION;
+	
+	if($user['userLatitude'] != 0.000000 && $user['userLongitude'] != 0.000000) {
+		$location = $_SERVER['serverdb']->getRow("SELECT city, state, zip FROM locations WHERE latitude = '{$user['userLatitude']}' AND longitude = '{$user['userLongitude']}'");
+		$user['userCity'] = $location['city'];
+		$user['userState'] = $location['state'];
+		$user['userZip'] = $location['zip'];
+		$user['userLocation'] = $location['city'].', '.$location['state'];
+	}
+	else $user['userLocation'] = $location['state'];
+	
+	return $user;
+}
+
+//********* This function updates the user database for the given user id *************
+
+function updateUser($user) {
+	$sql = array();
+	foreach ($user as $key=>$value) {
+		if(strpos($_SERVER['database']['serverBufferFields'],$key) !== false) $sql['buf'] .= ', '.$key.' = '.$_SERVER['serverdb']->qstr($value);
+        if(($user['userPower'] == 0.00 && strpos($_SERVER['database']['serverGuestFields'],$key) !== false) || ($user['userPower'] > 0 && strpos($_SERVER['database']['serverMemberFields'],$key) !== false)) $sql['ser'] .= ', '.$key.' = '.$_SERVER['serverdb']->qstr($value);
+        if(strpos($_SERVER['database']['networkUserFields'],$key) !== false) $sql['net'] .= ', '.$key.' = '.$_SERVER['serverdb']->qstr($value);
+		if(strpos($_SERVER['database']['userFields'],$key) !== false) $sql['sit'] .= ', '.$key.' = '.$_SERVER['serverdb']->qstr($value);
+	}
+	
+	if($user['bufferId']) $_SERVER['serverdb']->execute('REPLACE INTO buffers SET '.substr($sql['buf'],1));
+	if($user['userPower'] == 0.00) $_SERVER['serverdb']->execute('REPLACE INTO guests SET '.substr($sql['ser'],1));
+	else 				$_SERVER['serverdb']->execute('REPLACE INTO members SET '.substr($sql['ser'],1));
+	if($sql['net'] && $_SERVER['networkdb'])		$_SERVER['networkdb']->execute('REPLACE INTO users SET '.substr($sql['net'],1));
+    if($sql['sit']) 	$_SERVER['db']->execute('REPLACE INTO users SET '.substr($sql['sit'],1));
+	return true;
+}
+
+//************ This function updates the current user's privilege **************
+//******** $current looks like this: key1=val1a,val1b,val1c;key2=val2; *********
+
+function updateUserPrivileges($privilege,$value='',$valueNew='',$current='') {
+	if($current) $string = $current;
+	else $string =  $_SESSION['userAdminPrivleges'];
+	if(!$valueNew) $valueNew = $value;
+	if($string == "*") return; //They are super admin {me}     ;-)
+
+	if($string) {
+		$string = explode(';',$string);
+		if($string) foreach ($string as $key=>$substr) {
+			$str = explode('=',$substr);
+			if($str[0] == $privilege) { //This is the right one!
+				$itemSet = true;
+				if($value) {
+					$temp = '';
+					foreach(explode(',',$str[1]) as $key=>$item)
+						if($item != $value) $temp .= ','.$item;
+					$substr = $str[0].'='.$valueNew.$temp;
+				}
+				else $skipItem = true;
+			}
+			
+			if($skipItem) $skipItem = '';
+			else if($str[1]) $userPrivliges .= $substr.';';
+		}
+	}
+	if(!$itemSet) $userPrivliges .= $privilege.'='.$valueNew.';'; //The item we were updating was not in the string
+	
+	if($current) return $userPrivliges;
+	else $_SESSION['userAdminPrivleges'] = $userPrivliges;
+}
+
+//***** This function returns an array with all the details for the given user id *****
+
+function banUser($userId,$banMessage=true) {
+
+	$user = renderUser($userId, 'member,userId');
+	
+	$_SERVER['serverdb']->execute("UPDATE `members` SET `banMessage` = '$banMessage' WHERE id='$userId' LIMIT '1'");
+
+	mail($user['userEmail'], $user['userName'].': ATI Network Ban Notice', 
+	"{$user['userName']},\n".
+	"Your ATI Account has been suspended.\n\n".
+	"This was because of something that you (or someone accessing your account) did that violated our site's policies.\n".
+	"The reason given for your account suspension was:".
+	"\n=====================\n".
+	"$banMessage\n".
+	"=====================\n\n".
+	"If you feel that you recieved this message in error, please contact us at the following link:\n".
+	"http:allthingsinteresting.com/contact\n".
+	"\n\n-The ATI Team\n\n"
+	, "From: mailer@allthingsinteresting.com\nX-MSMail-Priority: High\nOrigin: {$_SERVER['REMOTE_ADDR']}");
+	
+	return true;
+}
+
+
+
+
+
+
+//***************************************************************************************
+//********************************* Database Functions! *********************************
+//***************************************************************************************
+
+
+
+
+
+
+//Makes strings safe for input into DB
+function dbStr($string) {
+	if(is_int($string)) return $string; //String is safe
+	else return '\''.mysqli_real_escape_string($_SERVER['db']->connectionId,$string).'\'';
+}
+
+function dbInt($string) {
+	return intval($string); //String is safe
+}
+
+//Returns the last error message generated by a query
+function dbError($db='') {
+	return $_SERVER[$db.'db']->errorMsg();
+}
+
+//Runs a SQL replace function on the DB
+function dbReplace($db,$table,$args) {
+	foreach ($args as $key=>$val) $sql .= ', '.$key.' = '.dbStr($val);
+	return $_SERVER[($db=='site'?'':$db).'db']->execute('REPLACE INTO '.$table.' SET'.substr($sql,1));
+}
+
+//Put data in database - use INSERT or UPDATE as necessary
+function dbPut($db,$table,$args) {
+	foreach ($args as $key=>$val) $sql .= ', '.$key.' = '.dbStr($val);
+	return $_SERVER[($db=='site'?'':$db).'db']->execute('INSERT INTO '.$table.' SET'.substr($sql,1).' ON DUPLICATE KEY UPDATE'.substr($sql,1));
+}
+
+
+
+
+
+
+//***************************************************************************************
+//******************************** Formatting Functions! ********************************
+//***************************************************************************************
+
+
+
+
+
+
+
+function doDate($date = '', $format = 'long') {
+	if (!$date) $date = time();
+	if($format == 'short') return date('y/m/d',$date);
+	else if($format == 'long') {
+		if(date('Y') != date('Y',$date)) return date('Y/m/d - G:i T',$date);
+		else {
+			if(time() - $date < 604800) return dateOffset(-(time() - $date),'','','s').' ('.date('M jS - G:i T',$date).')';
+			else return date('M jS - G:i T',$date);
+		}
+	}
+}
+function doPhone($phone) {
+	if(!$phone) return false;
+	return substr($phone,0,3)."-".substr($phone,3,3)."-".substr($phone,6);
+}
+function undoPhone($phone) {
+	$i = 0;
+	$i2 = 0;
+	$phoneLength = strlen($phone);
+	while ($i < $phoneLength) {
+		if($i2 < 8) {
+			if(is_numeric($phone{$i})) {
+				$return .= $phone{$i};
+				$i2++;
+			}
+		}
+		else {
+			$return .= $phone{$i};
+		}
+		$i++;
+	}
+	
+	return $return;
+}
+
+function checkEmail($email) {
+	if (!$email) return false;
+	list($username,$domain) = split('@',$email);
+	if(!checkdnsrr($domain, 'MX')) return false; // checks for MX records in the DNS
+	if(!fsockopen($domain,25)) return false; // attempts a socket connection to mail server
+	return true;  //looks good!
+}
+
+function doTxt($str) {
+	if(strpos($str,'<br') === false && strpos($str,'<div') === false) return nl2br($str);
+	else return $str;
+}
+
+function br2nl($string) {
+	return str_replace(array('<br />','<br />','<br/>'),"\n",$string);
+}
+
+function nl2nill($string) {
+	return str_replace(array("\r\n","\r","\n"),'',$string);
+}
+
+function br2nill($string) {
+	return str_replace(array('<br />','<br />','<br/>'),"",$string);
+}
+
+function dateOffset($time,$messagePast='',$messagePost='',$mode='') {
+	$weeks = 0;
+	$days = 0;
+	$hours = 0;
+	$minutes = 0;
+	$seconds = 0;
+	
+	if($time > 0) {
+		$preReturn = $messagePast;
+		while ($time > 0) {
+			if($time > 604800) { $time -= 604800; $weeks += 1; }
+			else if($time > 86400) { $time -= 86400; $days += 1; }
+			else if($time > 3600) { $time -= 3600; $hours += 1; }
+			else if($time > 60) { $time -= 60; $minutes += 1; }
+			else { $time -= 1; $seconds += 1; }
+		}
+	}
+	else {
+		$preReturn = $messagePost;
+		while ($time < 0) {
+			if($time < -604800) { $time += 604800; $weeks += 1; }
+			else if($time < -86400) { $time += 86400; $days += 1; }
+			else if($time < -3600) { $time += 3600; $hours += 1; }
+			else if($time < -60) { $time += 60; $minutes += 1; }
+			else { $time += 1; $seconds += 1; }
+		}
+		$postReturn = ' ago';
+	}
+	
+	if($weeks && ($mode != 's' || !$return))		$return .= ($return ? ', ' : '').$weeks.' week'.($weeks > 1 ? 's' : '');
+	if($days && ($mode != 's' || !$return))		$return .= ($return ? ', ' : '').$days.' day'.($days > 1 ? 's' : '');
+	if($hours && ($mode != 's' || !$return))		$return .= ($return ? ', ' : '').$hours.' hour'.($hours > 1 ? 's' : '');
+	if($minutes && ($mode != 's' || !$return))		$return .= ($return ? ', ' : '').$minutes.' minute'.($minutes > 1 ? 's' : '');
+	if(!$return)									$return .= ($return ? ', ' : '').$seconds.' second'.($seconds > 1 ? 's' : '');
+	
+	return $preReturn.$return.$postReturn;
+}
+
+
+
+
+
+
+//***************************************************************************************
+//******************************** Templating Functions! ********************************
+//***************************************************************************************
+
+
+
+
+
+
+
+function setPage($val, $item='content', $template='page') {
+	$GLOBALS['pageVars'][$template][$item] .= $val;
+}
+function setPageRes($val, $pre=false, $template='server') {
+	if($val == 'mt' || $val == 'ati') $pre = true;
+	if($GLOBALS['prefs']['resources'][$val]) {
+		if(is_array($GLOBALS['prefs']['resources'][$val])) foreach($GLOBALS['prefs']['resources'][$val] as $key=>$set) setPageRes($set,$pre);
+		else $val = $GLOBALS['prefs']['resources'][$val];
+	}
+	if($GLOBALS['prefs']['setresources'][$val]) return;
+	$GLOBALS['prefs']['setresources'][$val] = true;
+	$file_nme = str_replace(array('/','.'),array('_','+'),substr($val, 0, strripos($val, '.')));
+    $file_ext = substr($val, strripos($val, '.') + 1);
+	if($pre)	$GLOBALS['pageVars'][$template][$file_ext] = ','.$file_nme.$GLOBALS['pageVars'][$template][$file_ext];
+	else		$GLOBALS['pageVars'][$template][$file_ext] .= ','.$file_nme;
+}
+function setPageConst($item, $value, $template='page') {
+	$GLOBALS['pageVars'][$template][$item] = $value;
+}
+function setPageConsts($params, $template='page') {
+	if(is_array($GLOBALS['pageVars'][$template])) $GLOBALS['pageVars'][$template] += $params;
+	else $GLOBALS['pageVars'][$template] = $params;
+}
+function setPagePref($item, $value=true) {
+	if($item == 'template' || $item == 'skin') $_SERVER[$item] = $value;
+	else $GLOBALS['prefs'][$item] = $value;
+}
+function setPageCache($time,$string='') {
+	$file = _root.'/data/cache/page/'.str_replace('/','>',$_SERVER['REQUEST_URI']).$string;
+	if(file_exists($file) && filemtime($file) + $time > time()) {
+		$GLOBALS['pageVars']['page'] = unserialize(file_get_contents($file));
+		buildPage();
+	}
+	else $GLOBALS['prefs']['cache'] = $file;
+}
+function setPageHeader($item, $value = '') {
+	$_SERVER['headers'][$item] = $value;
+}
+function setPageBlock() {
+	$funcs = func_get_args();
+	$item = array_shift($funcs);	//set unlimited variables
+	if($item == 'prepend') {		//first parameter was flag
+		$prepend = true;
+		$item = array_shift($funcs);
+	}
+	if($item == 'tpl') {
+		$template = array_shift($funcs);
+		$item = array_shift($funcs);
+	}
+	else $template = 'page';
+	
+	if($prepend) $GLOBALS['pageVars'][$template][$GLOBALS['prefs']['templates'][$GLOBALS['prefs']['templates'][$_SERVER['template']]]['defs'][$item]] = call_user_func_array($item,$funcs).$GLOBALS['pageVars'][$template][$GLOBALS['prefs']['templates'][$GLOBALS['prefs']['templates'][$_SERVER['template']]]['defs'][$item]];
+	else $GLOBALS['pageVars'][$template][$GLOBALS['prefs']['templates'][$GLOBALS['prefs']['templates'][$_SERVER['template']]]['defs'][$item]] .= call_user_func_array($item,$funcs);
+}
+function setPageTpl($name='',$vars=_templates) {
+	$GLOBALS['templates'][$name] = $vars;
+}
+function pFunc() {
+	$funcs = func_get_args();
+	$item = array_shift($funcs);
+	return call_user_func_array($item,$funcs);
+}
+function isFunc($func) {
+	return is_callable($func);
+}
+
+function pFuncStart() {
+	ob_start();
+}
+
+function pFuncEnd() {
+	$funcs = func_get_args();
+	$item = array_shift($funcs);
+	$temp = array_splice($funcs, 1); //add content from ob_get_buffer as 3rd parameter if there are multiple parameters
+	$funcs[] = ob_get_clean();
+	if($temp) $funcs = array_merge($funcs,$temp);
+	return call_user_func_array($item,$funcs);
+}
+
+
+
+
+
+
+//***************************************************************************************
+//********************************** Helper Functions! **********************************
+//***************************************************************************************
+
+
+
+
+
+
+function itemList() {
+	$arr = func_get_args();
+	foreach($arr as $key=>$val)	$ret[$val] = true;
+	return $ret;
+}
+
+function microtime_float() {
+   return array_sum(explode(" ",microtime()));
+}
+
+function func() {
+	$funcs = func_get_args();
+	$location = array_shift($funcs);
+	$function = array_shift($funcs);
+	
+	if($location) include_once($location.'.atii');
+	return call_user_func_array($function, $funcs);
+}
+
+function lFunc($location) {
+	include_once($location.'.atii');
+}
+
+function cFunc() {
+	$funcs = func_get_args();
+	$time = array_shift($funcs);
+	//$name = md5(implode("",$funcs));
+	$location = array_shift($funcs);
+	$name = urlencode(implode("-",$funcs));
+	$function = array_shift($funcs);
+	
+	$cachedFile = _root.'/data/cache/func/'.$name;
+
+	if(file_exists($cachedFile) && filemtime($cachedFile) + $time > time()) { //use the cached version
+		return unserialize(file_get_contents($cachedFile));
+	}
+	else {
+		if($location) include_once $location.'.atii';
+		$data = call_user_func_array($function, $funcs);
+		$f = fopen($cachedFile, 'w');
+		fwrite($f, serialize($data));
+		fclose($f);
+		return $data;
+	}
+}
+
+function random($length) {	
+	if($length == 'unique') {
+	/*	$timestring = microtime();
+		$secondsSinceEpoch=(integer) substr($timestring, strrpos($timestring, " "), 100);
+		$microseconds=(double) $timestring;
+		$seed = mt_rand(0,1000000000) + 10000000 * $microseconds + $secondsSinceEpoch;
+		mt_srand($seed);
+		//$length = mt_rand(13,15);
+		$rand = "";
+		for($i=0; $i < 15; $i++) {
+			$rand .= $alphanum[mt_rand(1,36)];
+		}*/
+		$length = 15;
+	}
+	
+	$alphanum = array("_", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+	for($i=1; $i<=$length; $i++) $rand .= $alphanum[mt_rand(1,63)];
+	return $rand;
+} 
+
+function redirect($location, $text='', $textPage=1, $dea=false) {  //redirection at it's finest!
+	$GLOBALS['redirect']['location']		= $location;
+	$GLOBALS['redirect']['text'] 			= $text;
+	$GLOBALS['redirect']['textPage']		= $textPage; //You can specify -1 for infinite (not recommended), a countdown number, a specific page, or end for all last pages. Defaults to 1 (1 page countdown)
+	$GLOBALS['redirect']['deadEndAhead']	= $dea;
+	buildPage();
+}
+
+//The super duper function that turns all the ugly php generated arrays into beautiful, user friendly ones!!!!!!!
+function convert_urls($string) {
+	
+	//$in = '|([a-zA-Z0-9\.]*)\.php(\?)?<([a-zA-Z0-9_\[\]\.\+]*)=([a-zA-Z0-9_\[\]\.\+]*)&?+>|';
+	//$out = '$1<-$2-$3>';
+
+	$in = array( 
+	  '|([a-zA-Z0-9\.]*)\.php\?([a-zA-Z0-9_\[\]\.\+]*)=([a-zA-Z0-9_\[\]\.\+]*)&?(?:amp;)?([a-zA-Z0-9_\[\]\.\+]*)=([a-zA-Z0-9_\[\]\.\+]*)&?(?:amp;)?([a-zA-Z0-9_\[\]\.\+]*)=([a-zA-Z0-9_\[\]\.\+]*)&?(?:amp;)?([a-zA-Z0-9_\[\]\.]+)=([a-zA-Z0-9_\[\]\.\+]*)&?(?:amp;)?([a-zA-Z0-9_\[\]\.\+]*)=([a-zA-Z0-9_\[\]\.\+]*)|'
+	, '|([a-zA-Z0-9\.]*)\.php\?([a-zA-Z0-9_\[\]\.\+]*)=([a-zA-Z0-9_\[\]\.\+]*)&?(?:amp;)?([a-zA-Z0-9_\[\]\.\+]*)=([a-zA-Z0-9_\[\]\.\+]*)&?(?:amp;)?([a-zA-Z0-9_\[\]\.\+]*)=([a-zA-Z0-9_\[\]\.\+]*)&?(?:amp;)?([a-zA-Z0-9_\[\]\.]+)=([a-zA-Z0-9_\[\]\.\+]*)|'
+	, '|([a-zA-Z0-9\.]*)\.php\?([a-zA-Z0-9_\[\]\.\+]*)=([a-zA-Z0-9_\[\]\.\+]*)&?(?:amp;)?([a-zA-Z0-9_\[\]\.\+]*)=([a-zA-Z0-9_\[\]\.\+]*)&?(?:amp;)?([a-zA-Z0-9_\[\]\.\+]*)=([a-zA-Z0-9_\[\]\.\+]*)|'
+	, '|([a-zA-Z0-9\.]*)\.php\?([a-zA-Z0-9_\[\]\.\+]*)=([a-zA-Z0-9_\[\]\.\+]*)&?(?:amp;)?([a-zA-Z0-9_\[\]\.\+]*)=([a-zA-Z0-9_\[\]\.\+]*)|'
+	, '|([a-zA-Z0-9\.]*)\.php\?([a-zA-Z0-9_\[\]\.\+]*)=([a-zA-Z0-9_\[\]\.\+]*)|'
+    , '|([a-zA-Z0-9\.]*)\.php(\?)?|'
+	);
+
+	$out = array(
+	  '$1-$2-$3-$4-$5-$6-$7-$8-$9-$10-$11'
+	, '$1-$2-$3-$4-$5-$6-$7-$8-$9'
+	, '$1-$2-$3-$4-$5-$6-$7'
+	, '$1-$2-$3-$4-$5'
+	, '$1-$2-$3'
+	, '$1'
+	);
+	
+	if($_SERVER['urlRewriteRegexIn'] && $_SERVER['urlRewriteRegexOut']) $string = preg_replace($_SERVER['urlRewriteRegexIn'], $_SERVER['urlRewriteRegexOut'], $string);
+	
+	return preg_replace($in, $out, $string); 
+}
+
+function do_url($key='', $val='', $return='') {
+	if(!$return) $return = $_SERVER['REQUEST_FILE'];
+	$temp = $_GET;
+	if($key) $temp[$key] = $val;
+	foreach ($temp as $key=>$val) if($val) $return .= '-'.$key.'-'.encrypt($val,'url');
+	return $return;
+}
+
+function build_url($exclude=array()) {
+	if($exclude) foreach($exclude as $key=>$val) $exclude[$val] = true;
+	foreach ($_REQUEST as $key=>$val) if($val != '' && !$exclude[$key] && !$_COOKIE[$key]) $return .= '-'.$key.'-'.encrypt($val,'url');
+	return $return;
+}
+
+function generate_url($key='', $val='', $return='', $exclude='') {
+	if(!$return) $return = $_SERVER['REQUEST_FILE'];
+	$temp = array_merge($_GET, $_POST);
+	if($key) $temp[$key] = $val;
+	foreach ($temp as $key=>$val) if($val && !$exclude[$val]) $return .= '-'.$key.'-'.encrypt($val,'url');
+	return $return;
+}
+
+function generate_url_arr($arr, $return) {
+	foreach ($arr as $key=>$val) if($val) foreach ($val as $key2=>$val2) if($val2) $return .= '-'.$key2.'-'.encrypt($val2,'url');
+	return $return;
+}
+
+function encrypt($string, $encryptionLevel='') {
+	
+	if ($encryptionLevel == 'hex') {  //Really basic, totally insecure encryption
+  		return bin2hex($string);
+	}
+	else if ($encryptionLevel == 'url'){
+		$string = (string) $string;
+		for ($i=0; $i < strlen($string); $i++) {
+			if(($string[$i] >= '0' && $string[$i] <= '9') || ($string[$i] >= 'A' && $string[$i] <= 'Z') || ($string[$i] >= 'a' && $string[$i] <= 'z')) $retstr .= $string[$i];
+			else if($string[$i] == '/') $retstr .= '%25%32%66';
+			else if($string[$i] == ',') $retstr .= ','; //Don't mess up my commas!
+			else if($string[$i] == '-') $retstr .= '***';
+			//else if($string[$i] == ' ') $retstr .= '%20';
+			else $retstr .= '%'.dechex(ord($string[$i]));
+		}
+	   return $retstr;
+	} 
+	
+	$key = "dt3agbte";
+	
+	//$iv = mcrypt_create_iv(8,MCRYPT_DEV_RANDOM);
+	
+	$encrypted = mcrypt_ecb (MCRYPT_3DES, $key, $string, MCRYPT_ENCRYPT);
+	
+	//$GLOBALS['encryptionIVs'][$encrypted] = $iv;
+	
+	
+	/*$mod = mcrypt_module_open ($encryptionLevel,'','ecb','');
+	$iv_size = mcrypt_enc_get_iv_size($mod);
+	$iv = mcrypt_create_iv($iv_size,MCRYPT_DEV_RANDOM);
+	$max_key_size = mcrypt_enc_get_key_size($mod);
+	$key = substr($key,0,$max_key_size);
+	mcrypt_generic_init ($mod,$key,$iv);
+	
+	$encrypted = mcrypt_generic($mod,$string);
+	
+	$GLOBALS['encryptionIVs'][$encrypted] = $iv;
+	
+	mcrypt_generic_deinit ($mod);
+	mcrypt_module_close ($mod);
+	*/
+	
+	return $encrypted;
+}
+
+function decrypt($string, $encryptionLevel='') {
+	
+	if ($encryptionLevel == 'hex') {  //Really basic encryption
+		$len = strlen($string);
+		return pack("H" . $len, $string);
+	} 
+	
+	else if ($encryptionLevel == 'url'){
+		return str_replace('%2f','/',urldecode($string));
+	} 
+	
+
+	$key = "dt3agbte";
+	
+	$decrypted = mcrypt_ecb (MCRYPT_3DES, $key, $string, MCRYPT_DECRYPT);
+	
+	return $decrypted;
+	
+	/*$key = "0Bo1m8b2ar3di4er5 b6ee7tl8es9";
+	
+	return (str_replace("\0","",mcrypt_decrypt($encryptionLevel,$key,$string,'ecb',$GLOBALS['encryptionIVs'][$string])));
+	*/
+}
+
+function error($text,$type = '') {
+	if ($type == 'note')	setPageConst('error', '<div class="errorBox">'.$text.'</div>');
+	else					sendPage('
+	<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+	<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+		<head><title>ATIServer Error</title></head>
+		<style type="text/css">
+		body {
+			background-color: #F0F0F0;
+		}
+		.error {
+			width:50%;
+			margin:auto;
+			margin-top:50px;
+			border: 1px solid #FF9900;
+			background-color: #FFFFFF;
+			padding:20px;
+			padding-left:100px;
+		}
+		.title {
+			margin-left:-10px;
+			background-color: #FFFFFF;
+			font-weight:bold;
+			border-bottom: 1px solid #E1E1E1;
+			padding:10px;
+			margin-bottom:10px;
+		}
+		.text, .details {
+			font-style:italic;
+			border-bottom: 1px solid #E1E1E1;
+			padding:10px;
+			margin-top:50px;
+			margin-bottom:50px;
+			font-size:0.9em;
+		}
+		.shoot {
+			font-style:italic;
+			padding:10px;
+			font-size:0.8em;
+		}
+		</style>
+	<body>
+		<div class="error">
+			<div class="title">ATIServer encountered an error it could not recover from.</div>
+			<div class="input">We sincerely apoligize for the inconvience this error may cause.</div>
+			<div class="details">
+				<div class="title">Error Details:</div>'.$text.'
+			</div>
+			<div class="shoot">
+				Troubleshooting:
+				<ul>
+					<li>If you are the server administrator, please consult the ATIServer documentation</li>
+					<li>If not, you might contact the administrator of this site and alert them to the problem</li>
+				</ul>
+			</div>
+		</div>
+	</body>
+	</html>
+	');
+}
+
+error_reporting(1);				//If the value is zero when we are handling an error, the error expression has been silenced by an @ symbol - don't ask me why...
+set_error_handler("doError");	//Only works for non syntax related errors
+
+function doError($errno=0, $errmsg, $filename, $linenum) { ///, $vars
+	if($errno == E_STRICT || $errno == E_USER_NOTICE || $errno == E_NOTICE || $errno == E_WARNING || $errno == E_USER_WARNING || error_reporting() == 0) return;
+	error('<ul>
+		<li>The error encountered was "'.$errmsg.'" of type "'.$errno.'"</li>
+		<li>The error occured on line "'.$linenum.'" of file "'.$filename.'"</li>
+	</ul>');
+}
+
+function test() {
+	$args = func_get_args();
+	$sep = '';
+	setPage('{');
+	foreach($args as $key=>$arg) {
+		if(is_array($arg)) setPage(print_r($arg,true));
+		else if(strlen($arg) < 10) setPage($sep.$arg);
+		else setPage(nl2br($arg).'<br />');
+		$sep = '---';
+	}
+	setPage('}');
+}
+
+?>

@@ -1,0 +1,30 @@
+<?
+
+setPagePref('template','html');
+
+setPage('
+	<script type="text/javascript" src="/_js-_inc_mt_mootools12"></script>
+','head');
+
+setPage('
+	<script type="text/javascript">
+			window.addEvent(\'domready\', function() {
+				var testScroller = new Scroller($(\'test\'));
+				testScroller.start();
+			});
+		</script>
+		<div id="test" style="height:150px; overflow:auto;">
+			dsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklf
+			dsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklf
+			dsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklf
+			dsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklf
+			dsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklf
+			dsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklf
+			dsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklf
+			dsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklf
+			dsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklf
+			dsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklfdsfg hdsjgkdhgdjk fsgh djkfgh jklsfh jksdl ghsjkf gshjkds gdsjklf
+		</div>
+');
+
+?>

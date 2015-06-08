@@ -1,0 +1,93 @@
+<?
+loginCheck('<b>Please login to access your control panel.</b>','end');
+
+$sql = "SELECT id, title, date, soldDate FROM classifieds_ads WHERE usId = '{$_SESSION['userId']}'";
+
+if($_REQUEST['show'] == 'sold') {
+	$sql .= " AND soldDate != ''";
+	$soldChecked = 'checked';
+}
+else if($_REQUEST['show'] == 'all') {
+	$sql .= "";
+	$allChecked = 'checked';
+}
+else {
+	$sql .= " AND soldDate = ''";
+	$unsoldChecked = 'checked';
+}
+if($_REQUEST['title']) $sql .= " AND MATCH(title,description) AGAINST ('{$_REQUEST['title']}' IN BOOLEAN MODE)";
+if($_REQUEST['id']) $sql .= " AND id = ".$_REQUEST['id'];
+
+
+if($_SESSION['safarriStore']['id']) {	
+	$sql .= " AND storeid = '{$_SESSION['safarriStore']['id']}'";
+	$title = '<h4>Managing all my ads in '.$_SESSION['safarriStore']['name'].':</h4>';
+}
+else {
+	$title .= '<h4>Managing all my ads on Safarri:</h4>';
+}
+
+$sql .= " ORDER BY date DESC";
+
+$rs = $_SERVER['db']->execute($sql);
+$items = $rs->RecordCount();
+
+if($items) {
+	
+	$items = $rs->RecordCount();
+	$pagination = func(_mod.'pagination','pagination',$items,30);
+	$sql .= " LIMIT {$pagination['offset']},{$pagination['limit']}";
+	$rs = $_SERVER['db']->execute($sql);
+	
+	$return .= '
+	<p>'.$pagination['string'].'</p>
+	
+	<table class="outer">
+	  <tr>
+		<th width="200">Actions</th>
+		<th>Title</th>
+		<th>Date</th>
+	  </tr>
+	  ';
+	
+	while ($item = $rs->FetchRow()) {	
+		$counter ++;
+		(($counter % 2) == 0) ? $class = 'even' : $class = 'odd';
+
+		$ads += 1;
+		
+		if(!$item['soldDate']) $adLinks = '<a href="/submit-id-'.$item['id'].'-step-marksold">Mark Sold</a> - <a href="/submit-id-'.$item['id'].'-step-modify">Edit</a>';
+		else $adLinks = '<a href="/submit-id-'.$item['id'].'-step-markunsold">Mark Unsold</a>';
+
+		$return .= '
+		<tr class="'.$class.'">
+			<td><a href="/ad-'.$item['id'].'">View</a> - '.$adLinks.'</td>
+			<td class="hover" onclick="document.location.href=\'/ad-'.$item['id'].'\'" >'.$item['title'].'</td>
+			<td>'.doDate($item['date'],'short').'</td>
+		</tr>';
+	}
+	$return .= '</table>';
+}
+else {
+	$return .= '<div class="ebox">There are currently no ads in this view!</div>';
+}
+
+
+setPageConst('title',$_SESSION['userName'].'\'s Control Panel > Ads');
+setPageConst('bct','<a href="/index">Home</a> > <a href="/control/index">'.$_SESSION['userName'].'\'s Control Panel</a> > Ads');
+
+setPageBlock('blockFancy','Control Panel',
+	'<a href="index" class="lbtn"><< Back to Control Panel</a><a href="/submit" class="lbtn">>> Submit Ad</a>'
+	.$title.
+	'
+	<form method="post" action="ads">
+	<b>Filter:</b> <input type="radio" name="show" id="show" value="unsold" '.$unsoldChecked.'> Unsold Ads <input type="radio" name="show" id="show" value="sold" '.$soldChecked.'> Sold Ads <input type="radio" name="show" id="show" value="all" '.$allChecked.'> All Ads
+	<b>Title:</b> <input name="title" id="title" type="text" value="'.$_REQUEST['title'].'" size="14">
+	<b>Id:</b> <input name="id" id="id" type="text" value="'.$_REQUEST['id'].'" size="5">
+	<input type="submit" value="Update Filter">
+	</form>
+	'
+	.$return
+);
+
+?>

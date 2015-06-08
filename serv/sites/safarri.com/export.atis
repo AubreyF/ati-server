@@ -1,0 +1,123 @@
+<?
+
+//******************************************************************************
+//******************************** Prefilters **********************************
+//******************************************************************************
+
+
+//Initialize high priority global variables
+global $adBox, $page;
+
+//Template Check
+if(strtolower($_SERVER['X-Request']) == 'json') $_REQUEST['tpl'] = 'json';
+
+//We are in a category
+if($_REQUEST['cat']) {
+	if(strpos($_REQUEST['cat'],',')) $page['categories'] = explode(',',$_REQUEST['cat']); //composite browse
+	else $page['category'] = $_SERVER['db']->getRow("SELECT * FROM classifieds_categories WHERE id = ".$_REQUEST['cat']);
+}
+
+//Sanitize input
+if(!$_REQUEST['adpage']) $_REQUEST['adpage'] = 1;
+if($_REQUEST['q']) {
+	$_REQUEST['q'] = str_replace('  ',' ',str_replace(array(' | ','|'),' | ',$_REQUEST['q']));
+	if(strpos($_REQUEST['q'],'|') && !strpos($_REQUEST['q'],')')) $_REQUEST['q'] = '('.$_REQUEST['q'].')';
+}
+
+//Location Updates
+if(!$_REQUEST['latitude'] && $_REQUEST['distance']) $adBox['message'] = '<div><b>Location needed to sort by distance:</b> Please enter your location</div>';									//Distance, but no location
+else if($_REQUEST['location'] && !$_REQUEST['latitude']) {		//Update location
+	if($temp = func(_mod.'location','getLocation',$_REQUEST['location'])) {
+		$_REQUEST['latitude'] = $temp['latitude'];
+		$_REQUEST['longitude'] = $temp['longitude'];
+		$_REQUEST['zip'] = $temp['zip'];
+		if($_REQUEST['zip']) $_REQUEST['location'] = $_REQUEST['zip'];
+	}
+	else {
+		$adBox['message'] .= '<div><b>Location Not Found:</b> Please enter your location as <b>City, State</b> or <b>Zip Code</b></div>';
+		$_REQUEST['location'] = '';
+	}
+}
+
+//Filtersets
+if($_REQUEST['filterset']) {
+	if($_REQUEST['filterset'] == 'new')			$_REQUEST += array('order'=>'datenew','safarriads'=>'exclusive','filter'=>'none');
+	else if($_REQUEST['filterset'] == 'coolnew')	$_REQUEST += array('order'=>'datenew','safarriads'=>'exclusive');
+}
+
+//"Cool Filter" check
+if(!($_REQUEST['q'] || $_REQUEST['minprice'] || $_REQUEST['maxprice'] || $_REQUEST['type'] || $_REQUEST['cat']) && $_REQUEST['filter'] != 'none') $_REQUEST['featured'] = true;
+
+
+//******************************************************************************
+//********************************* Settings ***********************************
+//******************************************************************************
+
+
+if($_REQUEST['tpl'] == 'edgeio')	{
+}
+else if($_REQUEST['tpl'] == 'txt') {
+	$adBox['safarri']['fields'] .= ', a.usid, a.anonymous_user_details, a.description';
+}
+
+if($_REQUEST['tpl'] == 'json')	{
+	if(!$_REQUEST['adsppage']) $_REQUEST['adsppage'] = 25;
+	$adBox['safarri']['fields'] .= ', a.description, a.features';
+}
+else if($_REQUEST['tpl'] == 'rss') {
+	$_REQUEST['adsppage'] = 50;
+	$adBox['safarri']['fields'] .= ', a.description';
+}
+else if($_REQUEST['tpl'] == 'earth') {
+	$_REQUEST['showdist'] = false;
+	$_REQUEST['adsppage'] = 100;
+	if($_REQUEST['m'] != 'l') $_REQUEST['skipAds'] = true;
+	$adBox['safarri']['fields'] .= ', a.description, a.features';
+}
+else if($_REQUEST['tpl'] == 'txt' || $_REQUEST['tpl'] == 'xml' || $_REQUEST['tpl'] == 'oodle' || $_REQUEST['tpl'] == 'vast' || $_REQUEST['tpl'] == 'edgeio')	{
+	$_REQUEST['adtypes'] = 'local';
+	$_REQUEST['adsppage'] = 10000;
+	$adBox['safarri']['fields'] .= ', a.description';
+}
+else if($_REQUEST['tpl'] == 'base') {
+	
+}
+else {
+	setPage('<h4>Please specify a template format for this page by adding "-tpl-(atom|xml|txt|tdf|json)" to the URL.</h4>');
+	buildPage();
+}
+
+//******************************************************************************
+//****************************** Build Ad List *********************************
+//******************************************************************************
+
+
+if(!$_REQUEST['skipAds']) lfunc(_fnc.'adhandling');
+
+
+//******************************************************************************
+//***************************** Set Templates *********************************
+//******************************************************************************
+
+
+$page['title'] = 'Safarri - '.
+	($_REQUEST['cat'] ? func(_mod.'dbtree','getPathFromId','classifieds_categories',$_REQUEST['cat']) : 'All').
+	($_REQUEST['featured'] ? ' Featured Ads' : '');
+
+if($_REQUEST['q']) $page['title'] .= ': '.$_REQUEST['q'];
+if($_REQUEST['maxprice']) $page['description'] .= ' Max Price: $'.$_REQUEST['maxprice'];
+if($_REQUEST['minprice']) $page['description'] .= ' Min Price: $'.$_REQUEST['minprice'];
+if($_REQUEST['geocoding']) $page['description'] .= ' Server-Side Geocoding Enabled';
+$page['type'] = 'export';
+
+$page['ltitle'] = $page['title'].($page['description'] ? ' - '.$page['description'] : '');
+
+//******************************************************************************
+//***************************** Init Templates *********************************
+//******************************************************************************
+
+
+setPageTpl('export');
+setPageConsts(array('page'=>$page,'adBox'=>$adBox),'export');
+
+?>

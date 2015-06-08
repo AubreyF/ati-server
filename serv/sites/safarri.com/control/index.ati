@@ -1,0 +1,131 @@
+<?
+
+loginCheck('<b>Please login to access your control panel.</b>','end');
+
+//********************************** Inside Store ******************************
+
+if($_SESSION['safarriStore']['id']) {
+	
+	//List Ads
+	$shownAds = 0;
+	$ads = 0;
+	$sql = "SELECT id, title FROM classifieds_ads WHERE usId = '{$_SESSION['userId']}' AND status != 3 AND storeid = '{$_SESSION['safarriStore']['id']}' ORDER BY date";
+	$rs = $_SERVER['db']->execute($sql);
+	if($rs) {
+		$ads = $rs->recordCount();
+		/*while ($item = $rs->FetchRow()) {
+			if($shownAds > 10) break;
+			$shownAds ++;
+			(($shownAds % 2) == 0) ? $class = 'even' : $class = 'odd';
+			$adList .= '<div class="'.$class.' hover" onclick="document.location.href=\'/ad-'.$item['id'].'\'" ><a href="/ad-'.$item['id'].'">'.$item['title'].'</a></div>';
+		}*/
+		if($ads) {
+			$adList = '
+			<a href="/submit" class="lbtn bold">Submit Ad</a><a href="ads" class="lbtn bold">Manage Ads in Store</a>
+			<br /><div class="desc">You have '.$ads.' ads in "'.$_SESSION['safarriStore']['name'].'".</div>
+			<!--<a href="import" class="lbtn">Import Ads</a> <a href="export" class="lbtn">Export Ads</a>-->';
+		}
+		else {
+			$adList = '
+			<h4>You don\'t have any ads for sale in this store</h4>
+			<a href="/submit" class="lbtn bold">Submit My First Ad!</a>
+			<br />
+			';
+		}
+	}
+	else $adList = 'Error connecting to ad database...';
+	
+	//List Stores
+	if($_SESSION['safarriStore']['usId'] == $_SESSION['userId'] || isAdmin()) $storeList .= ' <a href="store" class="lbtn bold">Store Preferences</a>'; //they own the store
+	$storeList .= '<a href="http://'.SAFARRI.'/control/index" class="lbtn back bold">Exit Store</a><br /><div class="desc">(Exit to manage all Safarri ads, or start a new store)</div>';
+}
+
+//******************************** Not Inside Store ****************************
+
+else {
+	$shownAds = 0;
+	$ads = 0;
+	$sql = "SELECT id, title FROM classifieds_ads WHERE usId = '{$_SESSION['userId']}' AND status != 3 ORDER BY date";
+	$rs = $_SERVER['db']->execute($sql);
+	if($rs) {
+		$ads = $rs->recordCount();
+		/*while ($item = $rs->FetchRow()) {
+			if($shownAds > 10) break;
+			$shownAds ++;
+			(($shownAds % 2) == 0) ? $class = 'even' : $class = 'odd';
+			$adList .= '<div class="'.$class.' hover" onclick="document.location.href=\'/ad-'.$item['id'].'\'" ><a href="/ad-'.$item['id'].'">'.$item['title'].'</a></div>';
+		}*/
+		if($ads) {
+			$adList = '
+			<a href="/submit" class="lbtn bold">Submit Ad</a><a href="ads" class="lbtn bold">Manage All Ads</a>
+			<br /><div class="desc">You have '.$ads.' ads for sale on Safarri.</div>
+			<!--<a href="import" class="lbtn">Import Ads</a> <a href="export" class="lbtn">Export Ads</a>-->';
+		}
+		else {
+			$adList = '
+			<h4>You don\'t have any ads for sale on Safarri:</h4>
+			<a href="/submit" class="lbtn bold">Submit My First Ad!</a>
+			<br />
+			';
+		}
+	}
+	else {
+		$adList = 'Error connecting to ad database...'.$_SERVER['db']->errormsg();
+	}
+	
+	//List Stores
+	$stores = 0;
+	$shownStores = 0;
+	$sql = "SELECT id, name, link FROM stores WHERE usId = '{$_SESSION['userId']}'";
+	$rs = $_SERVER['db']->execute($sql);
+	if($rs) {
+		$stores = $rs->recordCount();
+		
+		if($stores) {
+			while ($item = $rs->FetchRow()) {
+				$shownStores ++;
+				(($shownStores % 2) == 0) ? $class = 'even' : $class = 'odd';
+				if(strpos($item['link'],'.')) $temp = 'http://'.$item['link'].'/control/index';
+				else $temp = 'http://'.$item['link'].'.'.SAFARRI.'/control/index';
+				$storeList .= '<div class="'.$class.' hover" onclick="document.location.href=\''.$temp.'\'" ><a href="'.$temp.'">'.$item['name'].'</a></div>';
+			}
+			$storeList = '
+			<a href="store" class="lbtn bold">Start a new Store</a>
+			<br /><h4>You have '.$stores.' Safarri stores:</h4>
+			'.$storeList;
+		}
+		else {
+			$storeList = '
+				<h4>You don\'t have your own store yet:</h4>
+				<a href="store" class="lbtn bold">Start a Store</a>
+				<br />
+			';
+		}
+	}
+}
+
+if(!$return) $return .= '<b>Welcome to your Control Panel, '.$_SESSION['userName'].'!</b><br />';
+
+setPageConst('title',$_SESSION['userName'].'\'s Control Panel');
+setPageConst('bct','<a href="/index">Home</a> > '.$_SESSION['userName'].'\'s '.$_SESSION['safarriStore']['name'].' Control Panel');
+
+setPageBlock('blockFancy',	$_SESSION['storeName'].' Control Panel',$return.'
+	<br /><br /><table class="columns narrow">
+	  <tr>
+		<td class="column">
+			<div class="header">Ads:</div>
+			<div class="content">
+				'.$adList.'
+			</div>
+		</td>
+		<td class="column">
+			<div class="header">'.($_SESSION['safarriStore']['name'] ? $_SESSION['safarriStore']['name'].' Store:' : 'Stores:').'</div>
+			<div class="content">
+				'.$storeList.'
+			</div>
+		</td>
+	  </tr>
+	</table>
+');
+
+?>

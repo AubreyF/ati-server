@@ -1,0 +1,15 @@
+<?
+
+setPageHeader('cache-control','public, max-age=86400');
+setPageHeader('Content-Type','text/xml');
+
+function getSubCats($id=0) {
+	$rs = $_SERVER['db']->execute("SELECT id, title FROM classifieds_categories WHERE parent = '{$id}'");	
+	if($rs) while ($row = $rs->fetchRow()) $str .= '<node id="'.$row['id'].'" text="'.$row['title'].'">'.getSubCats($row['id']).'</node>';
+	return $str;
+}
+
+setPage('<?xml version="1.0" encoding="iso-8859-1"?>
+<nodes>'.getSubCats().'</nodes>');
+
+?>

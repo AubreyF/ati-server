@@ -1,0 +1,52 @@
+<?
+setPageHeader('Cache-Control','public, max-age=86400'); //cache page for an hour!
+setPageHeader('Content-Type','text/atom+xml');
+
+if($adBox['ads']) foreach($adBox['ads'] as $key=>$ad) {
+	if(!$ad) continue; //This item has been cleared by the pagination system
+
+	foreach(explode(' > ',$ad['catTrail']) as $key=>$val) if($val != 'other') $ad['tags'] .= '<category term="'.$val.'" />'.chr(10);	
+	
+	$adBox['content'] .= '
+	<entry> 
+		<title><![CDATA['.$ad['type'].': '.$ad['title'].']]></title>  <!-- item.name --> 
+		<link rel="alternate" type="text/html" href="'.$ad['url'].'"/> <!-- item.url --> 
+		<id>'.$ad['id'].'</id> <!-- item.guid -->
+		'.($ad['pic0'] ? '<thumbnail>http://'.SAFARRI.$ad['pic0'].'</thumbnail>' : '').'
+		<published>'.date('Y-m-d\TH:i:sP',$ad['dateSeconds']).'</published>
+		<updated>'.date('Y-m-d\TH:i:sP',$ad['dateSeconds']).'</updated>
+		<content type="xhtml" xml:lang="en" 
+			xml:base="http://safarri.com/"> <!-- item.content --> 
+			 <div xmlns="http://www.w3.org/1999/xhtml"> 
+			   '.br2nill($ad['description']).'
+			 </div> 
+		</content>
+		<edgeio:price currency="usd">'.$ad['price'].'</edgeio:price> <!-- Item.price -->
+		<category term="listing" /> <!-- item.tags [TRIGGER ] --> 
+		<category term="for sale" /> <!-- item.tags [ANCHOR ] --> 
+		'.$ad['tags'].'
+		'.($ad['town'] ? '
+		<category term="city:'.urlencode($ad['town']).'" /> <!-- item.tags [LOCATION ] --> 
+		<category term="state:'.$ad['country'].'" /> <!-- item.tags [LOCATION ] --> 
+		<category term="country:USA" /> <!-- item.tags [LOCATION ] -->
+		' : '').'
+		'.($ad['expires'] ? '<edgeio:expires>'.$ad['soldDate'].'</edgeio:expires>' : '').'
+	</entry>
+	';
+}
+
+$content = '<?xml version="1.0" encoding="utf-8"?> 
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:edgeio="http://www.edgeio.com/api/v1">
+  <!--<link rel="next"  
+    href="http://example.org/feed.atom?pg-2"/> weblog.feed_next --> 
+ 
+  <title type="text">'.$page['title'].'</title> <!-- weblog.name --> 
+  <updated>'.date('Y-m-d\TH:i:sP').'</updated> <!-- weblog.lastPublished --> 
+  <link rel="alternate" type="text/html" hreflang="en" href="http://'.SAFARRI.'/browse'.build_url(array('tpl')).'"/>
+  <author><name>Safarri.com</name></author>
+  
+  '.$adBox['content'].'
+</feed>
+';
+
+?>

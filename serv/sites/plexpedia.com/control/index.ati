@@ -1,0 +1,126 @@
+<?
+
+loginCheck('<b>Please login to access your control panel.</b>','end');
+
+//********************************** Inside Group ******************************
+
+if($_SESSION['plexpediaGroup']['id']) { 
+	
+	//List Items
+	$shownItems = 0;
+	$items = 0;
+	$sql = "SELECT `id`, `title` FROM `forum_threads` WHERE `userId` = '{$_SESSION['userId']}' AND `submitTime` != '' AND `groupid` = '{$_SESSION['plexpediaGroup']['id']}' ORDER BY `time` DESC";
+	$rs = $_SERVER['db']->execute($sql);
+	
+	if($rs) {
+		$items = $rs->recordCount();
+		while ($item = $rs->FetchRow()) {
+			if($shownItems >= 10) break;
+			$shownItems ++;
+			(($shownItems % 2) == 0) ? $class = 'even' : $class = 'odd';
+			$itemList .= '<div class="'.$class.' hover" onclick="document.location.href=\'/view-'.$item['id'].'\'" ><a href="/view-'.$item['id'].'">'.strip_tags($item['title']).'</a></div>';
+		}
+		$itemList = '
+		<!--<h4>'.$items.' items (showing '.$shownItems.' most recent):</h4>-->
+		<a href="/submit" class="lbtn">Submit Item</a>'.($items ? '<a href="items" class="lbtn">Manage All Items</a>' : '' ).'
+		<br /><br />'.$itemList.'<br />
+		<!--<a href="import" class="lbtn">Import Items</a> <a href="export" class="lbtn">Export Items</a>-->';
+	}
+	else {
+		$itemList = '<div class="alertBox">No Items</div><a href="/submit" class="lbtn">Contribute Item</a>';
+	}
+	
+	//List Group
+	$groupList = '
+	<h4>You are inside '.$_SESSION['plexpediaGroup']['name'].':</h4>
+	<a href="http://'.PLEXPEDIA.'/control/index" class="lbtn back">Exit Group</a>';
+	if($_SESSION['plexpediaGroup']['usId'] == $_SESSION['userId'] || isAdmin()) $groupList .= ' <a href="group" class="lbtn">Group Preferences</a><br /><br /><a href="groupcats" class="lbtn">Category Setup</a> <a href="grouptools" class="lbtn">Tools</a><br />'; //they own the group
+}
+
+//******************************** Not Inside Group ****************************
+
+else {
+	$shownItems = 0;
+	$items = 0;
+	$sql = "SELECT `id`, `title` FROM `forum_threads` WHERE `userId` = '{$_SESSION['userId']}' AND `submitTime` != '' ORDER BY `submitTime`";
+	$rs = $_SERVER['db']->execute($sql);
+	
+	if($rs) {
+		$items = $rs->recordCount();
+		while ($item = $rs->FetchRow()) {
+			if($shownItems > 10) break;
+			$shownItems ++;
+			(($shownItems % 2) == 0) ? $class = 'even' : $class = 'odd';
+			$itemList .= '<a href="/view-'.$item['id'].'" class="'.$class.'">'.strip_tags($item['title']).'</a>'	;
+		}
+		$itemList = '
+		<a href="items" class="lbtn bold">Manage All Content</a>
+		<br />
+		<div class="llst">'.$itemList.'</div>
+		<!--<a href="import" class="lbtn">Import Items</a> <a href="export" class="lbtn">Export Items</a>-->';
+	}
+	else {
+		$itemList = '<div class="alertBox">No Items</div><a href="/submit" class="lbtn">Contribute Item</a>';
+	}
+	
+	//List Groups
+	$groups = 0;
+	$shownGroups = 0;
+	$sql = "SELECT `id`, `name`, `link` FROM `groups` WHERE `usId` = '{$_SESSION['userId']}'";
+	$rs = $_SERVER['db']->execute($sql);
+	if($rs) {
+		$groups = $rs->recordCount();
+		while ($item = $rs->FetchRow()) {	
+			$shownGroups ++;
+			(($shownGroups % 2) == 0) ? $class = 'even' : $class = 'odd';
+			if(strpos($item['link'],'.')) $temp = 'http://'.$item['link'].'/control/index';
+			else $temp = 'http://'.$item['link'].'.'.PLEXPEDIA.'/control/index';
+			$groupList .= '<a href="'.$temp.'" class="'.$class.'">'.$item['name'].'</a>';
+		}
+		$groupList = '
+		<a href="group" class="lbtn bold">Start a Group</a>
+		<br />
+		<div class="llst">'.$groupList.'</div>';
+	}
+}
+
+
+//if(!$return) $return .= '<b>Welcome to your control panel, '.$_SESSION['userName'].'!</b>';
+
+
+setPageConst('title',$_SESSION['userName'].'\'s Control Panel');
+setPageConst('bct','<a href="/index">Home</a> > '.$_SESSION['userName'].'\'s Control Panel');
+
+setPageBlock('blockFancy','My Control Panel',$return.'
+	<br /><table class="columns narrow">
+	  <tr>
+		<td class="column">
+			<div class="header">My Content:</div>
+			<div class="content">
+				'.$itemList.'
+			</div>
+			<div style="width:300px;"></div>
+		</td>
+		<td class="column">
+			<div class="header">'.($_SESSION['plexpediaGroup']['usId'] == $_SESSION['userId'] || isAdmin() ? 'My Groups' : 'Group Administration').':</div>
+			<div class="content">
+				'.$groupList.'
+				<br />
+			</div>
+			<br />
+			<div class="header">RSS Notifications:</div>
+			<div class="content" style="min-width:300px; margin:auto;">
+				<div class="desc">Stay on top of new '.$_SESSION['groupName'].' content! Subscribe to one of these RSS feeds:</div><br />
+				<div class="llst">
+					<a href="/export.atis-tpl-rss-mode-3-uid-'.$_SESSION['userId'].'">All Replies to My posts</a>
+					<a href="/export.atis-tpl-rss-mode-2">All Posts ~ and Replies</a>
+					<a href="/export.atis-tpl-rss">All Posts</a>
+				</div><br />
+				<div class="desc">You can subscribe to an individual page\'s items by clicking the RSS icon in your browser\'s address bar while you are viewing the page.</div>
+			</div>
+		</td>
+	  </tr>
+	</table>
+');
+
+?>

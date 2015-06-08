@@ -1,0 +1,112 @@
+<?
+
+setPageConst('favicon',	'/images/logos/favicon.ico','network');
+setPageRes('tpl/style.css');
+
+//*************************** Template Settings ******************************
+
+$siteName = $_SESSION['storeName'];
+$head .= '<link rel="search" title="Safarri" href="http://'.SAFARRI.'/data/search/search.xml" type="application/opensearchdescription+xml" />';
+$searchBox = array('action'=>'/browse','param'=>'q','desc'=>'Find Ads');
+$host = 'http://'.($_SESSION['safarriStore']['id'] ? $_SERVER['FAKE_HOST'] : SAFARRI);
+
+if(!$_SESSION['safarriStore']['id']) $logos = array(2=>'http://'.SAFARRI.'/images/logos/modernsm.png', 3=>'http://'.SAFARRI.'/images/logos/modernlg'.mt_rand(1,12).'.png');
+
+if($navLinks) $forumLinks = $navLinks;
+$navLinks = array();
+
+if(isLoggedIn()) $navLinks[ucwords($_SESSION['userName'])] = $host.'/control/index';
+$navLinks['Home'] = $host.'/index';
+$navLinks['Buy'] = $host.'/browse';
+
+if(
+		!$_SESSION['safarriStore']['id'] ||
+		($_SESSION['safarriStore']['usId'] == $_SESSION['userId']) || 
+		($_SESSION['safarriStore']['allowAnonymous'] == 1) || 
+		($_SESSION['safarriStore']['allowRegular'] == 1 && isLoggedIn()) ||
+		($_SERVER['db']->getOne("SELECT userName FROM store_contributors WHERE userName = '{$_SESSION['userName']}' AND storeId = '{$_SESSION['safarriStore']['id']}'"))
+	)
+		$navLinks['Sell'] = $host.'/submit';
+
+//if(!$_SESSION['safarriStore'] || $_SESSION['safarriStore']['tellAFriend']) $navLinks['Share'] = $host.'/user/invite';
+if(!$_SESSION['safarriStore']['id']) {
+	if($forumLinks) $navLinks['Forum'] = array('link'=>'http://forum.'.SAFARRI ,'children'=>$forumLinks);
+	//else $navLinks['Forum'] = 'http://forum.'.SAFARRI;
+}
+
+//*************************** Tempate Vars ******************************
+
+$head .= '
+<script type="text/javascript"><!--
+	function doBrowse(link,hideParam) { 	//Used by Links - link can be a url or a link object
+		if(typeof(link) != "string") link = link.href;
+		if(!document.getElementById("sidebarform")) document.location = link;
+		document.forms[\'sidebarform\'].action = link; //Set the action of the form to the link\'s href
+		document.forms[\'sidebarform\'].submit(); //Submit the form
+		return (false); //Keep the link from clicking...
+	}
+	
+	function doFilter() {					//Used by sidebarform
+		if($("sidebarform")) {				//WE are on a browse page with the sideBarForm on it
+			document.forms["sidebarform"].action = browseUrl();
+			document.forms["sidebarform"].submit(); //Submit the form
+		}
+		else { //We are on a page with the QuickBrowse but not the sideBarForm (like the index page)
+			window.location = browseUrl();
+		}
+		
+		return (false); //Keep the link from clicking...
+	}
+	
+	function paramBrowse(key,val) {			//Used By Map link
+		document.getElementById(key).value = val; //Update form item value
+		document.forms[\'sidebarform\'].action = browseUrl();
+		document.forms[\'sidebarform\'].submit(); //Submit the form
+		return (false); //Keep the link from clicking...
+	}
+		
+	function browseUrl() {					//Generates a browse url including category list
+		var cats = \'\';
+		for(i=0; i<document.forms[\'sidebarcats\'].elements.length; i++) if(document.forms[\'sidebarcats\'].elements[i] && document.forms[\'sidebarcats\'].elements[i].name != -1 && document.forms[\'sidebarcats\'].elements[i].checked) cats = cats + document.forms[\'sidebarcats\'].elements[i].name + ",";
+		if(cats) return "/browse-cat-" + cats.substring(0,cats.length - 1);
+		else return "/browse";
+	}
+//--></script>
+';
+
+/*if($_SERVER['HTTP_HOST'] == SAFARRI) $formats .= '
+<div class="hoverTainer">
+	<div class="trigger"><a rel="nofollow" href="http://www.digg.com/tech_news/" target="_blank" title="Digg this site - tell everyone else how great Safarri is!"><img src="/images/formats/digg.png" alt="Digg!" /></a></div>
+	<div class="hoverBox">
+		<div class="header">"Digg" Safarri:</div>
+		If you find Safarri amazing, interesting, or useful; <br />submit it to Digg.com and give everyone else a chance to see it!
+	</div>
+</div>';*/
+
+if($_SESSION['safarriStore']['id']) {
+	$footer = '
+		This "'.$_SESSION['safarriStore']['name'].'" store is powered by <a href="http://'.SAFARRI.'">Safarri.com</a>
+	';
+	$networkFooter = '';
+}
+else {
+	$footer = '
+	<a href="http://'.SAFARRI.'/contact">Contact Safarri >></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<!--<a href="http://'.SAFARRI.'/user/invite">Share Safarri >></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-->
+	<!--Safarri is the masterpiece of <a href="http://aubreyfalconer.com/index">Aubrey Falconer >></a>-->
+	';
+}
+
+$footer .= '
+	<script type="text/javascript">
+	var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+	document.write(unescape("%3Cscript src=\'" + gaJsHost + "google-analytics.com/ga.js\' type=\'text/javascript\'%3E%3C/script%3E"));
+	</script>
+	<script type="text/javascript">
+	var pageTracker = _gat._getTracker("UA-1255418-3");
+	pageTracker._initData();
+	pageTracker._trackPageview();
+	</script>
+';
+
+?>

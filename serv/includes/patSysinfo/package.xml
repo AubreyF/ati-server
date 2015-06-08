@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
+<package version="1.0">
+  <name>patSysinfo</name>
+  <summary>Get realtime information  system information.</summary>
+  <description>With patSysinfo you get a lot of data with only a few PHP-statements. 
+Et voila, you get a lot of data your code can deal with it. 
+If you are as lazy as me, and you do not want to write PHP-code at all, just add a patSysinfo XML element to get all needed data.</description>
+  <maintainers>
+    <maintainer>
+      <user>gerd</user>
+      <name>Gerd Schaufelberger</name>
+      <email>gerd@php-tools.net</email>
+      <role>developer</role>
+    </maintainer>
+  </maintainers>
+  <release>
+    <version>2.0</version>
+    <date>2004-03-03</date>
+    <license>PHP License</license>
+    <state>alpha</state>
+    <notes>first public release</notes>
+    <deps>
+      <dep type="php" rel="ge">4.3.0</dep>
+    </deps>
+    <provides type="class" name="patSysinfo_OS" />
+    <provides type="function" name="patSysinfo_OS::setUseHtmlChars" />
+    <provides type="function" name="patSysinfo_OS::setFillString" />
+    <provides type="function" name="patSysinfo_OS::setUnitCalcConfig" />
+    <provides type="function" name="patSysinfo_OS::setUseUnitCalc" />
+    <provides type="function" name="patSysinfo_OS::getOSVersion" />
+    <provides type="function" name="patSysinfo_OS::getUptime" />
+    <provides type="function" name="patSysinfo_OS::getLoadAvg" />
+    <provides type="function" name="patSysinfo_OS::getNumberUser" />
+    <provides type="function" name="patSysinfo_OS::getTopProcesses" />
+    <provides type="function" name="patSysinfo_OS::getMem" />
+    <provides type="function" name="patSysinfo_OS::getCpu" />
+    <provides type="function" name="patSysinfo_OS::getPciDevs" />
+    <provides type="function" name="patSysinfo_OS::getIdeDevs" />
+    <provides type="function" name="patSysinfo_OS::getScsiDevs" />
+    <provides type="function" name="patSysinfo_OS::getMount" />
+    <provides type="function" name="patSysinfo_OS::getHostName" />
+    <provides type="function" name="patSysinfo_OS::getHostIp" />
+    <provides type="function" name="patSysinfo_OS::getNetDevs" />
+    <provides type="function" name="patSysinfo_OS::setSensorParam" />
+    <provides type="function" name="patSysinfo_OS::addSensorParam" />
+    <provides type="function" name="patSysinfo_OS::setSensorHideLabel" />
+    <provides type="function" name="patSysinfo_OS::addSensorHideLabel" />
+    <provides type="function" name="patSysinfo_OS::setSensorReplace" />
+    <provides type="function" name="patSysinfo_OS::addSensorReplace" />
+    <provides type="function" name="patSysinfo_OS::getSensor" />
+    <provides type="function" name="patSysinfo_OS::unitCalc" />
+    <provides type="class" name="patSysinfo_OS_Linux" extends="patSysinfo_OS" />
+    <provides type="function" name="patSysinfo_OS_Linux::getOSVersion" />
+    <provides type="function" name="patSysinfo_OS_Linux::getUptime" />
+    <provides type="function" name="patSysinfo_OS_Linux::getNumberUsers" />
+    <provides type="function" name="patSysinfo_OS_Linux::getTopProcesses" />
+    <provides type="function" name="patSysinfo_OS_Linux::getMem" />
+    <provides type="function" name="patSysinfo_OS_Linux::getCpu" />
+    <provides type="class" name="patSysinfo_OS_Windows" extends="patSysinfo_OS" />
+    <provides type="function" name="patSysinfo_OS_Windows::getOSVersion" />
+    <provides type="function" name="patSysinfo_OS_Windows::getUptime" />
+    <provides type="function" name="patSysinfo_OS_Windows::getNumberUsers" />
+    <provides type="function" name="patSysinfo_OS_Windows::getTopProcesses" />
+    <provides type="function" name="patSysinfo_OS_Windows::getMem" />
+    <provides type="function" name="patSysinfo_OS_Windows::getCpu" />
+    <provides type="class" name="patSysinfo" />
+    <provides type="function" name="patSysinfo::create" />
+    <provides type="function" name="patSysinfo::getOSName" />
+    <filelist>
+      <file role="doc" baseinstalldir="pat" md5sum="cc628091b7569ade9eb1874b1432b495" name="docs/install.txt"/>
+      <file role="doc" baseinstalldir="pat" md5sum="43cac33842c4a67b80a7b806e692e9c2" name="docs/readme.txt"/>
+      <file role="doc" baseinstalldir="pat" md5sum="90dfa999827c1c45e24ba5cf177086a9" name="examples/cpu.php"/>
+      <file role="doc" baseinstalldir="pat" md5sum="99051335f974f7529fb06292139b403a" name="examples/errormanager.php"/>
+      <file role="doc" baseinstalldir="pat" md5sum="1ad4addaa01e960d1d5bae417a98e127" name="examples/hostname.php"/>
+      <file role="doc" baseinstalldir="pat" md5sum="014825351b172d31fd3dcc53ac2f5619" name="examples/memory.php"/>
+      <file role="doc" baseinstalldir="pat" md5sum="af3411e14b60ba894a8ffa7c7ce29c90" name="examples/numberusers.php"/>
+      <file role="doc" baseinstalldir="pat" md5sum="dc25cfdcc14a558a5acaee44c4910ef2" name="examples/os-tester.php"/>
+      <file role="doc" baseinstalldir="pat" md5sum="64caf42f2d65617db7d9673779eb06b1" name="examples/top.php"/>
+      <file role="doc" baseinstalldir="pat" md5sum="655b8af74a186514fe83aba6bd65205d" name="examples/unitCalc.php"/>
+      <file role="doc" baseinstalldir="pat" md5sum="22afef93f7f6895ed4211466259bcab7" name="examples/uptime.php"/>
+      <file role="php" baseinstalldir="pat" md5sum="51e74a25077c953eaa8408e57c0025c8" name="patSysinfo/OS.php"/>
+      <file role="php" baseinstalldir="pat" md5sum="18f6505e6407e1c49c87ccd60b97d101" name="patSysinfo/OS/Linux.php"/>
+      <file role="php" baseinstalldir="pat" md5sum="90d42f000d1031ec7bb392d5b16ad5fe" name="patSysinfo/OS/Windows.php"/>
+      <file role="php" baseinstalldir="pat" md5sum="b9ad91d194a37f4360fc9298ffbb0648" name="patSysinfo.php"/>
+    </filelist>
+  </release>
+  <changelog>
+    <release>
+      <version>2.0</version>
+      <date>2004-03-03</date>
+      <license>PHP License</license>
+      <state>alpha</state>
+      <notes>first public release</notes>
+    </release>
+  </changelog>
+</package>

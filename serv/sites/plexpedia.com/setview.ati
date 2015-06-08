@@ -1,0 +1,7 @@
+<?
+
+$_SESSION['forumViewMode'] = $_REQUEST['mode'];
+
+redirect($_SESSION['lastPage'].'#comments');
+
+?>

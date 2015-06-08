@@ -1,0 +1,46 @@
+<?
+
+declare(ticks = 1); 							//Instruct pcntl to check every clock cycle
+pcntl_signal(SIGTERM,	"onPcntlSignal");		//They Terminated Us
+pcntl_signal(SIGINT,	"onPcntlSignal");	 	//They Interrupted Us
+pcntl_signal(SIGCHLD,	"onPcntlSignal");		//Child Terminated	
+
+function onPcntlSignal($signal) {
+	if($signal == SIGCHLD) {
+		$pid = pcntl_waitpid(0, $status, WNOHANG); // Check for the child that exited
+		while ($pid != 0 && $pid != -1) { //multiple children might have finished due to multithreading
+			$status = pcntl_wexitstatus($status);
+			if($status == '2') { //Child sent a restart request
+				serverRestart();
+			}
+			else if($status == '3') { //Child sent a shutdown request
+				serverShutdown();
+			}
+			else unset($GLOBALS['server']['children'][$pid]);
+			$pid = pcntl_waitpid(0, $status, WNOHANG); //check for another child
+		}
+	}
+	else if ($signal == SIGTERM || $signal == SIGKILL || $signal == SIGINT) { //they are killing us
+		serverShutdown();
+	}
+}
+
+function serverRestart() {
+	socket_shutdown($GLOBALS['serverSocket']);
+	socket_close($GLOBALS['serverSocket']);
+	logMessage("ATIServer Restarting...");
+	pcntl_exec('atiserver.atii'); //Start new thread execution in the same process space
+}
+
+function serverShutdown() {
+	socket_shutdown($GLOBALS['serverSocket']);
+	socket_close($GLOBALS['serverSocket']);
+	logMessage("ATIServer Shut Down.");
+	exit;
+}
+
+function finishPage() {
+	exit;
+}
+
+?>

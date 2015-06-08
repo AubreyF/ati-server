@@ -1,0 +1,5 @@
+/* Explorer Sucks... */
+
+.ATIMenu li ul li { left:0px; }
+.ATIMenu li ul li ul { left:0px; }
+.ATIMenu li ul li ul li, .ATIMenu li ul li ul li:hover { line-height:18px; }

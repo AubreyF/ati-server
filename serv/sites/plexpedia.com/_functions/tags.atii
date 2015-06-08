@@ -1,0 +1,56 @@
+<?
+
+function tagCloud($sql='',$tags=30) {
+	$rs = $_SERVER['db']->execute('SELECT tags FROM forum_threads WHERE tags != "" AND (state = \'active\' OR state = \'resolved\')'.$sql.' ORDER BY tags');
+	if ($rs) {
+		
+		$sum = 0;
+		
+		$tags = array();
+		while ($row = $rs->FetchRow()) {
+			$temp = explode(';',$row['tags']);
+			foreach($temp as $key=>$tag) {
+				if($tag == '' || $tag == $_SESSION['groupName'] || strlen($tag) < 3) continue;
+				$tags[$tag] += 1;
+				$sum += 1;
+			}
+		}
+		
+		//Hide tiny tags on big sites
+		if(count($tags) > 100) foreach($tags as $tag=>$count) if($count < 2) unset($tags[$tag]);
+		
+		ksort($tags);
+		
+		$max_size = 200; // max font size in %
+		$min_size = 90; // min font size in %
+		$max_opacity = 1; // max font size in %
+		$min_opacity = .5; // min font size in %
+		
+		//Find the average value
+		$avg = $sum / count($tags);
+		
+		//Get the largest and smallest array values
+		//$max_qty = max(array_values($tags));
+		$max_qty = (max(array_values($tags)) + $avg) / 2; //Get the average of the average and the max - makes spikes a bit less prominent
+		$min_qty = min(array_values($tags));
+		
+		//Find the range of values
+		$spread = $max_qty - $min_qty;
+		if (0 == $spread) { // we don't want to divide by zero
+			$spread = 1;
+		}
+		
+		//determine the font-size increment
+		//this is the increase per tag quantity (times used)
+		$step = ($max_size - $min_size)/($spread);
+		$stepOp = ($max_opacity - $min_opacity)/($spread);
+		
+		foreach($tags as $tag=>$count) {
+			$return .= '<a href="/browse-t-'.encrypt(strip_tags($tag),'url').'" style="font-size: '.min($min_size + (($count - $min_qty) * $step), $max_size).'%; opacity:'.min($min_opacity + (($count - $min_qty) * $stepOp),$max_opacity).';" title="'.$count.' Item'.($count > 1 ? 's' : '').'">'.ucwords(strip_tags($tag)).'</a> ';
+		}
+		
+		return $return;
+	}
+}
+
+?>

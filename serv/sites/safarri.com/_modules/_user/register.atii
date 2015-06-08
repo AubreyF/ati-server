@@ -1,0 +1,9 @@
+<?
+
+$vars['title'] = 'Safarri Registration Successful!';
+$vars['message'] = 
+	"Thanks for registering on Safarri.\n".
+	"You are just a step away from posting ads or running your own online store!\n".
+	"Your registration account will work on all the ATI Network websites. Your registration information is provided below:";
+
+?>

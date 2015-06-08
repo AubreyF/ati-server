@@ -1,0 +1,45 @@
+<?
+$content = '';
+
+title	color	condition	currency	description	expiration_date	id	image_link	link	location	make	mileage	model	price	price_type	quantity	vehicle_type	vin	year
+
+$t = chr(9);
+if($adBox['safarriAds']) foreach($adBox['safarriAds'] as $key=>$ad) {
+		$ad['catTrail'] = func(_mod.'dbtree','getPathFromId','classifieds_categories',$ad['cid']);
+		$optional = '';
+		if($ad['soldDate'] > $ad['dateSeconds']) $optional .= '<expire_time>'.$ad['soldDate'].'</expire_time>';
+		$optional .= '<image_url>http://'.SAFARRI.$ad['pic0'].'</image_url>';
+		
+		$content .=
+			$ad['id'].$t.									//ID
+			$ad['dateSeconds'].$t.							//Expiry Date
+			'http://'.SAFARRI.'/ad-'.$ad['id'].$t.			//URL
+			$ad['catTrail'].$t.								//Category
+			$ad['price'].$t.								//Price
+			$ad['type'].': '.$ad['title'].$t.				//Title
+			br2nill($ad['description']).$t.					//Description
+			$ad['town'].', '.$ad['country'].', USA'.$t.	//Location
+		'';
+	
+}
+
+setPage('Data Successfully uploaded to Google Base');
+
+
+//****************************** Handle Google Base Uploads *******************************
+
+if( !$adBox['searchApplied'] && (!file_exists($cachedFile) || filemtime($cachedFile) + 86400 < time())) { //We have not uploaded a file for at least a day
+	//Generate XML file, and store in data directory
+	$file = _site.'/data/xml/ads.xml';
+	$f = fopen($file, 'w');
+	fwrite($f, $content);
+	fclose($f);
+
+	//Connect to Google Base ftp server, set to pasive mode, and send XML file
+	$ftpc = @ftp_connect(@gethostbyname('uploads.google.com'));  
+	ftp_login($ftpc,'safarri','teu9888');
+	ftp_pasv($ftpc,true);
+	if(!ftp_put($ftpc, '/', $file, FTP_BINARY)) die('<h1>Could not connect to Google Base server</h1>');
+}
+
+?>

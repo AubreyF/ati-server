@@ -1,0 +1,1 @@
+<?setPageConst('title','Empowering Amateur Dectives');setPage('<div id="ptitle">Linguistics:</div>'.pFunc('blockNav','		<h4>Linguistics:</h4>		<br /><br /><br />		<div class="smallText">Automated modern Language Translation, and Bidirectional Hieroglyphic translation matrixes await!</div>	',	array('Translation'=>'/trans', 'Hieroglyphics'=>'/hiero')).'');?>

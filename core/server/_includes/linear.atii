@@ -1,0 +1,11 @@
+<?
+
+function finishPage() {
+	throw new Exception();
+}
+
+function resetRequest() {
+	unset($_SERVER);
+}
+
+?>

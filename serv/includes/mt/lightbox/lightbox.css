@@ -1,0 +1,104 @@
+/* lightbox styles */
+
+.lbLoading {
+	background: #fff url(_inc/mt/lightbox/loader.gif) no-repeat center;
+}
+
+#lbOverlay {
+	background-color: #000;
+	cursor: pointer;
+	left: 0;
+	position: absolute;
+	width: 100%;
+	z-index: 100000;
+}
+#lbCenter, #lbBottomContainer {
+	background-color: #fff;
+	left: 50%;
+	overflow: hidden;
+	position: absolute;
+	z-index: 100001;
+}
+#lbImage {
+	border: 3px solid #fff;
+	cursor: pointer;
+}
+#lbBottom {
+	border: 10px solid #fff;
+	border-top-style: none;
+	color: #000;
+	font: normal 11px/16px Arial, sans-serif;
+	text-align: left;
+}
+
+
+
+/***************************
+
+	styles for next & previous buttons as part of footer
+
+***************************/
+
+#lbPrevLink, #lbNextLink {
+	display: block;
+	width: 63px;
+	height: 32px;
+	outline: none;
+}
+
+#lbPrevLink {
+	float: left;
+	background: transparent url(images/prevlabel.gif) no-repeat left;
+	
+}
+
+#lbPrevLink:hover {
+	background: transparent url(images/prevlabel.gif) no-repeat left;
+}
+
+#lbNextLink {
+	float: right;
+	background: transparent url(images/nextlabel.gif) no-repeat right;
+}
+
+#lbNextLink:hover {
+	background: transparent url(images/nextlabel.gif) no-repeat right;
+}
+
+#lbControls {
+	display: block;
+	height: 32px;
+}
+
+/**********************************/
+
+#lbBottom {
+	font-family: Verdana, Helvetica, sans-serif;
+	font-size: 10px;
+	color: #666;
+	line-height: 1.4em;
+	text-align: left;
+	border: 10px solid #fff;
+	border-top-style: none;
+}
+
+#lbCloseLink {
+	clear: both;
+	display: block;
+	float: right;
+	width: 66px;
+	height: 22px;
+	background: transparent url(images/closelabel.gif) no-repeat center;
+	margin: 0px 0px 0px 0px;
+	/*border: 1px solid #000;*/
+}
+
+#lbCaption, #lbNumber, #lbDescription {
+	margin-right: 71px;
+	/*border: 1px solid #000;*/
+}
+
+#lbCaption {
+	font-weight: bold;
+}
+

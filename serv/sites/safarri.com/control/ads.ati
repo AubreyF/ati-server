@@ -1,0 +1,259 @@
+<?
+
+loginCheck('<b>Please login to access your control panel.</b>','end');
+
+if($_REQUEST['mode']) {
+	
+	if($_REQUEST['mode'] == 'mrksld') {
+		$sql = 'soldDate = '.time().', status = 2, qty = 0';
+	}
+	if($_REQUEST['mode'] == 'mrkpnd') {
+		$sql = 'status = 1';
+	}
+	else if($_REQUEST['mode'] == 'mrkunsld') {
+		$sql = 'soldDate = \''.(($ad['duration']) ? ($ad['date'] + ($ad['duration'] * 60 * 60 * 24)) : '') .'\', status = 0, qty = \'1\'';
+	}
+	else if($_REQUEST['mode'] == 'mrkdel') {
+		$sql = 'status = 3';
+	}
+	
+	else if($_REQUEST['mode'] == 'xfrusr') {
+		$success = false;
+		if($_REQUEST['username']) {
+			$id = $_SERVER['serverdb']->GetOne("SELECT userId FROM members WHERE userName = \"{$_REQUEST['username']}\"");
+			if($id) {
+				$success = true;
+				$sql = 'usid = \''.$id.'\'';
+			}
+		}
+		
+		if(!$success) {
+			setPage("
+				<div class=\"ebox\">
+					Warning: transferring your ads to another user can not be undone!
+					<a href=\"javascript:document.history.back();\" class=\"lbtn bold back\">Cancel</a>
+				</div>
+				
+				Please enter the ATI username of the person you desire to transfer your ads to:
+				
+				<form method=\"post\">
+					<input type=\"text\" name=\"username\" value=\"\" />
+					<input type=\"submit\" value=\"Give checked ads to user\" />
+				</form>
+			");
+			buildPage();
+		}
+	}
+	
+	
+	else if(strpos($_REQUEST['mode'],':')) {
+		$val = explode(':',$_REQUEST['mode']);
+		if($val['0'] == 'mvstr') {
+			$sql = 'storeid = '.$val[1];
+		}
+	}
+	
+	$temp = '';
+	foreach($_REQUEST as $key=>$val) {
+		if(is_int($key) && $val == 'on') {
+			$ad = $_SERVER['db']->getRow("SELECT usId FROM classifieds_ads WHERE id=".$key);
+			if($ad['usId'] != $_SESSION['userId'] && !isAdmin()) redirect($_SESSION['lastPage'],'You did not have permission to edit the previous ad'); //make sure they are allowed to edit!
+			$temp .= ' or id = '.$key;
+		}
+	}
+	
+	$_SERVER['db']->execute('update classifieds_ads set '.$sql.' where '.substr($temp,4));
+}
+
+$sql = "SELECT id, name, usId FROM stores WHERE usId = '{$_SESSION['userId']}'";
+$rs = $_SERVER['db']->execute($sql);
+if($rs) {
+	$stores = $rs->recordCount();
+	while ($item = $rs->FetchRow()) {
+		$stores[$item['id']] = $item;
+		$storeActions .= '<a href="javascript:adAction(\'mvstr:'.$item['id'].'\');">> Move to "'.$item['name'].'"</a>';
+	}
+}
+
+$sql = "SELECT id, title, date, soldDate, qty, status, storeid FROM classifieds_ads WHERE 1";
+
+if($_REQUEST['view'] == 'sold') {
+	$sql .= " AND status == 2";
+	$view = 'Sold';
+}
+else if($_REQUEST['view'] == 'deleted') {
+	$sql .= " AND status == 3";
+	$view = 'Deleted';
+}
+else if($_REQUEST['view'] == 'unsold'){
+	$view = 'Unsold and Pending';
+	$sql .= " AND status < 2";
+	$unsoldChecked = 'checked';
+}
+else {
+	$sql .= " AND status != 3";
+	$view = 'All';
+}
+/*if(isAdmin()) {
+	if(array_key_exists('user',$_REQUEST)) $user = $_REQUEST['user'];
+	else $user = $_SESSION['userId'];
+	$critera .= '<b>UserId:</b> <input type="text" name="user" id="user" value="'.$user.'" size="14">';
+}
+else */$user = $_SESSION['userId'];
+if($user) $sql .= " AND usId = '{$user}'";
+
+if($_REQUEST['title']) $sql .= " AND MATCH(title,description) AGAINST ('{$_REQUEST['title']}' IN BOOLEAN MODE)";
+if($_REQUEST['id']) $sql .= " AND id = ".$_REQUEST['id'];
+
+
+if($_SESSION['safarriStore']['id']) {	
+	$sql .= " AND storeid = '{$_SESSION['safarriStore']['id']}'";
+	$title = 'Managing '.$view.' Ads in '.$_SESSION['safarriStore']['name'];
+}
+else {
+	$title .= 'Managing '.$view.' Ads';
+}
+
+$sql .= " ORDER BY date DESC";
+$rs = $_SERVER['db']->execute($sql);
+if($rs) $items = $rs->RecordCount();
+if($items) {
+	$pagination = func(_mod.'pagination','pagination',$items,100);
+	$sql .= " LIMIT {$pagination['offset']},{$pagination['limit']}";
+	$rs = $_SERVER['db']->execute($sql);
+	
+	$return .= '
+	<p>'.$pagination['string'].'</p>
+	<form method="get" action="ads" name="items" id="itemform">
+	<table class="outer">
+	  <tr>
+		<th><input type="checkbox" onClick="doCheckedItems(\'toggle\',this.checked);" id="checkToggle" /></th>
+		<th>Status</th>
+		<th>Title (Click to View)</th>
+		<th>Details</th>
+	  </tr>
+	  ';
+	
+	while ($item = $rs->FetchRow()) {
+		$counter ++;
+		(($counter % 2) == 0) ? $class = 'even' : $class = 'odd';
+		$ads += 1;
+		
+		if($item['status'] == 1) $item['status'] = 'Sale Pending';
+		else if($item['status'] == 2) $item['status'] = 'Sold';
+		else if($item['status'] == 3) $item['status'] = 'Deleted';
+		else $item['status'] = 'Unsold';
+		
+		if($item['storeid']) {
+			$item['store'] = $_SERVER['db']->getRow('SELECT name, link FROM stores WHERE id = '.$item['storeid']);
+			if(!strpos($item['store']['link'],'.')) $item['store']['link'] .= '.safarri.com';
+		}
+		
+		$return .= '
+		<tr class="'.$class.'">
+			<!--<td><input name="qty-'.$item['id'].'" type="text" value="'.$item['qty'].'" size="3"/></td>-->
+			<td vertical-align="middle"><input name="'.$item['id'].'" id="cb'.$item['id'].'" type="checkbox" style="margin-top:-2px;" onclick="doCheckedItems();" /></td>
+			<td align="center" class="desc hover" onClick="$(\'cb'.$item['id'].'\').checked = ($(\'cb'.$item['id'].'\').checked ? false : true); doCheckedItems();">'.$item['status'].'</td>
+			<td align="center" class="hover" onClick="document.location.href = \'/ad-'.$item['id'].'\';"><a href="/ad-'.$item['id'].'">'.$item['title'].'</a></td>
+			<td align="center" class="desc">'./*($item['status'] ? $item['status'].' | ' : '').*/doDate($item['date'],'short').' '.($item['store'] ? '<br /><a href="http://'.$item['store']['link'].'">'.$item['store']['name'].'</a>' : '').'</td>
+		</tr>';
+		
+	}
+	
+	$return .= '
+	</table>
+	<br />
+	<input type="hidden" name="mode" value="" id="withcheckedhidden" />
+	<input type="hidden" name="view" value="" id="viewselecthidden" />
+	</form>
+	';
+}
+else {
+	$return .= '<div class="ebox">There are no ads to show in this view</div>';
+}
+
+setPageConst('title',$_SESSION['userName'].'\'s Control Panel > Ads');
+setPageConst('bct','<a href="/index">Home</a> > <a href="/control/index">'.$_SESSION['userName'].'\'s Control Panel</a> > Manage Ads');
+setPage('
+	<script type="text/javascript">
+		var checkedActions;
+		
+		window.addEvent(\'domready\', function() {
+			$(\'viewselect\').addEvent(\'change\',function() {
+				$(\'viewform\').submit();
+			});
+			
+			checkedActions = $(\'checkedActions\');
+			checkedActions.set(\'slide\', {duration: \'long\', transition: \'elastic:out\'});
+			checkedActions.slide(\'hide\');
+		});
+		
+		function adAction(action) {
+			$(\'withcheckedhidden\').value = action;
+			$(\'viewselecthidden\').value = $(\'viewselect\').value;
+			$(\'itemform\').submit();
+		}
+		
+		function doCheckedItems(mode,val) {
+			var form = window.document.items;
+			
+			if(mode == \'toggle\') {
+				for(i=0; i<form.length; i++) form[i].checked = val;
+			}
+			else {
+				 //$("checkToggle").checked = false;
+			}
+			
+			var checked = false;
+			for(i=0; i<form.length; i++) {
+				if(form[i].checked) checked = true;
+			}
+			if(checked) checkedActions.slide(\'in\');
+			else checkedActions.slide(\'out\');
+		}
+	</script>
+','head');
+
+if($_REQUEST['view']) $cbView[$_REQUEST['view']] = ' selected';
+
+setPageBlock('blockHelp','Tools:','
+	<div id="checkedActions" style="overflow:hidden; max-height:500px; overflow:auto;">
+		<div class="dtxt">With Checked Items:<br /><br />
+			<div class="llst" style="background-color:#FFFFFF;">
+				<a href="javascript:adAction(\'mrkunsld\');">> Mark UnSold</a>
+				<a href="javascript:adAction(\'mrksld\');">> Mark Sold</a>
+				<a href="javascript:adAction(\'mrkpnd\');">> Mark Pending</a>
+				<a href="javascript:adAction(\'mrkdel\');">> Mark Deleted</a>
+				'.$storeActions.'
+				<a href="javascript:adAction(\'xfrusr\');">> Transfer to user</a>
+			</div>
+		</div><br />
+	</div>
+	
+	<form method="get" id="viewform">
+		<div class="desc">Ads to View:</div>
+		<select name="view" id="viewselect">
+			<option value="all">All Ads</option>
+			<option value="unsold"'.$cbView['unsold'].'>Unsold and Pending</option>
+			<option value="sold"'.$cbView['sold'].'>Sold</option>
+			<option value="deleted"'.$cbView['deleted'].'>Deleted</option>
+		</select>
+		<!--<input type="submit" value="Update View" />--> 
+	</form>
+');
+
+setPageBlock('blockFancy',$title,'
+	
+	<!--
+	<form method="post" action="ads">
+	'.$critera.'
+	<b>Status:</b> <input type="radio" name="show" id="show" value="unsold" '.$unsoldChecked.'> Unsold <input type="radio" name="show" id="show" value="sold" '.$soldChecked.'> Sold <input type="radio" name="show" id="show" value="all" '.$allChecked.'> All
+	<b>Title:</b> <input name="title" id="title" type="text" value="'.$_REQUEST['title'].'" size="14">
+	<b>Id:</b> <input name="id" id="id" type="text" value="'.$_REQUEST['id'].'" size="5">
+	<input type="submit" value="Update Filter">
+	</form>-->
+	'
+	.$return
+);
+
+?>

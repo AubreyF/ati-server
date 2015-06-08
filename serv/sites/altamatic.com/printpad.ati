@@ -1,0 +1,34 @@
+<?
+
+setPagePref('template','html');
+setPagePref('deadEndPage',true);
+setPage('window.print();','onLoad');
+setPageConst('title','One Time Pad Grid');
+
+for($i=0;$i<1271;$i++) {
+	$content .= '<div>'.mt_rand(1,26).'</div>';
+}
+
+setPage('
+<style type="text/css">
+body { text-align:center; font-size:12px; width:660px; }
+.letters { height:20px; position:absolute; top:9px; left:199px; font-size:10px; font-weight:bold; }
+.numbers { height:20px; position:absolute; top:19px; left:200px; font-size:10px; font-weight:bold; }
+.letters span { display:block; width:17px; height:10px; }
+.numbers span { display:block; width:17px; height:10px; border-top: 1px solid #F1F1F1; padding-top:1px; }
+.blocks { margin-top:20px; }
+.blocks>div { width:20px; height:19px; border:1px solid #F1F1F1; margin-top:-1px; margin-left:-1px; line-height:20px; }
+img, span, div { float:left; }
+</style>
+','head');
+
+setPage('
+	<img src="/print/logo.png" />
+	<div class="letters"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span><span>J</span><span>K</span><span>L</span><span>M</span><span>N</span><span>O</span><span>P</span><span>W</span><span>R</span><span>S</span><span>T</span><span>U</span><span>V</span><span>W</span><span>X</span><span>Y</span><span>Z</span></div>
+	<div class="numbers"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span></div>
+	<div class="blocks">
+		'.$content.'
+	</div>
+');
+
+?>

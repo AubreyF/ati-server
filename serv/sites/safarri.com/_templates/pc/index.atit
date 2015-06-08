@@ -1,0 +1,74 @@
+<script type="text/javascript">
+	window.addEvent('domready', function() {
+		var adScroller = new Scroller('adList', {area: 50, velocity: 0.7});
+		$('adList').addEvent('mouseenter', adScroller.start.bind(adScroller));
+		$('adList').addEvent('mouseleave', adScroller.stop.bind(adScroller));
+		$('adList').setStyle('overflow','hidden');
+	});
+</script>
+
+<style type="text/css">
+	#findAds { overflow:hidden; }
+	.adTitle { font-size:1em; font-size:12px !important; }
+	.adLocation { padding-right:2px; }
+	.block { display:block; }
+	.block>.icon { font-size:4em; color:#0066CC; padding-right:20px; padding-bottom:0px; float:left; }
+	.block>.text, .block>.text:hover { height:83px; padding-right:20px; font-size:10px; color:#999999; }
+	.block>.text>.title { padding-top:5px; padding-bottom:5px; font-size:13px; color:#0066CC; text-align:left; }
+	.block>.text>.desc, .opttext { color:#BBBBBB; }
+</style>
+
+<?=pFunc('columns','',
+	'<a class="hover" href="http://forum.safarri.com/view-244" target="_blank">'.
+	pFunc('blockContent','Welcome to Safarri!','
+		<div class="htxt" style="font-size:13px;">Your Commerce Solution.</div>
+		<div class="htxt" style="font-size:9px;">» Learn More</div>
+		<br /><br />
+		<div class="block">
+			<img class="icon" src="/images/marketing/homeeasy.png" />
+			<div class="text">
+				<div class="title">Easy:</div>
+				We put the fun in classifieds.
+			</div>
+		</div>
+		<div class="block">
+			<img class="icon" src="/images/marketing/homelocal.png" />
+			<div class="text">
+				<div class="title">Local:</div>
+				Save on shipping, avoid fraud, and meet new people.
+			</div>
+		</div>
+		<div class="block">
+			<img class="icon" src="/images/marketing/homepower.png" />
+			<div class="text">
+				<div class="title">Powerful:</div>
+				Streamlined control panel. Full featured user stores. Syndicated with thousands of sites.
+			</div>
+		</div>
+		<div class="block">
+			<img class="icon" src="/images/marketing/homefree.png" />
+			<div class="text">
+				<div class="title">Free:</div>
+				We do the work, you keep your cash. Everyone Wins!
+			</div>
+		</div>
+	',array('fancy'=>true,'height'=>400)).'</a><br /><div class="llst">
+			<a href="#" onClick="window.external.AddSearchProvider(\'http://safarri.com/data/search/searchsim.xml\');"><img src="/images/logos/small.png" /> Browser Integrated Safarri Search</a>
+		</div>',
+		pFunc('blockContent','Assorted Listings:',cFunc(30,_fnc.'classifiedslist','classifiedsList','simple',array('safarriads'=>2, 'adsppage'=>10, 'featured'=>true, 'location'=>$_SESSION['userZip'])).'<br /><a href="/browse" class="lbtn bold slender">Browse All Ads</a><br />',array('nopad'=>true,'height'=>229,'id'=>'adList','fancy'=>true)).
+		pFunc('blockContent','Find Local Ads:','<form method="post" action="/browse" class="outer narrow">
+			<div>
+				<input class="input" type="text" value="" name="q"/>
+				Keywords:
+			</div>
+			<div>
+				<input class="input" type="text" value="83809" name="location"/>
+				City/Zip:
+			</div>
+			<input type="submit" class="bold" value="» Browse!"/>
+		</form>
+		<div class="desc stxt opttext" style="padding-top:3px;">{Both fields are optional}</div>
+		',array('fancy'=>true,'height'=>115,'id'=>'findAds')).
+		'<br />
+		<div class="caln"><a href="/earth" title="Safarri Brings Streaming 3D Classifieds to Google Earth"><img src="/images/earth/bannerbutton.png" alt="Safarri + Google Earth - Real Time streaming 3D classifeds"/></a></div>
+')?>

@@ -1,0 +1,138 @@
+<?
+$tplDefs += array('blockHelp'=>'sideBar2');
+
+function block($title,$content) {
+	return '
+	<div class="boxtop"><div class="left"></div><div class="right"></div>'.$title.'</div>
+	<div class="boxcontent">
+	'.$content.'
+	</div>
+	';
+}
+
+function blockSide($title,$content) {
+	return '
+	<div class="boxtop"><div class="left"></div><div class="right"></div>'.$title.'</div>
+	<div class="boxcontent">'.$content.'</div>
+	';
+}	
+
+function blockBold($content) {
+	return '
+	<div class="boldboxtop"></div>
+	<div class="boldboxcontent">'.$content.'</div>
+	<div class="boldboxbot"></div>
+	';
+}
+
+function blockFancy($title,$content) {
+	return '
+	<div class="fancyboxtop"><div class="left"></div><div class="right"></div><div class="text" id="fbt'.preg_replace("/[^0-9a-z\.]/","",strtolower($title)).'">'.$title.'</div></div>
+	<div class="fancyboxcontent">'.$content.'</div>
+	';
+}
+
+function blockHeaded($title,$desc='',$content='') {
+	return '
+	<div class="hbt"><div class="left"></div><div class="right"></div>'.$title.'</div>
+	'.($desc ? '<div class="hbd"><div class="left"></div><div class="right"></div><div class="text">'.$desc.'</div></div>' : '').'
+	'.($content ? '<div class="hbc">'.$content.'</div>' : '').'
+	';
+}
+
+function blockContent($title,$content,$options='') {
+	return '                                          
+	<div class="contentboxtop"><div class="left"></div><div class="right"></div><div class="text" id="cb'.preg_replace("/[^0-9a-z\.]/","",strtolower($title)).'">'.$title.'</div></div>
+	<div class="contentboxcontent'.($options['nopad'] ? ' noPad' : '').'" style="'.($options['height'] ? 'height:'.$options['height'].'px;' : '').'"'.($options['id'] ? ' id="'.$options['id'].'"' : '').'>'.$content.'</div>
+	';
+}
+
+function blockMessage($message) {
+	return '
+	<div id="messagebox">
+		<div class="left"></div>
+		<a href="'.$_SERVER['FAKE_URI'].'" title="Close Message"><div class="right"></div></a>
+		<div class="text">
+			<div class="title">Message Viewer:</div>
+			<div class="message">'.$message.'</div>
+		</div>
+	</div>
+	';
+}
+
+function blockHelp($title,$message,$floating=true) {
+	setPage('
+	<script type="text/javascript">
+	<!--
+	function setHelp(title,message) {
+		document.getElementById("tipboxtitle").innerHTML = title;
+		document.getElementById("tipboxtext").innerHTML = message;
+	}
+	function clearHelp() {
+		document.getElementById("tipboxtitle").innerHTML = \''.addslashes($title).'\';
+		document.getElementById("tipboxtext").innerHTML = "'.addslashes(nl2nill($message)).'";
+	}
+	//-->
+	</script>
+	','head');
+	
+	return '
+	<div class="tipboxspacer">&nbsp;</div>
+	<div class="tipbox'.($floating ? ' tipboxfloating' : '').'">
+		<div class="tipboxtop"></div>
+		<div class="tipboxtitle" id="tipboxtitle">'.$title.'</div>
+		<div class="tipboxcontent" id="tipboxtext">'.$message.'</div>
+		<div class="tipboxbot"></div>
+	</div>
+	';
+}
+
+function navLinks($mode='list',$arr,$opts='') {
+	if(!$opts['level']) $opts['level'] = 'top';	//Default Level
+	if(!$opts['down']) $opts['down'] = 'current';	//Default CSS "hover" class
+	
+	static $links;
+	foreach($arr as $key=>$val) {
+		//Update Link Count for Current Level
+		$links[$opts['level'].'Count']++;
+		//Handle Sub levels
+		if(is_array($val)) {
+			$links[$opts['level']] .= '<a href="'.$val['link'].'" class="link sub'.(($GLOBALS['preferences']['navLinksSelected'][$opts['level']] == $val['link']) || (strpos($_SERVER['FAKE_URI'],$val['link']) !== false) ? ' current' : '').'">'.$key.'</a>';
+			navLinks($mode,$val['children'],array('level'=>'sub'));
+		}
+		//Add link to current level
+		else $links[$opts['level']] .= '<a href="'.$val.'" class="link'.(($GLOBALS['preferences']['navLinksSelected'][$opts['level']] == $val) || (strpos($_SERVER['FAKE_URI'],$val) !== false) ? ' '.$opts['down'] : '').'" id="link'.strtolower($key).'"><span class="text">'.$key.'</span></a>';
+	}
+	return $links;
+}
+
+
+function blockComment($post,$user='',$isParent=false) {
+	if($isParent) $post['id'] = 0;
+	if(!$user) $user = renderMemberBasic($post['userId']);
+	
+	return '
+	<a name="c'.$post['id'].'" class="anchor"></a>
+	<div class="comment">
+		<div class="title">
+			<div class="right"></div>
+			'.($_SESSION['userId'] == $user['userId'] || isAdmin() ? ('<a href="'.($post['editLink'] ? $post['editLink'] : '/submitpost-id-'.$post['id'].'-tid-'.$_REQUEST['id']).'">>> Edit</a>') : '').'
+			<a href="/submitpost-tid-'.$_REQUEST['id'].'-pid-'.$post['id'].'">>> Reply</a>
+			<div class="left"></div>
+			'.$post['links'].'
+			'.$post['title'].'
+		</div>
+		<div class="right"><div class="top"></div></div>
+		<div class="side">
+			<div class="top"></div>
+			<div class="user">'.$user['userFullName'].'</div>
+			'.doDate($post['date']).'
+			'.($post['parentLink'] !== false ? ($post['parentLink'] ? '<a href="'.$post['parentLink'].'"><< In Reply to</a>' : '<br />(In Reply to Item)') : '').'
+		</div>
+		<div class="text">'.$post['text'].'</div>
+		<div class="bot"><div class="left"></div><div class="right"></div></div>
+	</div>
+	';
+}
+
+?>

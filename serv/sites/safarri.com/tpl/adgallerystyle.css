@@ -1,0 +1,11 @@
+.adDiv { display:block; width:223px; height:150px; float:left; text-align:center; margin:1px; text-decoration:none; }
+.adDiv:hover { background-color: #FAFAFA; border: 1px solid #999999; margin:0px; text-decoration:none; }
+.adDiv .thumb { height: 75px; width: 100px; margin-left:35px; }
+.adDiv .title { display:block; height:25px; line-height:12px; margin-top:5px; text-align:center; text-decoration:none; overflow:hidden; font-weight:normal; font-size:10px; }
+.adDiv .price { text-align:left; font-weight:bold; padding-left:10px; }
+.adDiv .location { text-align:right; font-size:0.9em; padding-right:10px; }
+.adDiv:hover .title { text-decoration:none; color: #477B9E; }
+.adDiv .specs, .adDiv .date { display:none; }
+.adDiv:hover .specs { display:block; overflow:hidden; position:relative; line-height:13px; height:49px; top:40px; margin-bottom:-55px; margin-left:-4px; padding-left:5px; padding-right:5px; padding-bottom:5px; width:219px; background-color: #FAFAFA; border: 1px solid #999999; border-top:none; font-size:0.9em; text-align:center; color:#555555; }
+.adDiv .specs .spec { color:#999999; }
+.adDiv .tools, .adDiv .provider { float:right; }
